@@ -1,0 +1,553 @@
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: #222;
+  color: #fff;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0 12px 24px;
+  overflow-y: auto;
+  touch-action: manipulation;
+}
+
+.game {
+  max-width: 520px;
+  width: 100%;
+  margin: 16px auto;
+  background: #333;
+  padding: 14px;
+  border: 2px solid #666;
+  border-radius: 12px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.status {
+  margin-bottom: 10px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.floor-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exp-bar {
+  height: 8px;
+  background: #111;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.exp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a6cf7, #6c87ff);
+  transition: width 0.3s;
+}
+
+.battle-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.player-hp {
+  font-weight: bold;
+}
+
+.enemy-info {
+  text-align: right;
+}
+
+.enemy-name {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.log {
+  height: 220px;
+  background: #111;
+  padding: 8px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.log div {
+  margin-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 16px 12px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  background: #4a6cf7;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #6c87ff;
+}
+
+button:active {
+  background: #3a5ce7;
+}
+
+.escape-btn {
+  background: #e74c3c;
+}
+
+.escape-btn:hover {
+  background: #ff6b6b;
+}
+
+.screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #555;
+}
+
+.screen-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.back-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  background: #555;
+}
+
+.back-button:hover {
+  background: #666;
+}
+
+.inventory-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.inventory-tab {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  background: #444;
+  border-radius: 6px;
+}
+
+.inventory-tab.is-active {
+  background: #4a6cf7;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sub-tab {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  background: #444;
+  border-radius: 6px;
+}
+
+.sub-tab.is-active {
+  background: #555;
+}
+
+.inventory-footer {
+  margin-top: 16px;
+}
+
+.scroll-top-button {
+  width: 100%;
+  padding: 12px;
+  background: #555;
+}
+
+.status-section {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #2a2a2a;
+  border-radius: 8px;
+}
+
+.status-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #aaa;
+}
+
+.job-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.job-progress {
+  font-size: 12px;
+  color: #aaa;
+  padding: 6px;
+  background: #222;
+  border-radius: 4px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: #222;
+  border-radius: 6px;
+}
+
+.stat-name {
+  font-size: 13px;
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #4a6cf7;
+}
+
+.stat-points-display,
+.skill-points-display {
+  padding: 8px;
+  background: #222;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.small-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  flex: none;
+}
+
+.full-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.equipped-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.equip-slot {
+  padding: 10px;
+  background: #222;
+  border-radius: 6px;
+  border: 2px dashed #444;
+  font-size: 13px;
+}
+
+.equip-slot.filled {
+  border-style: solid;
+  border-color: #4a6cf7;
+}
+
+.calc-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  font-size: 13px;
+}
+
+.calc-stats div {
+  padding: 6px;
+  background: #222;
+  border-radius: 4px;
+}
+
+.equipped-skill {
+  padding: 8px;
+  background: #222;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #333;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #666;
+}
+
+.modal-content h2 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.modal-content button {
+  margin-top: 12px;
+}
+
+.job-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.job-card {
+  padding: 12px;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.job-card:hover {
+  border-color: #4a6cf7;
+}
+
+.job-card.selected {
+  border-color: #4a6cf7;
+  background: #1a3a7f;
+}
+
+.job-card h4 {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+}
+
+.job-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modal-actions button {
+  flex: 1;
+  margin: 0;
+}
+
+.stat-alloc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.stat-alloc-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-alloc-controls button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 18px;
+  margin: 0;
+}
+
+.stat-alloc-value {
+  min-width: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.item-card {
+  padding: 10px;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.item-card:hover {
+  border-color: #4a6cf7;
+}
+
+.item-card.equipped {
+  border-color: #4caf50;
+  background: #1a3d1a;
+}
+
+.item-card.common { border-left: 4px solid #888; }
+.item-card.uncommon { border-left: 4px solid #4caf50; }
+.item-card.rare { border-left: 4px solid #2196f3; }
+.item-card.epic { border-left: 4px solid #9c27b0; }
+.item-card.legendary { border-left: 4px solid #ff9800; }
+
+.item-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.item-stats {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.skill-item {
+  padding: 10px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skill-info {
+  flex: 1;
+}
+
+.skill-name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.skill-desc {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.skill-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.skill-level {
+  background: #4a6cf7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .game {
+    margin: 16px auto;
+    height: auto;
+  }
+}
+
+
+/* Status tabs */
+.status-tabs{
+  display:flex;
+  gap:8px;
+  padding:8px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.status-tab-btn{
+  flex:1;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06);
+  color:inherit;
+  cursor:pointer;
+  font-weight:600;
+}
+.status-tab-btn.is-active{
+  background:rgba(255,255,255,0.16);
+}
+.options-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.option-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.achievements-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.achievement-card{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.04);
+}
+.achievement-card .small{
+  margin-top:4px;
+  opacity:0.85;
+  font-size:12px;
+}
