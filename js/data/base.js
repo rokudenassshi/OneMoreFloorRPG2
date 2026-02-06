@@ -5,9 +5,18 @@
 (function () {
   "use strict";
 
-  const GAME_VERSION = "0.2.0";
+  // バージョンは version.json（HTMLのブートローダー）で window.GAME_VERSION に設定される。
+  // ここでは未設定時のフォールバックのみ持つ。
+  const GAME_VERSION =
+    typeof window.GAME_VERSION === "string" && window.GAME_VERSION.trim()
+      ? window.GAME_VERSION.trim()
+      : "dev";
 
   const gameData = {
+    floor: 1,
+    battleFloor: null,
+    pendingFloorAfterWin: null,
+
     player: {
       level: 1,
       exp: 0,
@@ -56,8 +65,16 @@
       status: {
         poisonTurns: 0,
         burnTurns: 0,
+        bleedTurns: 0,
+        stunTurns: 0,
+        slowTurns: 0,
+        slowRate: 0,
+        vulnerableTurns: 0,
+        vulnerableRate: 0,
+        silenceTurns: 0,
         accuracyDownTurns: 0,
         accuracyDownRate: 0,
+        defendingTurns: 0,
       },
 
       // 装備スロット: 武器/防具 2、装飾品 1
@@ -71,7 +88,6 @@
       items: [{ name: "やくそう", heal: 50, count: 3 }],
     },
 
-    floor: 1,
     enemy: null,
     gameState: "EXPLORE", // EXPLORE / BATTLE
 

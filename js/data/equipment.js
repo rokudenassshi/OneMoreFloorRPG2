@@ -6,8 +6,13 @@
   "use strict";
 
   // 装備タイプ
+  // - category: weapon / armor / accessory
+  // - hands: 0 / 1 / 2
+  // - bias: 装備生成時の傾向（attack/defense/accuracy/evasion/magicAttack/healPower など）
   const equipTypes = {
+    // -------------------
     // 武器
+    // -------------------
     sword: {
       name: "剣",
       category: "weapon",
@@ -16,6 +21,48 @@
       bias: {
         attackMult: 1.0,
         accuracy: (floor) => Math.round(4 + floor * 0.18),
+      },
+    },
+    longsword: {
+      name: "長剣",
+      category: "weapon",
+      hands: 1,
+      // 標準より少し火力寄り
+      bias: {
+        attackMult: 1.08,
+        accuracy: (floor) => Math.round(2 + floor * 0.14),
+      },
+    },
+    greatsword: {
+      name: "大剣",
+      category: "weapon",
+      hands: 2,
+      // 高火力・命中が落ちる
+      bias: {
+        attackMult: 1.32,
+        accuracy: (floor) => -Math.round(2 + floor * 0.18),
+      },
+    },
+    katana: {
+      name: "刀",
+      category: "weapon",
+      hands: 1,
+      // 命中と回避寄り（斬れ味）
+      bias: {
+        attackMult: 0.98,
+        accuracy: (floor) => Math.round(9 + floor * 0.22),
+        evasion: (floor) => Math.round(2 + floor * 0.10),
+      },
+    },
+    rapier: {
+      name: "レイピア",
+      category: "weapon",
+      hands: 1,
+      // 命中特化（火力は控えめ）
+      bias: {
+        attackMult: 0.86,
+        accuracy: (floor) => Math.round(14 + floor * 0.28),
+        evasion: (floor) => Math.round(1 + floor * 0.08),
       },
     },
     dagger: {
@@ -27,6 +74,16 @@
         attackMult: 0.85,
         accuracy: (floor) => Math.round(8 + floor * 0.22),
         evasion: (floor) => Math.round(4 + floor * 0.12),
+      },
+    },
+    handaxe: {
+      name: "手斧",
+      category: "weapon",
+      hands: 1,
+      // 斧の片手版：火力寄り・命中少し下がる
+      bias: {
+        attackMult: 1.12,
+        accuracy: (floor) => -Math.round(1 + floor * 0.12),
       },
     },
     axe: {
@@ -49,14 +106,36 @@
         accuracy: (floor) => Math.round(7 + floor * 0.20),
       },
     },
+    halberd: {
+      name: "戦斧槍",
+      category: "weapon",
+      hands: 2,
+      // 槍×斧：火力と命中の中間
+      bias: {
+        attackMult: 1.18,
+        accuracy: (floor) => Math.round(1 + floor * 0.08),
+      },
+    },
     mace: {
       name: "メイス",
       category: "weapon",
       hands: 1,
-      // 攻撃寄り（少し命中が下がる）
+      // 聖職寄り（回復力が伸びる。攻撃もそこそこ。魔法攻撃は少し）
       bias: {
-        attackMult: 1.15,
-        accuracy: (floor) => -Math.round(1 + floor * 0.12),
+        attackMult: 1.10,
+        accuracy: (floor) => -Math.round(1 + floor * 0.10),
+        healPowerMult: 1.35,
+        magicAttackMult: 0.85,
+      },
+    },
+    flail: {
+      name: "フレイル",
+      category: "weapon",
+      hands: 1,
+      // クセ強：命中は少し下がるが火力は高め
+      bias: {
+        attackMult: 1.18,
+        accuracy: (floor) => -Math.round(1 + floor * 0.14),
       },
     },
     hammer: {
@@ -79,19 +158,58 @@
         accuracy: (floor) => Math.round(10 + floor * 0.25),
       },
     },
+    crossbow: {
+      name: "クロスボウ",
+      category: "weapon",
+      hands: 2,
+      // 命中さらに高い（攻撃控えめ、回避は少し下がる）
+      bias: {
+        attackMult: 0.90,
+        accuracy: (floor) => Math.round(14 + floor * 0.26),
+        evasion: (floor) => -Math.round(1 + floor * 0.06),
+      },
+    },
     staff: {
       name: "杖",
       category: "weapon",
       hands: 2,
-      // 魔法寄り（攻撃低め、守り少し）
+      // 魔法寄り（物理攻撃は控えめ。魔法攻撃が伸びる。回復も少し）
       bias: {
-        attackMult: 0.9,
+        attackMult: 0.45,
         accuracy: (floor) => Math.round(2 + floor * 0.10),
         defense: (floor) => Math.round(2 + floor * 0.06),
+        magicAttackMult: 1.40,
+        healPowerMult: 1.10,
+      },
+    },
+    wand: {
+      name: "ワンド",
+      category: "weapon",
+      hands: 1,
+      // 魔法特化（物理はかなり弱い）
+      bias: {
+        attackMult: 0.70,
+        accuracy: (floor) => Math.round(4 + floor * 0.12),
+        magicAttackMult: 1.55,
+        healPowerMult: 0.95,
+      },
+    },
+    holy_staff: {
+      name: "聖杖",
+      category: "weapon",
+      hands: 2,
+      // 回復特化（物理は弱い）
+      bias: {
+        attackMult: 0.50,
+        accuracy: (floor) => Math.round(1 + floor * 0.08),
+        magicAttackMult: 1.10,
+        healPowerMult: 1.60,
       },
     },
 
-    // 防具
+    // -------------------
+    // 防具（カテゴリは armor。スロットは装備1/装備2に入る想定）
+    // -------------------
     armor: {
       name: "鎧",
       category: "armor",
@@ -132,6 +250,27 @@
         accuracy: (floor) => -Math.round(1 + floor * 0.10),
       },
     },
+    buckler: {
+      name: "小盾",
+      category: "armor",
+      hands: 1,
+      // 回避寄りの盾
+      bias: {
+        defenseMult: 0.85,
+        evasion: (floor) => Math.round(6 + floor * 0.18),
+      },
+    },
+    tower_shield: {
+      name: "大盾",
+      category: "armor",
+      hands: 1,
+      // 超堅い盾：回避が大きく下がる
+      bias: {
+        defenseMult: 1.35,
+        evasion: (floor) => -Math.round(3 + floor * 0.20),
+        accuracy: (floor) => -Math.round(1 + floor * 0.08),
+      },
+    },
     helmet: {
       name: "兜",
       category: "armor",
@@ -140,6 +279,26 @@
       bias: {
         defenseMult: 0.95,
         evasion: (floor) => -Math.round(1 + floor * 0.06),
+      },
+    },
+    hood: {
+      name: "フード",
+      category: "armor",
+      hands: 1,
+      // 回避寄り
+      bias: {
+        defenseMult: 0.70,
+        evasion: (floor) => Math.round(6 + floor * 0.16),
+      },
+    },
+    circlet: {
+      name: "サークレット",
+      category: "armor",
+      hands: 1,
+      // 命中寄り（視界）
+      bias: {
+        defenseMult: 0.75,
+        accuracy: (floor) => Math.round(6 + floor * 0.14),
       },
     },
     boots: {
@@ -152,6 +311,16 @@
         evasion: (floor) => Math.round(8 + floor * 0.18),
       },
     },
+    greaves: {
+      name: "グリーヴ",
+      category: "armor",
+      hands: 1,
+      // 防御寄り
+      bias: {
+        defenseMult: 0.92,
+        evasion: (floor) => -Math.round(1 + floor * 0.05),
+      },
+    },
     gloves: {
       name: "篭手",
       category: "armor",
@@ -160,6 +329,16 @@
       bias: {
         defenseMult: 0.65,
         accuracy: (floor) => Math.round(5 + floor * 0.16),
+      },
+    },
+    bracers: {
+      name: "腕当て",
+      category: "armor",
+      hands: 1,
+      // 回避＋防御の中間
+      bias: {
+        defenseMult: 0.78,
+        evasion: (floor) => Math.round(4 + floor * 0.12),
       },
     },
     robe: {
@@ -183,11 +362,40 @@
         evasion: (floor) => Math.round(12 + floor * 0.25),
       },
     },
+    mantle: {
+      name: "外套",
+      category: "armor",
+      hands: 1,
+      // 回避＋命中
+      bias: {
+        defenseMult: 0.62,
+        evasion: (floor) => Math.round(10 + floor * 0.22),
+        accuracy: (floor) => Math.round(3 + floor * 0.10),
+      },
+    },
 
-    // 装飾品
+    // -------------------
+    // 装飾品（アクセ枠）
+    // -------------------
     ring: { name: "指輪", category: "accessory", hands: 0 },
     amulet: { name: "アミュレット", category: "accessory", hands: 0 },
     belt: { name: "ベルト", category: "accessory", hands: 0 },
+    charm: { name: "お守り", category: "accessory", hands: 0 },
+    talisman: { name: "護符", category: "accessory", hands: 0 },
+    earrings: { name: "耳飾り", category: "accessory", hands: 0 },
+    necklace: { name: "首飾り", category: "accessory", hands: 0 },
+    pendant: { name: "ペンダント", category: "accessory", hands: 0 },
+    bracelet: { name: "腕輪", category: "accessory", hands: 0 },
+    brooch: { name: "ブローチ", category: "accessory", hands: 0 },
+    anklet: { name: "足輪", category: "accessory", hands: 0 },
+    mask: { name: "仮面", category: "accessory", hands: 0 },
+    orb: { name: "宝珠", category: "accessory", hands: 0 },
+    relic: { name: "レリック", category: "accessory", hands: 0 },
+    sigil: { name: "紋章", category: "accessory", hands: 0 },
+    medal: { name: "勲章", category: "accessory", hands: 0 },
+    rosary: { name: "ロザリオ", category: "accessory", hands: 0 },
+    charmstone: { name: "霊石", category: "accessory", hands: 0 },
+    mirror_shard: { name: "鏡片", category: "accessory", hands: 0 },
   };
 
   // 装飾品効果
@@ -204,6 +412,24 @@
     { name: "命中率UP", type: "accuracy", value: 5 },
     // 索敵(= 二つ名遭遇に影響するパラメータ)を装飾品でも伸ばせるようにしておく
     { name: "索敵UP", type: "search", value: 1 },
+    { name: "魔法攻撃力UP", type: "magicPower", value: 18 },
+    { name: "回復力UP", type: "healPower", value: 18 },
+    { name: "回復量UP", type: "healReceived", value: 15 },
+    { name: "被ダメージ軽減", type: "damageReduction", value: 8 },
+    { name: "クリダメUP", type: "critDamage", value: 20 },
+    { name: "吸血", type: "lifeSteal", value: 6 },
+    { name: "再生", type: "regen", value: 2 },
+    { name: "やくそう効果UP", type: "herbPower", value: 30 },
+    { name: "状態異常短縮", type: "ailmentDurationDown", value: 20 },
+    { name: "毒耐性", type: "poisonResist", value: 35 },
+    { name: "火傷耐性", type: "burnResist", value: 35 },
+    { name: "出血耐性", type: "bleedResist", value: 35 },
+    { name: "しびれ耐性", type: "stunResist", value: 30 },
+    { name: "鈍足耐性", type: "slowResist", value: 30 },
+    { name: "脆弱耐性", type: "vulnerableResist", value: 30 },
+    { name: "封印耐性", type: "silenceResist", value: 30 },
+    { name: "命中低下耐性", type: "accuracyDownResist", value: 30 },
+
   ];
 
   window.equipTypes = equipTypes;

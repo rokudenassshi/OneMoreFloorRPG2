@@ -18,9 +18,11 @@
       </div>
       <div class="battle-status">
         <div class="player-hp">HP：<span id="playerHp"></span></div>
+        <div id="playerStatusEffects" class="status-effects"></div>
         <div class="enemy-info">
           <div class="enemy-name"><span id="enemyName"></span></div>
           <div class="enemy-hp"><span id="enemyHp">---</span></div>
+          <div id="enemyStatusEffects" class="status-effects"></div>
         </div>
       </div>
     </div>
@@ -264,14 +266,66 @@
 
   </div>
 
-  <!-- JSは分割して読み込み -->
-  <script src="js/data/base.js"></script>
-  <script src="js/data/jobs.js"></script>
-  <script src="js/data/skills.js"></script>
-  <script src="js/data/enemies.js"></script>
-  <script src="js/data/equipment.js"></script>
-  <script src="js/data/achievements.js"></script>
-  <script src="js/core.js"></script>
-  <script src="js/ui.js"></script>
+  <!--
+    version.json にバージョンを置き、JS読み込みURLへ ?v= を付けてキャッシュを回避する。
+    ※version.json は fetch({cache:'no-store'}) で取得するため、更新が反映されやすい。
+  -->
+  <script>
+    (function () {
+      "use strict";
+
+      const scriptList = [
+        "js/data/base.js",
+        "js/data/jobs.js",
+        "js/data/skills.js",
+        "js/data/enemies.js",
+        "js/data/equipment.js",
+        "js/data/achievements.js",
+        "js/core.js",
+        "js/ui.js",
+      ];
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error("読み込みに失敗: " + src));
+          document.body.appendChild(s);
+        });
+      }
+
+      function getVersion() {
+        return fetch("version.json", { cache: "no-store" })
+          .then((res) => {
+            if (!res.ok) throw new Error("version.json を取得できません: " + res.status);
+            return res.json();
+          })
+          .then((data) => {
+            const v = data && typeof data.version === "string" ? data.version.trim() : "";
+            return v || "dev";
+          })
+          .catch(() => "dev");
+      }
+
+      getVersion()
+        .then((version) => {
+          // 他のJS（セーブ出力など）でも使えるように window に乗せる
+          window.GAME_VERSION = version;
+
+          // 順番に読み込む（依存関係を壊さない）
+          let chain = Promise.resolve();
+          for (const p of scriptList) {
+            const src = p + "?v=" + encodeURIComponent(version);
+            chain = chain.then(() => loadScript(src));
+          }
+          return chain;
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
+        });
+    })();
+  </script>
 </body>
 </html>

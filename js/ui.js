@@ -11,12 +11,16 @@
   function updateUI() {
     const p = gameData.player;
 
+    // 初期化前でも安全に動くように、必要なDOM参照は都度確保する
+    if (!gameData.battleButtons) gameData.battleButtons = document.getElementById("battleButtons");
+    if (!gameData.exploreButtons) gameData.exploreButtons = document.getElementById("exploreButtons");
+
     document.getElementById("playerLevel").textContent = p.level;
     document.getElementById("floor").textContent = gameData.floor;
     document.getElementById("playerHp").textContent = `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
 
     // 経験値バー
-    const expRate = p.exp / getExpNeeded();
+    const expRate = Math.min(1, Math.max(0, p.exp / getExpNeeded()));
     document.getElementById("expBarFill").style.width = expRate * 100 + "%";
 
     // 敵情報
@@ -29,14 +33,18 @@
       document.getElementById("enemyHp").textContent = "---";
     }
 
+    renderStatusEffects();
+
     // ボタン表示切り替え
-    if (gameData.gameState === "BATTLE") {
-      gameData.battleButtons.style.display = "block";
-      gameData.exploreButtons.style.display = "none";
-      updateSkillButton();
-    } else {
-      gameData.battleButtons.style.display = "none";
-      gameData.exploreButtons.style.display = "block";
+    if (gameData.battleButtons && gameData.exploreButtons) {
+      if (gameData.gameState === "BATTLE") {
+        gameData.battleButtons.style.display = "block";
+        gameData.exploreButtons.style.display = "none";
+        updateSkillButton();
+      } else {
+        gameData.battleButtons.style.display = "none";
+        gameData.exploreButtons.style.display = "block";
+      }
     }
   }
 
@@ -50,14 +58,91 @@
       return;
     }
 
+    // クールタイム値の正規化（NaN対策）
+    let cd = Number(gameData.player.skillCooldown || 0);
+    if (!Number.isFinite(cd) || cd < 0) cd = 0;
+    gameData.player.skillCooldown = cd;
+
+    // 封印中はスキルボタン自体を無効化
+    const st = (gameData && gameData.player) ? (gameData.player.status || {}) : {};
+    if (gameData.gameState === "BATTLE" && st.silenceTurns > 0) {
+      btn.textContent = `スキル(封印:${st.silenceTurns})`;
+      btn.disabled = true;
+      return;
+    }
+
     const skillDef = skills[skill];
-    if (gameData.player.skillCooldown > 0) {
-      btn.textContent = `スキル (${gameData.player.skillCooldown})`;
+    if (cd > 0) {
+      btn.textContent = `スキル (${cd})`;
       btn.disabled = true;
     } else {
       btn.textContent = `スキル`;
       btn.disabled = false;
     }
+  }
+
+  // -------------------
+
+  // 状態異常表示
+  // -------------------
+  function renderStatusEffects() {
+    renderStatusEffectsFor(
+      document.getElementById("playerStatusEffects"),
+      (gameData && gameData.player) ? gameData.player.status : null,
+      true,
+    );
+    renderStatusEffectsFor(
+      document.getElementById("enemyStatusEffects"),
+      (gameData && gameData.enemy) ? gameData.enemy.status : null,
+      false,
+    );
+  }
+
+  /**
+   * @param {HTMLElement|null} container
+   * @param {object|null} st
+   * @param {boolean} isPlayer
+   */
+  function renderStatusEffectsFor(container, st, isPlayer) {
+    if (!container) return;
+    container.innerHTML = "";
+    if (!st) return;
+
+    /** @type {{text:string}[]} */
+    const badges = [];
+
+    if (st.poisonTurns > 0) badges.push({ text: `☠ 毒 ${st.poisonTurns}T` });
+    if (st.burnTurns > 0) badges.push({ text: `🔥 火傷(回復↓) ${st.burnTurns}T` });
+    if (st.bleedTurns > 0) badges.push({ text: `🩸 出血 ${st.bleedTurns}T` });
+    if (st.stunTurns > 0) badges.push({ text: `⚡ しびれ ${st.stunTurns}T` });
+
+    if (st.slowTurns > 0) {
+      const rate = Math.round((st.slowRate || 0) * 100);
+      badges.push({ text: rate > 0 ? `🐌 鈍足-${rate}% ${st.slowTurns}T` : `🐌 鈍足 ${st.slowTurns}T` });
+    }
+
+    if (st.vulnerableTurns > 0) {
+      const rate = Math.round((st.vulnerableRate || 0) * 100);
+      badges.push({ text: rate > 0 ? `💥 脆弱+${rate}% ${st.vulnerableTurns}T` : `💥 脆弱 ${st.vulnerableTurns}T` });
+    }
+
+    if (st.silenceTurns > 0) badges.push({ text: `🔇 封印 ${st.silenceTurns}T` });
+
+    if (st.accuracyDownTurns > 0) {
+      const rate = Math.round((st.accuracyDownRate || 0) * 100);
+      badges.push({ text: rate > 0 ? `👁 命中↓-${rate}% ${st.accuracyDownTurns}T` : `👁 命中↓ ${st.accuracyDownTurns}T` });
+    }
+
+    if (isPlayer && st.defendingTurns > 0) {
+      badges.push({ text: `🛡 防御 ${st.defendingTurns}T` });
+    }
+
+    badges.forEach((b) => {
+      const span = document.createElement("span");
+      span.className = "status-badge";
+      span.textContent = b.text;
+      container.appendChild(span);
+    });
   }
 
   function log(text) {
@@ -173,6 +258,41 @@
       case "cooldownReduction":
         // 正値は短縮として扱う
         return hasV ? `クールタイム-${Math.abs(v)}ターン` : "クールタイム短縮";
+
+      case "magicPower":
+        return hasV ? `魔法攻撃力${sign}${v}` : "魔法攻撃力";
+      case "healPower":
+        return hasV ? `回復力${sign}${v}` : "回復力";
+      case "healReceived":
+        return hasV ? `回復量${sign}${v}%` : "回復量";
+      case "damageReduction":
+        return hasV ? `被ダメージ-${Math.abs(v)}%` : "被ダメージ軽減";
+      case "critDamage":
+        return hasV ? `クリダメ${sign}${v}%` : "クリダメ";
+      case "lifeSteal":
+        return hasV ? `吸血${sign}${v}%` : "吸血";
+      case "regen":
+        return hasV ? `再生${sign}${v}%` : "再生";
+      case "herbPower":
+        return hasV ? `やくそう回復${sign}${v}%` : "やくそう回復";
+      case "ailmentDurationDown":
+        return hasV ? `状態異常短縮${sign}${v}%` : "状態異常短縮";
+      case "poisonResist":
+        return hasV ? `毒耐性${sign}${v}%` : "毒耐性";
+      case "burnResist":
+        return hasV ? `火傷耐性${sign}${v}%` : "火傷耐性";
+      case "bleedResist":
+        return hasV ? `出血耐性${sign}${v}%` : "出血耐性";
+      case "stunResist":
+        return hasV ? `しびれ耐性${sign}${v}%` : "しびれ耐性";
+      case "slowResist":
+        return hasV ? `鈍足耐性${sign}${v}%` : "鈍足耐性";
+      case "vulnerableResist":
+        return hasV ? `脆弱耐性${sign}${v}%` : "脆弱耐性";
+      case "silenceResist":
+        return hasV ? `封印耐性${sign}${v}%` : "封印耐性";
+      case "accuracyDownResist":
+        return hasV ? `命中低下耐性${sign}${v}%` : "命中低下耐性";
       default:
         if (eff.name && hasV) return `${eff.name}(${sign}${v})`;
         return eff.name || "";
@@ -221,6 +341,8 @@ function sameItem(a, b) {
               <div class="item-name">${item.name}${item.randomOptions > 0 ? ` +${item.randomOptions}` : ""}</div>
               <div class="item-stats">
                 ${fmtStat("攻撃", item.attack)}
+                ${fmtStat("魔法攻撃", item.magicAttack)}
+                ${fmtStat("回復力", item.healPower)}
                 ${fmtStat("防御", item.defense)}
                 ${fmtStat("命中", item.accuracy, "%")}
                 ${fmtStat("回避", item.evasion, "%")}
@@ -330,9 +452,11 @@ function sameItem(a, b) {
     const lock = isTwoHandLocked();
 
     const canEquipTo = (slotNo) => {
-      if (item.hands === 2) return true; // 両手アイテム自体はどちらでも選べる（もう片方は空になる）
-      if (lock === 1 && slotNo === 2) return false;
-      if (lock === 2 && slotNo === 1) return false;
+      // 両手武器はどちらでも選べる（もう片方は空になる）
+      if (item.hands === 2) return true;
+
+      // 両手装備中でも、片手装備への切り替えは「装備1/装備2どちらを選んでもOK」。
+      // 選んだスロットに装備する際に、両手装備を外してから装備する。
       return true;
     };
 
@@ -377,15 +501,21 @@ function sameItem(a, b) {
 
     const lock = isTwoHandLocked();
 
-    // 両手装備中のロックチェック（別スロットへの装備は禁止）
+    // 両手装備中のロック処理
+    // 以前は「別スロットへの装備」を禁止していましたが、
+    // 両手武器から片手武器へ切り替える時は「装備1/装備2どちらを選んでも」変更できるようにします。
+    // - 両手武器が装備1に入っている状態で装備2を選んだ場合: いったん両手武器を外してから装備2へ
+    // - 両手武器が装備2に入っている状態で装備1を選んだ場合: いったん両手武器を外してから装備1へ
     if (item.hands !== 2) {
       if (lock === 1 && slotNo === 2) {
-        log("両手装備中のため、装備2には装備できない");
-        return;
+        const removed = eq.slot1;
+        eq.slot1 = null;
+        if (removed) log(`${removed.name}（両手）を外した`);
       }
       if (lock === 2 && slotNo === 1) {
-        log("両手装備中のため、装備1には装備できない");
-        return;
+        const removed = eq.slot2;
+        eq.slot2 = null;
+        if (removed) log(`${removed.name}（両手）を外した`);
       }
     }
 
@@ -481,6 +611,7 @@ function sameItem(a, b) {
 
     updateBagUI();
     updateUI();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   // -------------------
@@ -634,11 +765,11 @@ function updateStatusUI() {
     const twoHandLock = slot1 && slot1.hands === 2 ? 1 : slot2 && slot2.hands === 2 ? 2 : 0;
 
     document.getElementById("equipSlot1").textContent = twoHandLock === 2
-      ? "装備1: 使用不可（両手装備中）"
+      ? "装備1: 空（両手装備中。上書きで切替可）"
       : slot1 ? `装備1: ${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}（装備中）` : "装備1: 空";
 
     document.getElementById("equipSlot2").textContent = twoHandLock === 1
-      ? "装備2: 使用不可（両手装備中）"
+      ? "装備2: 空（両手装備中。上書きで切替可）"
       : slot2 ? `装備2: ${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}（装備中）` : "装備2: 空";
 
     document.getElementById("equipAccessorySlot").textContent = acc ? `装飾品（装備中）: ${acc.name}` : "装飾品: 空";

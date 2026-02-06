@@ -5,6 +5,54 @@
 (function () {
   "use strict";
   // -------------------
+  // 状態異常: 追加ルール
+  // -------------------
+  // 毒：最大HP割合ダメージ（敵ターン開始時に1回）
+  const POISON_MAXHP_RATE = 0.03; // 3%
+  // 火傷：回復量が減少（回復時に適用）
+  const BURN_HEAL_MULT = 0.6; // 60%（=40%減少）
+
+  /**
+   * 回復量を状態異常で補正する（火傷: 回復量減少）
+   * @param {number} baseHeal
+   * @returns {number}
+   */
+  function adjustHealByStatus(baseHeal) {
+    let heal = Math.round(baseHeal);
+    if (!Number.isFinite(heal) || heal <= 0) return 0;
+
+    const st = (gameData && gameData.player && gameData.player.status) ? gameData.player.status : null;
+    if (st && st.burnTurns > 0) {
+      const reduced = Math.max(1, Math.round(heal * BURN_HEAL_MULT));
+      if (reduced !== heal) {
+        log(`🔥 火傷で回復量が減少（${heal}→${reduced}）`);
+      }
+      heal = reduced;
+    }
+
+    // 装飾品：回復量UP（%）
+    const bonusPct = Number(getAccessoryBonus("healReceived") || 0);
+    if (Number.isFinite(bonusPct) && bonusPct !== 0) {
+      heal = Math.max(1, Math.round(heal * (1 + bonusPct / 100)));
+    }
+
+    return heal;
+  }
+
+  /**
+   * 現在の「スケーリング用」階層を返す。
+   * 戦闘中で battleFloor がある場合は battleFloor を使う。
+   * @returns {number}
+   */
+  function getScalingFloor() {
+    const bf = Number(gameData && gameData.battleFloor);
+    if (gameData && gameData.gameState === "BATTLE" && Number.isFinite(bf) && bf > 0) return bf;
+    const f = Number(gameData && gameData.floor);
+    return Number.isFinite(f) && f > 0 ? f : 1;
+  }
+
+
+  // -------------------
   // オートセーブ
   // -------------------
   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
@@ -71,6 +119,8 @@
       gameState: gameData.gameState,
       player: gameData.player,
       enemy: gameData.enemy,
+      battleFloor: gameData.battleFloor || null,
+      pendingFloorAfterWin: gameData.pendingFloorAfterWin || null,
     };
     return JSON.parse(JSON.stringify(payload));
   }
@@ -84,8 +134,30 @@
     normalizePlayerState(gameData.player);
     gameData.enemy = payload.enemy || null;
 
+    gameData.battleFloor = Number.isFinite(Number(payload.battleFloor)) ? Math.max(1, Math.floor(Number(payload.battleFloor))) : null;
+    gameData.pendingFloorAfterWin = Number.isFinite(Number(payload.pendingFloorAfterWin)) ? Math.max(1, Math.floor(Number(payload.pendingFloorAfterWin))) : null;
+
+    // 戦闘でなければ戦闘用データは捨てる
+    if (gameData.gameState !== "BATTLE") {
+      gameData.battleFloor = null;
+      gameData.pendingFloorAfterWin = null;
+    }
+
     if (!gameData.player.status) {
-      gameData.player.status = { poisonTurns: 0, burnTurns: 0, accuracyDownTurns: 0, accuracyDownRate: 0 };
+      gameData.player.status = {
+        poisonTurns: 0,
+        burnTurns: 0,
+        bleedTurns: 0,
+        stunTurns: 0,
+        slowTurns: 0,
+        slowRate: 0,
+        vulnerableTurns: 0,
+        vulnerableRate: 0,
+        silenceTurns: 0,
+        accuracyDownTurns: 0,
+        accuracyDownRate: 0,
+        defendingTurns: 0,
+      };
     }
     if (!gameData.player.jobKills) gameData.player.jobKills = {};
     if (typeof gameData.player.totalKills !== "number") gameData.player.totalKills = 0;
@@ -368,7 +440,21 @@
   // -------------------
   // 初期化
   // -------------------
-  window.onload = function () {
+  let __initDone = false;
+
+  function initGame() {
+    if (__initDone) return;
+
+    // ui.js がまだ読み込まれていない場合（動的ロードの順序によって起きうる）
+    // 先に進むと log/updateUI が未定義で初期化が止まるため、少し待って再試行する。
+    if (typeof window.log !== "function" || typeof window.updateUI !== "function") {
+      setTimeout(initGame, 0);
+      return;
+    }
+
+    __initDone = true;
+
+    // UI参照
     gameData.battleButtons = document.getElementById("battleButtons");
     gameData.exploreButtons = document.getElementById("exploreButtons");
 
@@ -403,7 +489,17 @@
     }, AUTOSAVE_INTERVAL_MS);
 
     updateUI();
-  };
+  }
+
+  // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、
+  // readyState を見て即時初期化する。
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    // すでにDOM構築済み
+    queueMicrotask(initGame);
+  } else {
+    window.addEventListener("DOMContentLoaded", initGame, { once: true });
+    window.addEventListener("load", initGame, { once: true });
+  }
 
   // -------------------
   // ステータス計算
@@ -444,6 +540,8 @@
     if (item.defense) combat.defense += item.defense * mult;
     if (item.accuracy) combat.accuracy += item.accuracy * mult;
     if (item.evasion) combat.evasion += item.evasion * mult;
+    if (item.magicAttack) combat.magicPower += item.magicAttack * mult;
+    if (item.healPower) combat.healPower += item.healPower * mult;
 
     if (Array.isArray(item.effects)) {
       item.effects.forEach((eff) => {
@@ -455,6 +553,8 @@
         if (eff.type === "defenseBonus") combat.defense += eff.value * mult;
         if (eff.type === "accuracy") combat.accuracy += eff.value * mult;
         if (eff.type === "evasion") combat.evasion += eff.value * mult;
+        if (eff.type === "magicPower") combat.magicPower += eff.value * mult;
+        if (eff.type === "healPower") combat.healPower += eff.value * mult;
         // 索敵は装備種別によらず、補正はかけない（主に装飾品用）
         if (eff.type === "search") combat.search += eff.value;
       });
@@ -470,6 +570,7 @@
       attack: stats.strength * 2,
       defense: stats.vitality * 1.5,
       magicPower: stats.intelligence * 2,
+      healPower: Math.round(stats.intelligence * 1.2),
       accuracy: 70 + stats.dexterity * 1.5,
       evasion: stats.agility * 1.2,
       critRate: 5 + stats.dexterity * 0.8,
@@ -485,6 +586,13 @@
     if (st.accuracyDownTurns > 0) {
       const rate = typeof st.accuracyDownRate === "number" ? st.accuracyDownRate : 0.2;
       combat.accuracy = Math.max(1, combat.accuracy * (1 - rate));
+    }
+
+    // 状態異常（鈍足：命中/回避ダウン）
+    if (st.slowTurns > 0) {
+      const rate = typeof st.slowRate === "number" ? st.slowRate : 0.2;
+      combat.accuracy = Math.max(1, combat.accuracy * (1 - rate));
+      combat.evasion = Math.max(0, combat.evasion * (1 - rate));
     }
 
 
@@ -535,6 +643,7 @@
     combat.attack = Math.round(combat.attack);
     combat.defense = Math.round(combat.defense);
     combat.magicPower = Math.round(combat.magicPower);
+    combat.healPower = Math.round(combat.healPower || 0);
     combat.accuracy = Math.round(combat.accuracy);
     combat.evasion = Math.round(combat.evasion);
     combat.critRate = Math.round(combat.critRate);
@@ -626,21 +735,36 @@
   function move(dir) {
     if (gameData.gameState !== "EXPLORE") return;
 
-    gameData.floor = Math.max(1, gameData.floor + dir);
+    const cur = Math.max(1, Math.floor(Number(gameData.floor || 1)));
+    const target = Math.max(1, cur + dir);
+
+    // 進む（敵と遭遇した場合は、倒してから階層が上がる）
+    if (dir > 0) {
+      // 戦闘開始
+      if (Math.random() < 0.8 || target <= 5) {
+        gameData.pendingFloorAfterWin = target;
+        startBattle(target);
+      } else {
+        gameData.floor = target;
+
+        if (typeof gameData.player.maxReachedFloor !== "number") gameData.player.maxReachedFloor = 1;
+        gameData.player.maxReachedFloor = Math.max(gameData.player.maxReachedFloor, gameData.floor);
+        checkAndUnlockAchievements();
+        log(`${gameData.floor}階層に進んだ`);
+        requestAutosave();
+        updateUI();
+      }
+      return;
+    }
+
+    // 戻る（戻る時はそのまま階層だけ移動）
+    gameData.floor = target;
     if (typeof gameData.player.maxReachedFloor !== "number") gameData.player.maxReachedFloor = 1;
     gameData.player.maxReachedFloor = Math.max(gameData.player.maxReachedFloor, gameData.floor);
     checkAndUnlockAchievements();
-    log(`${gameData.floor}階層に${dir > 0 ? "進んだ" : "戻った"}`);
-
-    // 戦闘開始
-    if (Math.random() < 0.8 || gameData.floor <= 5) {
-      startBattle();
-    } else {
-      log("…何も起こらなかった");
-    }
+    log(`${gameData.floor}階層に戻った`);
 
     requestAutosave();
-
     updateUI();
   }
 
@@ -654,16 +778,22 @@
     return damage;
   }
 
-    function startBattle() {
+    function startBattle(battleFloor) {
     gameData.gameState = "BATTLE";
 
     // 戦闘開始時にログをクリア
     if (typeof window.clearLog === "function") window.clearLog();
 
-    const floor = gameData.floor;
+    const floor = Number.isFinite(Number(battleFloor)) ? Math.max(1, Math.floor(Number(battleFloor))) : gameData.floor;
 
-    // 敵生成：階層に応じて候補を絞る
-    const candidates = monsterTypes.filter((m) => (m.minFloor || 1) <= floor);
+    gameData.battleFloor = floor;
+
+// 敵生成：階層に応じて候補を絞る
+    const candidates = monsterTypes.filter((m) => {
+      const min = m.minFloor || 1;
+      const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
+      return min <= floor && floor <= max;
+    });
     const pool = candidates.length > 0 ? candidates : monsterTypes;
     const baseMonster = pool[Math.floor(Math.random() * pool.length)];
     const enemy = JSON.parse(JSON.stringify(baseMonster));
@@ -744,6 +874,13 @@
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
+    const st = gameData.player.status || (gameData.player.status = {});
+    if (st.stunTurns > 0) {
+      st.stunTurns--;
+      log("⚡ しびれて動けない！");
+      enemyTurn();
+      return;
+    }
 
     addJobProgress("attack", 1);
 
@@ -764,7 +901,8 @@
     const isCrit = Math.random() * 100 < combat.critRate;
     const jt = jobs?.[gameData.player?.job]?.traits || {};
     const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
-    const critMul = isCrit ? baseCritMul : 1;
+    const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+    const critMul = isCrit ? (baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)) : 1;
 
 
     if (isCrit) addJobProgress("crit", 1);
@@ -779,6 +917,18 @@
     recordPlayerDamage(damage);
     log(`${damage}のダメージ${isCrit ? " クリティカル！" : ""}`);
 
+
+    // 装飾品：吸血（与えたダメージの%を回復）
+    const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+    if (Number.isFinite(lsPct) && lsPct > 0) {
+      const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
+      const heal = adjustHealByStatus(baseHeal);
+      if (heal > 0) {
+        gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+        log(`🩸 吸血で${heal}回復`);
+      }
+    }
+
     checkBattleEnd();
 
     if (gameData.gameState === "BATTLE") {
@@ -790,6 +940,13 @@
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
     const st = gameData.player.status || (gameData.player.status = {});
+    if (st.stunTurns > 0) {
+      st.stunTurns--;
+      log("⚡ しびれて動けない！");
+      enemyTurn();
+      return;
+    }
+
     st.defendingTurns = 1;
     log("🛡 防御した");
 
@@ -801,19 +958,52 @@
 
 
   function useSkill() {
+    if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
+
     const skillKey = gameData.player.equippedSkill;
-    if (!skillKey || gameData.player.skillCooldown > 0) return;
+    if (!skillKey) return;
+
+    // クールタイム値の正規化（NaN対策）
+    let cdNow = Number(gameData.player.skillCooldown || 0);
+    if (!Number.isFinite(cdNow) || cdNow < 0) cdNow = 0;
+    gameData.player.skillCooldown = cdNow;
+
+    const st = gameData.player.status || (gameData.player.status = {});
+    if (st.stunTurns > 0) {
+      st.stunTurns--;
+      log("⚡ しびれて動けない！");
+      enemyTurn();
+      return;
+    }
+    if (st.silenceTurns > 0) {
+      log("🔇 封印されてスキルが使えない！");
+      enemyTurn();
+      return;
+    }
+
+    if (gameData.player.skillCooldown > 0) {
+      log(`⏳ クールタイム中（残り${gameData.player.skillCooldown}）`);
+      return;
+    }
 
     const skillDef = skills[skillKey];
-    const level = gameData.player.skills[skillKey] || 0;
+    if (!skillDef || typeof skillDef.effect !== "function") {
+      log("スキルが設定されていない");
+      return;
+    }
+    const level = (gameData.player.skills && gameData.player.skills[skillKey]) ? gameData.player.skills[skillKey] : 0;
     const effect = skillDef.effect(level);
 
     addJobProgress("skillUse", 1);
 
-    log("スキルを使用！");
+    log(`🪄 ${skillDef.name || skillKey}を使用！`);
 
     const combat = getCombatStats();
     const enemy = gameData.enemy;
+
+    // 装飾品：スキル威力UP（%）
+    const skillPowerPct = Number(getAccessoryBonus("skillPower") || 0);
+    const skillMul = Number.isFinite(skillPowerPct) ? (1 + skillPowerPct / 100) : 1;
 
     // スキル効果
     if (typeof effect.healAmount === "number") {
@@ -821,13 +1011,15 @@
       addJobProgress("heal", 1);
       const jt = jobs?.[gameData.player?.job]?.traits || {};
       const healMult = typeof jt.healMult === "number" ? jt.healMult : 1;
-      const heal = Math.round(effect.healAmount * healMult);
+      const healScale = typeof effect.healScale === "number" ? effect.healScale : 0.6;
+      const baseHeal = Math.round((effect.healAmount * healMult + combat.healPower * healScale) * skillMul);
+      const heal = adjustHealByStatus(baseHeal);
       gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
       log(`${heal}HP回復した！`);
     } else if (effect.baseDamage) {
       // 魔法攻撃
       addJobProgress("magic", 1);
-      let damage = effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
+      let damage = (effect.baseDamage + combat.magicPower * (effect.magicScale || 1)) * skillMul;
       damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       enemy.hp -= damage;
       recordPlayerDamage(damage);
@@ -838,15 +1030,26 @@
         // 連続攻撃
         let total = 0;
         for (let i = 0; i < effect.hits; i++) {
-          let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * effect.damageMultiplier);
+          let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * effect.damageMultiplier * skillMul);
           damage = Math.round(damage * (0.9 + Math.random() * 0.2));
           enemy.hp -= damage;
           total += damage;
         }
         recordPlayerDamage(total);
         log(`${effect.hits}回攻撃！ 合計${total}ダメージ`);
+
+        // 装飾品：吸血
+        const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+        if (Number.isFinite(lsPct) && lsPct > 0) {
+          const baseHeal = Math.max(1, Math.round(total * (lsPct / 100)));
+          const heal = adjustHealByStatus(baseHeal);
+          if (heal > 0) {
+            gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+            log(`🩸 吸血で${heal}回復`);
+          }
+        }
       } else {
-        let damage = Math.max(1, (combat.attack - enemy.defense * (effect.ignoreDef || 0.5)) * effect.damageMultiplier);
+        let damage = Math.max(1, (combat.attack - enemy.defense * (effect.ignoreDef || 0.5)) * effect.damageMultiplier * skillMul);
         damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         enemy.hp -= damage;
         recordPlayerDamage(damage);
@@ -854,19 +1057,47 @@
 
         // 回復効果
         if (effect.healPercent) {
-          const heal = Math.round(damage * effect.healPercent);
+          const baseHeal = Math.round(damage * effect.healPercent);
+          const heal = adjustHealByStatus(baseHeal);
           gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
           log(`${heal}HP回復した！`);
+        }
+
+        // 装飾品：吸血
+        const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+        if (Number.isFinite(lsPct) && lsPct > 0) {
+          const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
+          const heal = adjustHealByStatus(baseHeal);
+          if (heal > 0) {
+            gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+            log(`🩸 吸血で${heal}回復`);
+          }
         }
       }
     }
 
     {
       const jtCd = jobs?.[gameData.player?.job]?.traits || {};
-      let cd = skillDef.cooldown;
-      if (typeof jtCd.cooldownMult === "number") cd = Math.round(cd * jtCd.cooldownMult);
-      if (typeof jtCd.cooldownReduction === "number") cd = cd - jtCd.cooldownReduction;
-      gameData.player.skillCooldown = Math.max(0, Math.floor(cd));
+      let cd = Number(skillDef.cooldown);
+
+      if (!Number.isFinite(cd) || cd < 0) cd = 1;
+
+      if (typeof jtCd.cooldownMult === "number" && Number.isFinite(jtCd.cooldownMult)) {
+        cd = cd * jtCd.cooldownMult;
+      }
+      if (typeof jtCd.cooldownReduction === "number" && Number.isFinite(jtCd.cooldownReduction)) {
+        cd = cd - jtCd.cooldownReduction;
+      }
+
+      // 装飾品：クールタイム短縮（ターン）
+      const accCdRed = Number(getAccessoryBonus("cooldownReduction") || 0);
+      if (Number.isFinite(accCdRed) && accCdRed !== 0) cd = cd - accCdRed;
+
+      // 最低でも1ターンはクールタイムを発生させる（連続使用防止）
+      const cdFinal = Math.max(1, Math.floor(cd));
+
+      // enemyTurn() の冒頭で 1 減るので +1 しておく
+      gameData.player.skillCooldown = cdFinal + 1;
     }
 
     checkBattleEnd();
@@ -877,6 +1108,14 @@
   }
 
   function useHerbInBattle() {
+    const st = gameData.player.status || (gameData.player.status = {});
+    if (st.stunTurns > 0) {
+      st.stunTurns--;
+      log("⚡ しびれて動けない！");
+      enemyTurn();
+      return;
+    }
+
     const herbItem = gameData.player.items.find((i) => i.name === "やくそう");
     if (!herbItem || herbItem.count <= 0) {
       log("やくそうを持っていない");
@@ -888,7 +1127,12 @@
       gameData.player.items = gameData.player.items.filter((i) => i.name !== "やくそう");
     }
 
-    const heal = Math.max(1, Math.floor(gameData.player.hp * 0.05));
+    let baseHeal = Math.max(1, Math.floor(gameData.player.hp * 0.05));
+    const herbBonusPct = Number(getAccessoryBonus("herbPower") || 0);
+    if (Number.isFinite(herbBonusPct) && herbBonusPct !== 0) {
+      baseHeal = Math.max(1, Math.round(baseHeal * (1 + herbBonusPct / 100)));
+    }
+    const heal = adjustHealByStatus(baseHeal);
     gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
     log(`やくそうを使用！ ${heal}HP回復した！`);
 
@@ -901,12 +1145,25 @@
   function escape() {
     if (gameData.gameState !== "BATTLE") return;
 
+    const st = gameData.player.status || (gameData.player.status = {});
+    if (st.stunTurns > 0) {
+      st.stunTurns--;
+      log("⚡ しびれて動けない！");
+      enemyTurn();
+      return;
+    }
+
     const combat = getCombatStats();
     const rate = Math.min(30 + Math.floor(combat.evasion / 2), 90);
 
     if (Math.random() * 100 < rate) {
       log("💨 逃走成功！");
-      gameData.floor = Math.max(1, gameData.floor - 1);
+      if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+        // まだ階層を上げていない（倒したら上がる方式）ので、逃走しても階層は下げない
+        gameData.pendingFloorAfterWin = null;
+      } else {
+        gameData.floor = Math.max(1, gameData.floor - 1);
+      }
       endBattle(false);
       requestAutosave();
     } else {
@@ -919,6 +1176,9 @@
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
     // クールダウン減少（プレイヤー）
+    if (!Number.isFinite(gameData.player.skillCooldown) || gameData.player.skillCooldown < 0) {
+      gameData.player.skillCooldown = 0;
+    }
     if (gameData.player.skillCooldown > 0) {
       gameData.player.skillCooldown--;
     }
@@ -929,10 +1189,24 @@
     // 状態異常ダメージ（敵ターン開始時に1回）
     const st = gameData.player.status || (gameData.player.status = {});
     if (st.poisonTurns > 0) {
-      const dmg = Math.max(2, Math.round(gameData.floor * 1.2));
+      const maxHp = Math.max(1, gameData.player.maxHp || 1);
+      const pct = Math.round(POISON_MAXHP_RATE * 100);
+      const dmg = Math.max(1, Math.round(maxHp * POISON_MAXHP_RATE));
       gameData.player.hp -= dmg;
       st.poisonTurns--;
-      log(`☠ 毒で${dmg}ダメージ`);
+      log(`☠ 毒で${dmg}ダメージ（最大HP${pct}%）`);
+      if (gameData.player.hp <= 0) {
+        updateUI();
+        checkPlayerDeath();
+        requestAutosave();
+        return;
+      }
+    }
+    if (st.bleedTurns > 0) {
+      const dmg = Math.max(2, Math.round(getScalingFloor() * 1.0));
+      gameData.player.hp -= dmg;
+      st.bleedTurns--;
+      log(`🩸 出血で${dmg}ダメージ`);
       if (gameData.player.hp <= 0) {
         updateUI();
         checkPlayerDeath();
@@ -941,15 +1215,24 @@
       }
     }
     if (st.burnTurns > 0) {
-      const dmg = Math.max(3, Math.round(gameData.floor * 1.5));
-      gameData.player.hp -= dmg;
+      // 火傷は継続ダメージではなく「回復量減少」として扱う
       st.burnTurns--;
-      log(`🔥 火傷で${dmg}ダメージ`);
-      if (gameData.player.hp <= 0) {
-        updateUI();
-        checkPlayerDeath();
-        requestAutosave();
-        return;
+      if (st.burnTurns <= 0) {
+        log("🔥 火傷が治った");
+      }
+    }
+
+    // 装飾品：再生（敵ターン開始時に回復）
+    const regenPct = Number(getAccessoryBonus("regen") || 0);
+    if (Number.isFinite(regenPct) && regenPct > 0 && gameData.player.hp > 0) {
+      const maxHp = Math.max(1, gameData.player.maxHp || 1);
+      if (gameData.player.hp < maxHp) {
+        const baseHeal = Math.max(1, Math.round(maxHp * (regenPct / 100)));
+        const heal = adjustHealByStatus(baseHeal);
+        if (heal > 0) {
+          gameData.player.hp = Math.min(maxHp, gameData.player.hp + heal);
+          log(`✨ 再生で${heal}回復`);
+        }
       }
     }
 
@@ -959,6 +1242,23 @@
       if (st.accuracyDownTurns <= 0) {
         st.accuracyDownRate = 0;
       }
+    }
+
+    // 鈍足のターン経過
+    if (st.slowTurns > 0) {
+      st.slowTurns--;
+      if (st.slowTurns <= 0) st.slowRate = 0;
+    }
+
+    // 被ダメージ増加（脆弱）のターン経過
+    if (st.vulnerableTurns > 0) {
+      st.vulnerableTurns--;
+      if (st.vulnerableTurns <= 0) st.vulnerableRate = 0;
+    }
+
+    // 封印のターン経過
+    if (st.silenceTurns > 0) {
+      st.silenceTurns--;
     }
 
     // 敵クールダウン減少
@@ -1054,30 +1354,99 @@
     return damage;
   }
 
-  function applyOnHitStatuses(fromSkillDef) {
+    function applyOnHitStatuses(fromSkillDef) {
     const enemy = gameData.enemy;
     const ef = enemy.effects || {};
     const st = gameData.player.status || (gameData.player.status = {});
 
-    if (ef.poisonOnHitChance && Math.random() < ef.poisonOnHitChance) {
-      st.poisonTurns = Math.max(st.poisonTurns || 0, ef.poisonTurns || 3);
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+
+    // 装飾品：状態異常短縮（%）
+    const durationDown = clamp(Number(getAccessoryBonus("ailmentDurationDown") || 0), 0, 80) / 100;
+
+    function adjustedTurns(baseTurns) {
+      const t = Math.max(1, Math.floor(Number(baseTurns) || 1));
+      return Math.max(1, Math.round(t * (1 - durationDown)));
+    }
+
+    function maybeResistLog(msg) {
+      if (!msg) return;
+      if (Math.random() < 0.35) log(msg);
+    }
+
+    function checkChance(baseChance, resistType, resistMsg) {
+      const base = Number(baseChance);
+      if (!Number.isFinite(base) || base <= 0) return false;
+
+      const resistPct = clamp(Number(getAccessoryBonus(resistType) || 0), 0, 90) / 100;
+      const adj = base * (1 - resistPct);
+
+      const roll = Math.random();
+      if (roll < adj) return true;
+
+      // 元の確率なら当たっていたが、耐性で防いだ
+      if (roll < base && resistPct > 0) maybeResistLog(resistMsg);
+      return false;
+    }
+
+    // 毒
+    if (ef.poisonOnHitChance && checkChance(ef.poisonOnHitChance, "poisonResist", "🛡 毒を防いだ！")) {
+      st.poisonTurns = Math.max(st.poisonTurns || 0, adjustedTurns(ef.poisonTurns || 3));
+      log("☠ 毒状態になった！");
+    }
+    if (fromSkillDef && fromSkillDef.poisonChance && checkChance(fromSkillDef.poisonChance, "poisonResist", "🛡 毒を防いだ！")) {
+      st.poisonTurns = Math.max(st.poisonTurns || 0, adjustedTurns(fromSkillDef.poisonTurns || 3));
       log("☠ 毒状態になった！");
     }
 
-    if (fromSkillDef && fromSkillDef.poisonChance && Math.random() < fromSkillDef.poisonChance) {
-      st.poisonTurns = Math.max(st.poisonTurns || 0, fromSkillDef.poisonTurns || 3);
-      log("☠ 毒状態になった！");
-    }
-    if (fromSkillDef && fromSkillDef.burnChance && Math.random() < fromSkillDef.burnChance) {
-      st.burnTurns = Math.max(st.burnTurns || 0, fromSkillDef.burnTurns || 2);
+    // 火傷
+    if (fromSkillDef && fromSkillDef.burnChance && checkChance(fromSkillDef.burnChance, "burnResist", "🛡 火傷を防いだ！")) {
+      st.burnTurns = Math.max(st.burnTurns || 0, adjustedTurns(fromSkillDef.burnTurns || 2));
       log("🔥 火傷状態になった！");
     }
+
+    // 命中低下
     if (fromSkillDef && fromSkillDef.debuff && fromSkillDef.debuff.accuracyDownTurns) {
-      st.accuracyDownTurns = Math.max(st.accuracyDownTurns || 0, fromSkillDef.debuff.accuracyDownTurns);
-      st.accuracyDownRate = Math.max(st.accuracyDownRate || 0, fromSkillDef.debuff.accuracyDownRate || 0.2);
-      log("👁 命中が下がった！");
+      if (checkChance(1, "accuracyDownResist", "🛡 命中低下を防いだ！")) {
+        st.accuracyDownTurns = Math.max(st.accuracyDownTurns || 0, adjustedTurns(fromSkillDef.debuff.accuracyDownTurns));
+        st.accuracyDownRate = Math.max(st.accuracyDownRate || 0, fromSkillDef.debuff.accuracyDownRate || 0.2);
+        log("👁 命中が下がった！");
+      }
+    }
+
+    // 出血
+    if (fromSkillDef && fromSkillDef.bleedChance && checkChance(fromSkillDef.bleedChance, "bleedResist", "🛡 出血を防いだ！")) {
+      st.bleedTurns = Math.max(st.bleedTurns || 0, adjustedTurns(fromSkillDef.bleedTurns || 2));
+      log("🩸 出血状態になった！");
+    }
+
+    // しびれ
+    if (fromSkillDef && fromSkillDef.stunChance && checkChance(fromSkillDef.stunChance, "stunResist", "🛡 しびれを防いだ！")) {
+      st.stunTurns = Math.max(st.stunTurns || 0, adjustedTurns(fromSkillDef.stunTurns || 1));
+      log("⚡ しびれて動けなくなった！");
+    }
+
+    // 鈍足
+    if (fromSkillDef && fromSkillDef.slowChance && checkChance(fromSkillDef.slowChance, "slowResist", "🛡 鈍足を防いだ！")) {
+      st.slowTurns = Math.max(st.slowTurns || 0, adjustedTurns(fromSkillDef.slowTurns || 2));
+      st.slowRate = Math.max(st.slowRate || 0, fromSkillDef.slowRate || 0.2);
+      log("🐌 鈍足になった！");
+    }
+
+    // 脆弱
+    if (fromSkillDef && fromSkillDef.vulnerableChance && checkChance(fromSkillDef.vulnerableChance, "vulnerableResist", "🛡 脆弱を防いだ！")) {
+      st.vulnerableTurns = Math.max(st.vulnerableTurns || 0, adjustedTurns(fromSkillDef.vulnerableTurns || 2));
+      st.vulnerableRate = Math.max(st.vulnerableRate || 0, fromSkillDef.vulnerableRate || 0.25);
+      log("💥 受けるダメージが増えた！");
+    }
+
+    // 封印
+    if (fromSkillDef && fromSkillDef.silenceChance && checkChance(fromSkillDef.silenceChance, "silenceResist", "🛡 封印を防いだ！")) {
+      st.silenceTurns = Math.max(st.silenceTurns || 0, adjustedTurns(fromSkillDef.silenceTurns || 1));
+      log("🔇 スキルが封印された！");
     }
   }
+
 
   function applyPlayerGuardReduction(damage) {
     const st = gameData.player.status || {};
@@ -1087,6 +1456,18 @@
       return Math.max(1, Math.round(damage * mult));
     }
     return damage;
+  }
+
+
+  // 装飾品：被ダメージ軽減（%）
+  function applyPlayerIncomingReduction(damage) {
+    let d = Math.max(1, Math.round(damage));
+    const pct = Number(getAccessoryBonus("damageReduction") || 0);
+    if (Number.isFinite(pct) && pct > 0) {
+      const r = Math.min(80, Math.max(0, pct)) / 100;
+      d = Math.max(1, Math.round(d * (1 - r)));
+    }
+    return d;
   }
 
   function performEnemyAttack() {
@@ -1103,6 +1484,14 @@
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     damage = applyPlayerGuardReduction(damage);
+
+    const pst = gameData.player.status || {};
+    if (pst.vulnerableTurns > 0) {
+      const vr = typeof pst.vulnerableRate === "number" ? pst.vulnerableRate : 0.25;
+      damage = Math.max(1, Math.round(damage * (1 + vr)));
+    }
+
+    damage = applyPlayerIncomingReduction(damage);
 
     gameData.player.hp -= damage;
     log(`◀ ${enemy.displayName}の攻撃！ ${damage}ダメージ`);
@@ -1154,6 +1543,12 @@
       damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
       damage = applyPlayerGuardReduction(damage);
+      const pst = gameData.player.status || {};
+      if (pst.vulnerableTurns > 0) {
+        const vr = typeof pst.vulnerableRate === "number" ? pst.vulnerableRate : 0.25;
+        damage = Math.max(1, Math.round(damage * (1 + vr)));
+      }
+      damage = applyPlayerIncomingReduction(damage);
       gameData.player.hp -= damage;
       total += damage;
 
@@ -1206,6 +1601,19 @@
         log(`${item.name}を手に入れた！`);
       }
 
+      // 敵を倒したら階層が上がる（進行待ちがある場合）
+      if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+        const nf = Math.max(1, Math.floor(Number(gameData.pendingFloorAfterWin)));
+        gameData.pendingFloorAfterWin = null;
+        gameData.floor = nf;
+
+        if (typeof gameData.player.maxReachedFloor !== "number") gameData.player.maxReachedFloor = 1;
+        gameData.player.maxReachedFloor = Math.max(gameData.player.maxReachedFloor, gameData.floor);
+        checkAndUnlockAchievements();
+        log(`✅ ${gameData.floor}階層へ進んだ！`);
+      }
+
+
       endBattle(true);
     }
 
@@ -1225,10 +1633,19 @@
     gameData.gameState = "EXPLORE";
     gameData.enemy = null;
 
+    // 戦闘用階層は戦闘終了で解除
+    gameData.battleFloor = null;
+
+    // 勝利していない場合は「進行待ち」を破棄
+    if (!victory) {
+      gameData.pendingFloorAfterWin = null;
+    }
+
     if (victory) {
       gameData.player.hp = gameData.player.maxHp;
     }
 
+    requestAutosave();
     updateUI();
   }
 
@@ -1267,8 +1684,265 @@
   // -------------------
   // 装備生成
   // -------------------
+
+  // -------------------
+  // 装備名のバリエーション（大量追加）
+  // -------------------
+  const NAME_PREFIX_BY_TIER = [
+    // 0: 〜29F
+    ["木製の", "鉄の", "革の", "粗末な", "古びた", "欠けた", "錆びた"],
+    // 1: 30〜99F
+    ["鋼の", "鍛えられた", "上質な", "精巧な", "銀の", "蒼の", "紅の"],
+    // 2: 100〜199F
+    ["ミスリルの", "魔鉄の", "黒鋼の", "聖銀の", "紅鋼の", "氷晶の", "雷晶の"],
+    // 3: 200〜349F
+    ["オリハルコンの", "星鉄の", "竜骨の", "深淵の", "白金の", "奈落の", "天穹の"],
+    // 4: 350F〜
+    ["神代の", "終焉の", "黎明の", "虚無の", "無限の", "天上の", "運命の", "原初の"],
+  ];
+
+  const NAME_PREFIX_BY_RARITY = {
+    common: ["ありふれた", "粗悪な", "欠けた", "錆びた", "古びた", "簡素な", "脆い"],
+    uncommon: ["頑丈な", "鋭利な", "軽量な", "扱いやすい", "改良された", "堅実な", "手馴れた"],
+    rare: ["灼熱の", "氷結の", "雷光の", "猛毒の", "影の", "聖なる", "呪われた", "疾風の", "岩砕きの", "吸血の", "浄化の"],
+    epic: ["竜殺しの", "覇王の", "幻影の", "星屑の", "古代の", "魔王の", "冥界の", "天翔ける", "禁断の", "黄昏の", "刻印の"],
+    legendary: ["神々しい", "終焉の", "原初の", "永劫の", "無限の", "世界樹の", "運命の", "絶対の", "全てを断つ", "万象の"],
+  };
+
+  const NAME_PREFIX_BY_TYPE = {
+    // 剣系
+    sword: ["斬鉄の", "白刃の", "閃光の", "血塗られた", "月影の", "紅蓮の", "蒼氷の", "雷鳴の", "審判の", "破邪の", "魔断ちの"],
+    longsword: ["騎士の", "将軍の", "戦乙女の", "剛毅な", "鋼鉄の"],
+    greatsword: ["巨刃の", "断罪の", "絶剣の", "破壊の", "山裂きの"],
+    katana: ["抜刀の", "居合の", "月詠みの", "風切りの", "白鞘の"],
+    rapier: ["刺突の", "決闘者の", "華麗な", "優雅な", "流麗な"],
+    dagger: ["影縫いの", "暗殺者の", "毒牙の", "疾刃の", "小悪魔の"],
+    // 斧/槍/鈍器
+    handaxe: ["猟師の", "伐採の", "血戦の", "荒々しい", "野性の"],
+    axe: ["山裂きの", "粉砕の", "屠殺の", "狂戦士の", "轟雷の"],
+    spear: ["貫通の", "竜槍の", "葬送の", "槍風の", "白銀の"],
+    halberd: ["戦場の", "掃討の", "破陣の", "刈り取りの", "黒曜の"],
+    mace: ["聖打の", "裁きの", "祈りの", "浄化の", "司祭の"],
+    flail: ["破城の", "鎖鉄の", "残虐な", "暴君の", "強襲の"],
+    hammer: ["粉砕の", "地割れの", "巨人の", "絶槌の", "轟炎の"],
+    // 遠距離/魔法
+    bow: ["狙撃の", "風矢の", "森の", "蒼天の", "月狩りの"],
+    crossbow: ["精密な", "連射の", "機巧の", "要塞の", "黒鉄の"],
+    staff: ["賢者の", "秘術の", "星詠みの", "魔導の", "古文書の"],
+    wand: ["詠唱の", "術式の", "精霊の", "魔弾の", "星屑の"],
+    holy_staff: ["聖歌の", "祝福の", "救済の", "光輝の", "大聖堂の"],
+
+    // 防具
+    armor: ["守護の", "城壁の", "堅牢な", "王国の", "鉄壁の"],
+    light_armor: ["俊敏な", "軽やかな", "旅人の", "狩人の", "疾風の"],
+    heavy_armor: ["不動の", "重厚な", "要塞の", "鉄壁の", "巨人の"],
+    shield: ["守護者の", "不屈の", "城塞の", "反射の", "護りの"],
+    buckler: ["回避の", "軽快な", "曲芸師の", "舞踏の", "黒檀の"],
+    tower_shield: ["絶壁の", "城塞の", "要塞の", "不落の", "巨盾の"],
+    helmet: ["鉄頭の", "戦士の", "古代の", "獅子の", "竜鱗の"],
+    hood: ["隠密の", "影の", "旅人の", "夜行の", "月影の"],
+    circlet: ["叡智の", "集中の", "霊視の", "秘宝の", "王冠の"],
+    boots: ["疾走の", "跳躍の", "静音の", "旅人の", "風切りの"],
+    greaves: ["堅牢な", "鉄壁の", "戦装の", "護脚の", "竜骨の"],
+    gloves: ["精密な", "匠の", "強打の", "手練の", "剛拳の"],
+    bracers: ["守りの", "回避の", "護腕の", "鉄腕の", "星鉄の"],
+    robe: ["魔術師の", "法衣の", "星衣の", "禁呪の", "叡智の"],
+    cloak: ["隠密の", "影歩きの", "迷彩の", "夜霧の", "月影の"],
+    mantle: ["疾風の", "守護の", "蒼天の", "黄昏の", "深淵の"],
+
+    // アクセ
+    ring: ["幸運の", "守護の", "加護の", "奪取の", "誓いの"],
+    amulet: ["護りの", "祈りの", "聖なる", "呪われた", "古代の"],
+    belt: ["剛力の", "堅牢な", "鍛錬の", "戦備の", "旅人の"],
+    charm: ["お守りの", "加護の", "招福の", "厄除けの", "霊験の"],
+    talisman: ["封魔の", "退魔の", "護符の", "結界の", "鎮魂の"],
+    earrings: ["聴覚の", "集中の", "精霊の", "星屑の", "煌めく"],
+    necklace: ["誓約の", "守護の", "宝飾の", "星の", "聖歌の"],
+    pendant: ["深淵の", "月影の", "導きの", "祝福の", "記憶の"],
+    bracelet: ["剛力の", "俊敏の", "護腕の", "魔導の", "鍛錬の"],
+    brooch: ["華麗な", "栄光の", "王家の", "祈りの", "薔薇の"],
+    anklet: ["疾走の", "静音の", "風切りの", "跳躍の", "旅人の"],
+    mask: ["仮面の", "隠密の", "幻影の", "無貌の", "夜霧の"],
+    orb: ["宝珠の", "霊光の", "星詠みの", "禁呪の", "叡智の"],
+    relic: ["古代の", "遺物の", "封印の", "啓示の", "大地の"],
+    sigil: ["紋章の", "刻印の", "結界の", "盟約の", "鎮魂の"],
+    medal: ["勲章の", "栄誉の", "武勲の", "騎士の", "将軍の"],
+    rosary: ["祈りの", "聖歌の", "救済の", "浄化の", "大聖堂の"],
+    charmstone: ["霊石の", "護りの", "招福の", "加護の", "厄除けの"],
+    mirror_shard: ["鏡片の", "反射の", "虚像の", "映し身の", "月映えの"],
+  };
+
+  function floorTier(floor) {
+    const f = Number(floor) || 1;
+    if (f < 30) return 0;
+    if (f < 100) return 1;
+    if (f < 200) return 2;
+    if (f < 350) return 3;
+    return 4;
+  }
+
+  function pick(list) {
+    if (!Array.isArray(list) || list.length === 0) return "";
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function decorateEquipmentName(baseName, typeKey, category, rarity, floor) {
+    const pool = [];
+    const tier = floorTier(floor);
+
+    // 階層帯の素材感
+    pool.push(...(NAME_PREFIX_BY_TIER[tier] || []));
+
+    // レアリティの雰囲気
+    pool.push(...(NAME_PREFIX_BY_RARITY[rarity] || []));
+
+    // タイプ固有の味
+    if (NAME_PREFIX_BY_TYPE[typeKey]) pool.push(...NAME_PREFIX_BY_TYPE[typeKey]);
+
+    // 保険（何も無い場合）
+    if (pool.length === 0) return baseName;
+
+    // 低レアは地味が出やすい、上に行くほど派手が出やすい
+    let prefix = "";
+    if (rarity === "common") {
+      prefix = Math.random() < 0.70 ? pick(NAME_PREFIX_BY_RARITY.common) : pick(pool);
+    } else if (rarity === "uncommon") {
+      prefix = Math.random() < 0.55 ? pick(NAME_PREFIX_BY_RARITY.uncommon) : pick(pool);
+    } else if (rarity === "rare") {
+      prefix = Math.random() < 0.35 ? pick(NAME_PREFIX_BY_RARITY.rare) : pick(pool);
+    } else if (rarity === "epic") {
+      prefix = Math.random() < 0.40 ? pick(NAME_PREFIX_BY_RARITY.epic) : pick(pool);
+    } else {
+      prefix = Math.random() < 0.50 ? pick(NAME_PREFIX_BY_RARITY.legendary) : pick(pool);
+    }
+
+    // まれに称号を付ける（雰囲気アップ）
+    let suffix = "";
+    if (rarity === "epic" && Math.random() < 0.15) suffix = "・真";
+    if (rarity === "legendary" && Math.random() < 0.25) suffix = "・極";
+    if (!suffix && floor >= 100 && Math.random() < 0.08) suffix = "・改";
+
+    // prefixは「〇〇の / 〇〇な / 〇〇」などを想定（そのまま連結する）
+    return `${prefix}${baseName}${suffix}`;
+  }
+
+  // -------------------
+  // 装飾品効果：フロア/レア度でスケール
+  // -------------------
+  const ACCESSORY_RARITY_MULT = {
+    common: 1.0,
+    uncommon: 1.08,
+    rare: 1.2,
+    epic: 1.38,
+    legendary: 1.6,
+  };
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  /**
+   * 装飾品効果の数値を、フロアとレア度でスケールして返す。
+   * - 低層：控えめ
+   * - 高層：強め（ただし過剰に暴れないようにタイプ別に上限）
+   * @param {string} type
+   * @param {number} base
+   * @param {number} floor
+   * @param {string} rarity
+   * @returns {number}
+   */
+  function scaleAccessoryEffectValue(type, base, floor, rarity) {
+    const f = clamp(Math.floor(Number(floor) || 1), 1, 500);
+    const rMul = ACCESSORY_RARITY_MULT[rarity] || 1.0;
+
+    // フロア補正（1.0〜2.25）
+    const floorMul = 1 + ((f - 1) / 499) * 1.25;
+
+    // 基本の伸び（タイプ別で伸び幅を変える）
+    const raw = floorMul * rMul;
+
+    // パーセンテージ系は伸びを少し抑える
+    const pctMul = 1 + (raw - 1) * 0.7;
+
+    // 例外：段階（整数）で伸ばしたいもの
+    if (type === "cooldownReduction") {
+      // 1 → 2/3 くらいまで（高層・高レアで強い）
+      let v = 1;
+      if (f >= 200) v++;
+      if (f >= 420) v++;
+      if (rarity === "epic") v++;
+      if (rarity === "legendary") v++;
+      return clamp(v, 1, 3);
+    }
+
+    // 索敵は上げすぎると上限(30%)にすぐ届くので控えめ＆上限
+    if (type === "search") {
+      const v = Math.round(base * (1 + (raw - 1) * 0.55));
+      return clamp(v, 1, 12);
+    }
+
+    // 伸びを強めたい（数値が小さくなりがちな）系
+    const flatTypes = new Set([
+      "evasion",
+      "accuracy",
+      "critRate",
+      "maxHpBonus",
+      "attackBonus",
+      "defenseBonus",
+      "magicPower",
+      "healPower",
+    ]);
+
+    let v;
+    if (flatTypes.has(type)) {
+      v = Math.round(base * raw);
+    } else {
+      v = Math.round(base * pctMul);
+    }
+
+    // タイプ別の上限（暴れ防止）
+    if (type === "damageReduction") v = clamp(v, 0, 80);
+    if (type === "ailmentDurationDown") v = clamp(v, 0, 80);
+
+    if (type === "lifeSteal") v = clamp(v, 0, 25);
+    if (type === "regen") v = clamp(v, 0, 12);
+    if (type === "critDamage") v = clamp(v, 0, 200);
+
+    if (type === "dropRate") v = clamp(v, 0, 150);
+    if (type === "expBonus") v = clamp(v, 0, 250);
+    if (type === "skillPower") v = clamp(v, 0, 250);
+    if (type === "healReceived") v = clamp(v, 0, 250);
+    if (type === "herbPower") v = clamp(v, 0, 350);
+
+    // 耐性は最大90%（core側でも90で丸めているが、作成時点でも合わせる）
+    if (
+      type === "poisonResist" ||
+      type === "burnResist" ||
+      type === "bleedResist" ||
+      type === "stunResist" ||
+      type === "slowResist" ||
+      type === "vulnerableResist" ||
+      type === "silenceResist" ||
+      type === "accuracyDownResist"
+    ) {
+      v = clamp(v, 0, 90);
+    }
+
+    // 最低1（0の意味があるものは上のclampで許容）
+    if (base > 0) v = Math.max(1, v);
+    return v;
+  }
+
+  function makeScaledAccessoryEffect(effect, floor, rarity) {
+    const e = { ...effect };
+    if (typeof e.value === "number" && Number.isFinite(e.value)) {
+      e.value = scaleAccessoryEffectValue(e.type, e.value, floor, rarity);
+    }
+    return e;
+  }
+
   function generateEquipment() {
-    const floor = gameData.floor;
+    const floor = getScalingFloor();
 
     // カテゴリー選択
     const categories = ["weapon", "armor", "accessory"];
@@ -1282,12 +1956,15 @@
     const typeKey = typeOptions[Math.floor(Math.random() * typeOptions.length)];
     const type = equipTypes[typeKey];
 
+    const rarity = getRarity(floor);
+
     const item = {
-      name: type.name,
+      baseName: type.name,
+      name: decorateEquipmentName(type.name, typeKey, category, rarity, floor),
       type: typeKey,
       category: type.category,
       hands: type.hands,
-      rarity: getRarity(floor),
+      rarity,
       locked: false,
     };
 
@@ -1306,6 +1983,18 @@
       const baseAttack = statBase * (1 + Math.random() * 0.5);
       const attackMult = getBias("attackMult", 1);
       item.attack = Math.round(baseAttack * attackMult);
+
+      // 杖/メイスなど：攻撃力とは別に、魔法攻撃力/回復力を持てる
+      if (typeof bias.magicAttackMult !== "undefined") {
+        const baseMagic = statBase * (1 + Math.random() * 0.6);
+        const mm = getBias("magicAttackMult", 1);
+        item.magicAttack = Math.round(baseMagic * mm);
+      }
+      if (typeof bias.healPowerMult !== "undefined") {
+        const baseHeal = statBase * (1 + Math.random() * 0.6);
+        const hm = getBias("healPowerMult", 1);
+        item.healPower = Math.round(baseHeal * hm);
+      }
 
       // 命中（マイナスもあり）
       if (typeof bias.accuracy !== "undefined") {
@@ -1336,16 +2025,26 @@
       const numEffects = 1 + Math.floor(Math.random() * 2);
       for (let i = 0; i < numEffects; i++) {
         const effect = accessoryEffects[Math.floor(Math.random() * accessoryEffects.length)];
-        item.effects.push({ ...effect });
+        item.effects.push(makeScaledAccessoryEffect(effect, floor, rarity));
       }
+
+      // 生成時の参照（将来の再計算やデバッグ用。UIには出さない）
+      item.generatedFloor = floor;
     }
 
-    // ランダムオプション
-    const optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
-    item.randomOptions = optionCount;
+    // ランダムオプション（表示の「+」＝オプション数）
+    let optionCount = 0;
 
-    for (let i = 0; i < optionCount; i++) {
-      if (category !== "accessory") {
+    // アクセサリー：効果数＝オプション数
+    if (category === "accessory") {
+      optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
+      item.randomOptions = optionCount;
+    } else {
+      // 武器/防具：追加で付く強化/効果の回数をオプション数として扱う
+      optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
+      item.randomOptions = optionCount;
+
+      for (let i = 0; i < optionCount; i++) {
         if (Math.random() < 0.5) {
           if (item.attack) item.attack += Math.round(statBase * 0.2);
           if (item.defense) item.defense += Math.round(statBase * 0.2);
@@ -1356,7 +2055,6 @@
         }
       }
     }
-
 
     // 永続化用ID（装備の復元に使用）
     if (typeof item.uid !== "string" || !item.uid) item.uid = generateUid();
