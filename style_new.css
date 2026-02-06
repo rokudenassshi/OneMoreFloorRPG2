@@ -68,6 +68,17 @@ body {
 
 .enemy-info {
   text-align: right;
+  min-width: 170px;
+  min-height: 2.4em;
+}
+
+.enemy-name, .enemy-hp {
+  display: block;
+  min-height: 1.2em;
+  line-height: 1.2em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .enemy-name {
@@ -381,6 +392,40 @@ button:active {
   color: #aaa;
 }
 
+.job-card.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.job-card.locked:hover {
+  border-color: #444;
+}
+
+.job-section-title {
+  grid-column: 1 / -1;
+  margin: 6px 0 2px 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: #ddd;
+}
+
+.job-req {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #bbb;
+}
+
+.job-adv-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  border-radius: 999px;
+  background: #444;
+  color: #eee;
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -441,6 +486,63 @@ button:active {
   background: #1a3d1a;
 }
 
+.item-card.locked {
+  border-style: dashed;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+button.item-action-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  background: #555;
+}
+
+button.item-action-btn:hover {
+  background: #666;
+}
+
+button.item-action-btn.discard {
+  background: #6b2b2b;
+}
+
+button.item-action-btn.discard:hover {
+  background: #7a3333;
+}
+
+button.item-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.locked-label {
+  color: #ffcc66;
+  font-weight: bold;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 .item-card.common { border-left: 4px solid #888; }
 .item-card.uncommon { border-left: 4px solid #4caf50; }
 .item-card.rare { border-left: 4px solid #2196f3; }
@@ -456,6 +558,20 @@ button:active {
 .item-stats {
   font-size: 12px;
   color: #aaa;
+}
+
+.equipped-label {
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.equipped-label {
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 4px;
+  font-size: 12px;
 }
 
 .skill-item {
@@ -550,4 +666,16 @@ button:active {
   margin-top:4px;
   opacity:0.85;
   font-size:12px;
+}
+
+.record-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.record-item{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.04);
 }

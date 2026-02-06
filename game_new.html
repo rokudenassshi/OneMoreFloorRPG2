@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
   <title>OneMoreFloorRPG - Enhanced</title>
   <link rel="stylesheet" href="style_new.css">
 </head>
-
 <body>
   <div class="game">
     <div class="status">
@@ -37,8 +34,8 @@
         <button onclick="openBag()">バッグ</button>
       </div>
       <div class="row">
-        <button onclick="move(-1)">もどる</button>
         <button onclick="openStatus()">ステータス</button>
+        <button onclick="openOptions()">オプション</button>
       </div>
     </div>
 
@@ -49,8 +46,8 @@
         <button onclick="useSkill()" id="skillBtn">スキル</button>
       </div>
       <div class="row">
-        <button class="escape-btn" onclick="escape()">にげる</button>
-        <button onclick="useHerbInBattle()">アイテム</button>
+        <button onclick="defend()">防御</button>
+        <button onclick="openBag()">バッグ</button>
       </div>
     </div>
 
@@ -99,7 +96,7 @@
       <div class="status-tabs">
         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
-        <button class="status-tab-btn" onclick="setStatusTab('options')" id="statusTabBtnOptions">オプション</button>
+        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
       </div>
 
       <div id="tabStatus">
@@ -143,8 +140,8 @@
         <div class="status-section">
           <h4>装備中</h4>
           <div class="equipped-slots">
-            <div class="equip-slot" id="equipSlot1">スロット1: 空</div>
-            <div class="equip-slot" id="equipSlot2">スロット2: 空</div>
+            <div class="equip-slot" id="equipSlot1">装備1: 空</div>
+            <div class="equip-slot" id="equipSlot2">装備2: 空</div>
             <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
           </div>
         </div>
@@ -165,6 +162,23 @@
           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
         </div>
       </div>
+
+      <div id="tabAchievements" style="display:none;">
+        <div class="status-section">
+          <h4>実績</h4>
+          <div id="achievementsContent" class="achievements-list"></div>
+        </div>
+      </div>
+
+      <div id="tabRecords" style="display:none;">
+        <div class="status-section">
+          <h4>記録</h4>
+          <div class="record-list">
+            <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
+            <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- スキル画面 -->
@@ -175,66 +189,89 @@
       </div>
       <div id="skillContent">
         <div class="skill-points-display">
-          スキルポイント: <strong id="skillPointsInSkill">0</strong>
+          <div>スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
+          <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
         </div>
+        <h4>共通スキル</h4>
+        <div id="commonSkillsList"></div>
         <h4>常時スキル</h4>
         <div id="passiveSkillsList"></div>
         <h4>戦闘スキル</h4>
         <div id="activeSkillsList"></div>
       </div>
     </div>
-  </div>
-  <div id="tabAchievements" style="display:none;">
-    <div class="status-section">
-      <h4>実績</h4>
-      <div id="achievementsContent" class="achievements-list"></div>
-    </div>
-  </div>
-  <div id="tabOptions" style="display:none;">
-    <div class="status-section">
-      <h4>設定</h4>
-      <div class="options-row">
-        <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
-        <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
+
+    <!-- オプション画面 -->
+    <div id="optionsScreen" style="display:none;">
+      <div class="screen-header">
+        <h3>オプション</h3>
+        <button class="back-button" onclick="closeOptions()">戻る</button>
       </div>
-      <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
-        onchange="handleSaveDataImport(event)">
-      <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+
+      <div class="status-section">
+          <h4>セーブデータ</h4>
+          <div class="options-row">
+            <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
+            <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
+          </div>
+          <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none" onchange="handleSaveDataImport(event)">
+          <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+        </div>
+        <div class="status-section">
+          <h4>設定</h4>
+          <label class="option-check">
+            <input type="checkbox" id="optAutosave" onchange="toggleAutosave(this.checked)">
+            オートセーブを有効にする
+          </label>
+        </div>
     </div>
-  </div>
-  </div>
-
-
-  <!-- 職業選択モーダル -->
-  <div id="jobModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>職業選択</h2>
-      <div id="jobGrid" class="job-grid"></div>
-      <button onclick="closeJobSelector()">閉じる</button>
-    </div>
-  </div>
-
-  <!-- ステータス振り分けモーダル -->
-  <div id="statModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>ステータス振り分け</h2>
-      <div class="stat-points-display">
-        残りポイント: <strong id="remainingPoints">0</strong>
-      </div>
-      <div id="statAllocationList"></div>
-      <div class="modal-actions">
-        <button onclick="resetStatAllocation()">リセット</button>
-        <button onclick="closeStatAllocation()">決定</button>
+    <!-- 装備先選択モーダル -->
+    <div id="equipSlotModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>装備先を選択</h2>
+        <div class="status-note" id="equipSlotModalItem"></div>
+        <div class="modal-actions">
+          <button id="equipSlotBtn1" type="button" onclick="chooseEquipSlot(1)">装備1</button>
+          <button id="equipSlotBtn2" type="button" onclick="chooseEquipSlot(2)">装備2</button>
+        </div>
+        <button class="full-btn" type="button" onclick="closeEquipSlotPicker()">キャンセル</button>
       </div>
     </div>
-  </div>
+
+    <!-- 職業選択モーダル -->
+    <div id="jobModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>職業選択</h2>
+        <div id="jobGrid" class="job-grid"></div>
+        <button onclick="closeJobSelector()">閉じる</button>
+      </div>
+    </div>
+
+    <!-- ステータス振り分けモーダル -->
+    <div id="statModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>ステータス振り分け</h2>
+        <div class="stat-points-display">
+          残りポイント: <strong id="remainingPoints">0</strong>
+        </div>
+        <div id="statAllocationList"></div>
+        <div class="modal-actions">
+          <button onclick="resetStatAllocation()">リセット</button>
+          <button onclick="closeStatAllocation()">決定</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 
   <!-- JSは分割して読み込み -->
-  <script src="js/data.js"></script>
+  <script src="js/data/base.js"></script>
+  <script src="js/data/jobs.js"></script>
+  <script src="js/data/skills.js"></script>
+  <script src="js/data/enemies.js"></script>
+  <script src="js/data/equipment.js"></script>
+  <script src="js/data/achievements.js"></script>
   <script src="js/core.js"></script>
   <script src="js/ui.js"></script>
 </body>
-
 </html>
