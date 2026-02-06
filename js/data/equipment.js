@@ -51,7 +51,7 @@
       bias: {
         attackMult: 0.98,
         accuracy: (floor) => Math.round(9 + floor * 0.22),
-        evasion: (floor) => Math.round(2 + floor * 0.10),
+        evasion: (floor) => Math.round(2 + floor * 0.1),
       },
     },
     rapier: {
@@ -103,7 +103,7 @@
       // 命中寄り（安定して当てやすい）
       bias: {
         attackMult: 1.05,
-        accuracy: (floor) => Math.round(7 + floor * 0.20),
+        accuracy: (floor) => Math.round(7 + floor * 0.2),
       },
     },
     halberd: {
@@ -122,8 +122,8 @@
       hands: 1,
       // 聖職寄り（回復力が伸びる。攻撃もそこそこ。魔法攻撃は少し）
       bias: {
-        attackMult: 1.10,
-        accuracy: (floor) => -Math.round(1 + floor * 0.10),
+        attackMult: 1.1,
+        accuracy: (floor) => -Math.round(1 + floor * 0.1),
         healPowerMult: 1.35,
         magicAttackMult: 0.85,
       },
@@ -164,7 +164,7 @@
       hands: 2,
       // 命中さらに高い（攻撃控えめ、回避は少し下がる）
       bias: {
-        attackMult: 0.90,
+        attackMult: 0.9,
         accuracy: (floor) => Math.round(14 + floor * 0.26),
         evasion: (floor) => -Math.round(1 + floor * 0.06),
       },
@@ -176,10 +176,10 @@
       // 魔法寄り（物理攻撃は控えめ。魔法攻撃が伸びる。回復も少し）
       bias: {
         attackMult: 0.45,
-        accuracy: (floor) => Math.round(2 + floor * 0.10),
+        accuracy: (floor) => Math.round(2 + floor * 0.1),
         defense: (floor) => Math.round(2 + floor * 0.06),
-        magicAttackMult: 1.40,
-        healPowerMult: 1.10,
+        magicAttackMult: 1.4,
+        healPowerMult: 1.1,
       },
     },
     wand: {
@@ -188,7 +188,7 @@
       hands: 1,
       // 魔法特化（物理はかなり弱い）
       bias: {
-        attackMult: 0.70,
+        attackMult: 0.7,
         accuracy: (floor) => Math.round(4 + floor * 0.12),
         magicAttackMult: 1.55,
         healPowerMult: 0.95,
@@ -200,10 +200,10 @@
       hands: 2,
       // 回復特化（物理は弱い）
       bias: {
-        attackMult: 0.50,
+        attackMult: 0.5,
         accuracy: (floor) => Math.round(1 + floor * 0.08),
-        magicAttackMult: 1.10,
-        healPowerMult: 1.60,
+        magicAttackMult: 1.1,
+        healPowerMult: 1.6,
       },
     },
 
@@ -217,7 +217,7 @@
       // 標準（守りはそこそこ、回避は下がる）
       bias: {
         defenseMult: 1.0,
-        evasion: (floor) => -Math.round(1 + floor * 0.10),
+        evasion: (floor) => -Math.round(1 + floor * 0.1),
       },
     },
     light_armor: {
@@ -227,7 +227,7 @@
       // 回避寄り（防御低め、回避が上がる）
       bias: {
         defenseMult: 0.85,
-        evasion: (floor) => Math.round(6 + floor * 0.20),
+        evasion: (floor) => Math.round(6 + floor * 0.2),
       },
     },
     heavy_armor: {
@@ -247,7 +247,7 @@
       // 守り寄り（防御高い、命中が少し下がる）
       bias: {
         defenseMult: 1.15,
-        accuracy: (floor) => -Math.round(1 + floor * 0.10),
+        accuracy: (floor) => -Math.round(1 + floor * 0.1),
       },
     },
     buckler: {
@@ -267,7 +267,7 @@
       // 超堅い盾：回避が大きく下がる
       bias: {
         defenseMult: 1.35,
-        evasion: (floor) => -Math.round(3 + floor * 0.20),
+        evasion: (floor) => -Math.round(3 + floor * 0.2),
         accuracy: (floor) => -Math.round(1 + floor * 0.08),
       },
     },
@@ -287,7 +287,7 @@
       hands: 1,
       // 回避寄り
       bias: {
-        defenseMult: 0.70,
+        defenseMult: 0.7,
         evasion: (floor) => Math.round(6 + floor * 0.16),
       },
     },
@@ -348,7 +348,7 @@
       // 魔法寄り（回避少し、命中少し）
       bias: {
         defenseMult: 0.8,
-        evasion: (floor) => Math.round(3 + floor * 0.10),
+        evasion: (floor) => Math.round(3 + floor * 0.1),
         accuracy: (floor) => Math.round(2 + floor * 0.08),
       },
     },
@@ -370,7 +370,7 @@
       bias: {
         defenseMult: 0.62,
         evasion: (floor) => Math.round(10 + floor * 0.22),
-        accuracy: (floor) => Math.round(3 + floor * 0.10),
+        accuracy: (floor) => Math.round(3 + floor * 0.1),
       },
     },
 
@@ -378,24 +378,8 @@
     // 装飾品（アクセ枠）
     // -------------------
     ring: { name: "指輪", category: "accessory", hands: 0 },
-    amulet: { name: "アミュレット", category: "accessory", hands: 0 },
-    belt: { name: "ベルト", category: "accessory", hands: 0 },
-    charm: { name: "お守り", category: "accessory", hands: 0 },
     talisman: { name: "護符", category: "accessory", hands: 0 },
     earrings: { name: "耳飾り", category: "accessory", hands: 0 },
-    necklace: { name: "首飾り", category: "accessory", hands: 0 },
-    pendant: { name: "ペンダント", category: "accessory", hands: 0 },
-    bracelet: { name: "腕輪", category: "accessory", hands: 0 },
-    brooch: { name: "ブローチ", category: "accessory", hands: 0 },
-    anklet: { name: "足輪", category: "accessory", hands: 0 },
-    mask: { name: "仮面", category: "accessory", hands: 0 },
-    orb: { name: "宝珠", category: "accessory", hands: 0 },
-    relic: { name: "レリック", category: "accessory", hands: 0 },
-    sigil: { name: "紋章", category: "accessory", hands: 0 },
-    medal: { name: "勲章", category: "accessory", hands: 0 },
-    rosary: { name: "ロザリオ", category: "accessory", hands: 0 },
-    charmstone: { name: "霊石", category: "accessory", hands: 0 },
-    mirror_shard: { name: "鏡片", category: "accessory", hands: 0 },
   };
 
   // 装飾品効果
@@ -429,7 +413,6 @@
     { name: "脆弱耐性", type: "vulnerableResist", value: 30 },
     { name: "封印耐性", type: "silenceResist", value: 30 },
     { name: "命中低下耐性", type: "accuracyDownResist", value: 30 },
-
   ];
 
   window.equipTypes = equipTypes;
