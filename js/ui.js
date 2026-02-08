@@ -295,6 +295,22 @@
         return hasV ? `吸血${sign}${v}%` : "吸血";
       case "regen":
         return hasV ? `再生${sign}${v}%` : "再生";
+      case "multiStrikeChance":
+        return hasV ? `連続攻撃率${sign}${v}%` : "連続攻撃率";
+      case "multiStrikeDamage":
+        return hasV ? `連続攻撃威力${sign}${v}%` : "連続攻撃威力";
+      case "hitHeal":
+        return hasV ? `攻撃時回復${sign}${v}` : "攻撃時回復";
+      case "counterChance":
+        return hasV ? `反撃率${sign}${v}%` : "反撃率";
+      case "counterDamage":
+        return hasV ? `反撃威力${sign}${v}%` : "反撃威力";
+      case "desperationDamage":
+        return hasV ? `背水${sign}${v}%` : "背水";
+      case "executeDamage":
+        return hasV ? `追い打ち${sign}${v}%` : "追い打ち";
+      case "evadeHeal":
+        return hasV ? `回避回復${sign}${v}` : "回避回復";
       case "herbPower":
         return hasV ? `やくそう回復${sign}${v}%` : "やくそう回復";
       case "ailmentDurationDown":
