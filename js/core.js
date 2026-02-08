@@ -470,8 +470,14 @@
             const base = typeof it.baseName === "string" ? it.baseName : "";
             if (!newType) {
               if (base.includes("耳")) newType = "earrings";
-              else if (base.includes("首") || base.includes("ペンダント")) newType = "necklace";
-              else if (base.includes("腕") || base.includes("帯") || base.includes("足")) newType = "bracelet";
+              else if (base.includes("首") || base.includes("ペンダント"))
+                newType = "necklace";
+              else if (
+                base.includes("腕") ||
+                base.includes("帯") ||
+                base.includes("足")
+              )
+                newType = "bracelet";
               else newType = "ring";
             }
 
@@ -482,9 +488,12 @@
 
         // type変更後に再取得
         const fixedTypeKey = String(it.type || "");
-        const fixedTypeDef = window.equipTypes && window.equipTypes[fixedTypeKey];
+        const fixedTypeDef =
+          window.equipTypes && window.equipTypes[fixedTypeKey];
         const fixedBase =
-          fixedTypeDef && typeof fixedTypeDef.name === "string" ? fixedTypeDef.name : null;
+          fixedTypeDef && typeof fixedTypeDef.name === "string"
+            ? fixedTypeDef.name
+            : null;
 
         // 旧表示名 → 新表示名（念のため）
         const legacyMap = {
@@ -927,7 +936,6 @@
         combat.maxHp *= jobTraits.maxHpMult;
     }
 
-
     // 背水強化：HPが50%以下のとき、攻撃/魔法攻撃を上げる（%）
     const desperPct = Number(getAccessoryBonus("desperationDamage") || 0);
     if (Number.isFinite(desperPct) && desperPct > 0) {
@@ -1247,11 +1255,17 @@
     // 追い打ち：敵HPが50%以下のとき与ダメージUP（%）
     const execPct = Number(getAccessoryBonus("executeDamage") || 0);
     const execMul =
-      Number.isFinite(execPct) && execPct > 0 && enemy.maxHp > 0 && enemy.hp / enemy.maxHp <= 0.5
+      Number.isFinite(execPct) &&
+      execPct > 0 &&
+      enemy.maxHp > 0 &&
+      enemy.hp / enemy.maxHp <= 0.5
         ? 1 + Math.min(200, execPct) / 100
         : 1;
 
-    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * critMul * execMul);
+    let damage = Math.max(
+      1,
+      (combat.attack - enemy.defense * 0.5) * critMul * execMul,
+    );
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     damage = applyEnemyIncomingReduction(enemy, damage);
@@ -1288,23 +1302,33 @@
       }
     }
 
-
     // 連続攻撃：一定確率でもう一撃（ダメージは控えめ）
     const msChance = Number(getAccessoryBonus("multiStrikeChance") || 0);
     if (Number.isFinite(msChance) && msChance > 0 && enemy.hp > 0) {
       const roll = Math.random() * 100;
       if (roll < Math.min(60, msChance)) {
         const bonus = Number(getAccessoryBonus("multiStrikeDamage") || 0);
-        const rate = 0.6 * (1 + (Number.isFinite(bonus) ? Math.min(150, bonus) : 0) / 100);
+        const rate =
+          0.6 * (1 + (Number.isFinite(bonus) ? Math.min(150, bonus) : 0) / 100);
         const extraCrit = Math.random() * 100 < combat.critRate;
         const extraCritMul = extraCrit
-          ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
+          ? baseCritMul *
+            (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
           : 1;
         const exec2Mul =
-          Number.isFinite(execPct) && execPct > 0 && enemy.maxHp > 0 && enemy.hp / enemy.maxHp <= 0.5
+          Number.isFinite(execPct) &&
+          execPct > 0 &&
+          enemy.maxHp > 0 &&
+          enemy.hp / enemy.maxHp <= 0.5
             ? 1 + Math.min(200, execPct) / 100
             : 1;
-        let d2 = Math.max(1, (combat.attack - enemy.defense * 0.5) * extraCritMul * exec2Mul * rate);
+        let d2 = Math.max(
+          1,
+          (combat.attack - enemy.defense * 0.5) *
+            extraCritMul *
+            exec2Mul *
+            rate,
+        );
         d2 = Math.round(d2 * (0.9 + Math.random() * 0.2));
         d2 = applyEnemyIncomingReduction(enemy, d2);
         enemy.hp -= d2;
@@ -1317,7 +1341,10 @@
           const baseHeal = Math.max(1, Math.round(d2 * (ls2 / 100)));
           const heal = adjustHealByStatus(baseHeal);
           if (heal > 0) {
-            gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+            gameData.player.hp = Math.min(
+              gameData.player.maxHp,
+              gameData.player.hp + heal,
+            );
             log(`🩸 吸血で${heal}回復`);
           }
         }
@@ -1328,7 +1355,10 @@
           const baseHeal = Math.max(1, Math.round(hh2));
           const heal = adjustHealByStatus(baseHeal);
           if (heal > 0) {
-            gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+            gameData.player.hp = Math.min(
+              gameData.player.maxHp,
+              gameData.player.hp + heal,
+            );
             log(`✨ 攻撃で${heal}回復`);
           }
         }
@@ -1455,7 +1485,10 @@
         const baseHeal = Math.max(1, Math.round(hitHealSkill));
         const heal = adjustHealByStatus(baseHeal);
         if (heal > 0) {
-          gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+          gameData.player.hp = Math.min(
+            gameData.player.maxHp,
+            gameData.player.hp + heal,
+          );
           log(`✨ 攻撃で${heal}回復`);
         }
       }
@@ -1480,7 +1513,9 @@
             enemy.maxHp > 0 &&
             enemy.hp / enemy.maxHp <= 0.5
           ) {
-            damage = Math.round(damage * (1 + Math.min(200, execPctSkill) / 100));
+            damage = Math.round(
+              damage * (1 + Math.min(200, execPctSkill) / 100),
+            );
           }
           enemy.hp -= damage;
           total += damage;
@@ -1488,7 +1523,10 @@
             const baseHeal = Math.max(1, Math.round(hitHealSkill));
             const heal = adjustHealByStatus(baseHeal);
             if (heal > 0) {
-              gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+              gameData.player.hp = Math.min(
+                gameData.player.maxHp,
+                gameData.player.hp + heal,
+              );
               log(`✨ 攻撃で${heal}回復`);
             }
           }
@@ -1532,7 +1570,10 @@
           const baseHeal = Math.max(1, Math.round(hitHealSkill));
           const heal = adjustHealByStatus(baseHeal);
           if (heal > 0) {
-            gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+            gameData.player.hp = Math.min(
+              gameData.player.maxHp,
+              gameData.player.hp + heal,
+            );
             log(`✨ 攻撃で${heal}回復`);
           }
         }
@@ -2065,7 +2106,10 @@
     const baseHeal = Math.max(1, Math.round(v));
     const heal = adjustHealByStatus(baseHeal);
     if (heal <= 0) return;
-    gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+    gameData.player.hp = Math.min(
+      gameData.player.maxHp,
+      gameData.player.hp + heal,
+    );
     log(`✨ 回避で${heal}回復`);
   }
 
@@ -2085,7 +2129,10 @@
     const dmgPct = Number(getAccessoryBonus("counterDamage") || 0);
     const mul = 1 + (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100;
 
-    let damage = Math.max(1, (combat.attack - enemy.defense * 0.35) * 0.65 * mul);
+    let damage = Math.max(
+      1,
+      (combat.attack - enemy.defense * 0.35) * 0.65 * mul,
+    );
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     damage = applyEnemyIncomingReduction(enemy, damage);
 
@@ -2718,6 +2765,10 @@
       locked: false,
     };
 
+    // UI表示用（固有能力/ランダムオプションの内訳）
+    item.fixedEffects = [];
+    item.randomOptionDetails = [];
+
     const statBase = 5 + floor * 3;
 
     // 装備タイプごとの特性（ジャンル特性）
@@ -2784,37 +2835,68 @@
 
       // 生成時の参照（将来の再計算やデバッグ用。UIには出さない）
       item.generatedFloor = floor;
+
+      // UI表示用：アクセサリーは効果=ランダムオプション
+      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
     }
 
-    // ランダムオプション（表示の「+」＝オプション数）
+        // ランダムオプション（表示の「+」＝オプション数）
+    // - UI側で「装備固有能力 / ランダムオプション」を分けて表示できるよう、内訳も保持する
     let optionCount = 0;
 
-    // アクセサリー：効果数＝オプション数
+    if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+    if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
+
+    // アクセサリー：効果数＝オプション数（effects と同じ）
     if (category === "accessory") {
       optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
+      // 念のため、randomOptionDetails を effects と同期
+      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
       item.randomOptions = optionCount;
     } else {
       // 武器/防具：追加で付く強化/効果の回数をオプション数として扱う
       optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
-      item.randomOptions = optionCount;
+
+      // 付与された内訳を列挙する（UI用）
+      item.randomOptionDetails = [];
 
       for (let i = 0; i < optionCount; i++) {
         if (Math.random() < 0.5) {
-          if (item.attack) item.attack += Math.round(statBase * 0.2);
-          if (item.defense) item.defense += Math.round(statBase * 0.2);
+          /** @type {Record<string, number>} */
+          const deltas = {};
+          if (item.attack) {
+            const d = Math.round(statBase * 0.2);
+            item.attack += d;
+            deltas.attack = d;
+          }
+          if (item.defense) {
+            const d = Math.round(statBase * 0.2);
+            item.defense += d;
+            deltas.defense = d;
+          }
+          if (Object.keys(deltas).length) {
+            item.randomOptionDetails.push({ kind: "stat", deltas });
+          } else {
+            // 保険：何も増えない場合でも、オプション回数としてはカウントする
+            item.randomOptionDetails.push({ kind: "stat", deltas: {} });
+          }
         } else {
           if (!item.effects) item.effects = [];
-          const eff =
-            accessoryEffects[
-              Math.floor(Math.random() * accessoryEffects.length)
-            ];
+          const eff = accessoryEffects[Math.floor(Math.random() * accessoryEffects.length)];
           const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
-          item.effects.push({ ...scaledEff, value: Math.round((Number(scaledEff.value) || 0) * 0.5) });
+          const finalEff = {
+            ...scaledEff,
+            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
+          };
+          item.effects.push(finalEff);
+          item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
         }
       }
+
+      item.randomOptions = item.randomOptionDetails.length;
     }
 
-    // 永続化用ID（装備の復元に使用）
+// 永続化用ID（装備の復元に使用）
     if (typeof item.uid !== "string" || !item.uid) item.uid = generateUid();
 
     return item;
@@ -2853,5 +2935,4 @@
   window.defend = defend;
   window.useSkill = useSkill;
   window.useHerbInBattle = useHerbInBattle;
-  window.escape = escape;
 })();

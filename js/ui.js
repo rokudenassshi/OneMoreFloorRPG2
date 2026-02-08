@@ -337,6 +337,116 @@
     }
   }
 
+
+// -------------------
+// 装備表示（固有能力 / ランダムオプション）
+// -------------------
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * @param {Record<string, number>|null|undefined} deltas
+ * @returns {string}
+ */
+function formatStatDeltaText(deltas) {
+  const d = deltas && typeof deltas === "object" ? deltas : {};
+  const parts = [];
+  const push = (label, v, suffix = "") => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n === 0) return;
+    const sign = n > 0 ? "+" : "";
+    parts.push(`${label}${sign}${n}${suffix}`);
+  };
+
+  push("攻撃力", d.attack);
+  push("防御", d.defense);
+  push("魔法攻撃", d.magicAttack);
+  push("回復力", d.healPower);
+  push("命中", d.accuracy, "%");
+  push("回避", d.evasion, "%");
+
+  return parts.length ? parts.join(" / ") : "能力強化（合算済み）";
+}
+
+/**
+ * @param {any} item
+ * @returns {string[]}
+ */
+function getFixedEffectTexts(item) {
+  const list = Array.isArray(item?.fixedEffects) ? item.fixedEffects : [];
+  return list
+    .map((x) => {
+      if (!x) return "";
+      if (typeof x === "string") return x;
+      if (x.text) return String(x.text);
+      return formatEffectText(x);
+    })
+    .filter(Boolean);
+}
+
+/**
+ * @param {any} item
+ * @returns {string[]}
+ */
+function getRandomOptionTexts(item) {
+  const texts = [];
+  const details = Array.isArray(item?.randomOptionDetails) ? item.randomOptionDetails : null;
+
+  if (details && details.length) {
+    for (const ent of details) {
+      if (!ent) continue;
+      if (ent.kind === "stat") {
+        texts.push(formatStatDeltaText(ent.deltas));
+        continue;
+      }
+      if (ent.kind === "effect") {
+        const eff = ent.effect || ent;
+        const t = formatEffectText(eff);
+        if (t) texts.push(t);
+        continue;
+      }
+      // 互換：effectっぽいオブジェクトが直で入っている場合
+      const t = formatEffectText(ent);
+      if (t) texts.push(t);
+    }
+    return texts.filter(Boolean);
+  }
+
+  // 旧データ互換：effects と randomOptions から推測
+  const effects = Array.isArray(item?.effects) ? item.effects : [];
+  effects.forEach((eff) => {
+    const t = formatEffectText(eff);
+    if (t) texts.push(t);
+  });
+
+  const desired = Math.max(0, Math.floor(Number(item?.randomOptions || 0)));
+  const missing = Math.max(0, desired - effects.length);
+  for (let i = 0; i < missing; i++) {
+    texts.push("能力強化（合算済み）");
+  }
+
+  return texts.filter(Boolean);
+}
+
+/**
+ * @param {string[]} texts
+ * @param {string} emptyText
+ * @returns {string}
+ */
+function renderEffectListHtml(texts, emptyText = "なし") {
+  if (!Array.isArray(texts) || texts.length === 0) {
+    return `<div class="effect-none">${escapeHtml(emptyText)}</div>`;
+  }
+  const li = texts.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+  return `<ul class="effect-list">${li}</ul>`;
+}
+
 function sameItem(a, b) {
     if (!a || !b) return false;
     if (a.uid && b.uid) return a.uid === b.uid;
@@ -374,21 +484,41 @@ function sameItem(a, b) {
       const lockIcon = locked ? "🔒" : "🔓";
       const canDiscard = !locked && !equipped;
 
+      const fixedTexts = getFixedEffectTexts(item);
+      const randomTexts = getRandomOptionTexts(item);
+      const randomCount = randomTexts.length;
+      const displayName = `${item.name}${randomCount > 0 ? ` +${randomCount}` : ""}`;
+
+      const baseStatsText = [
+        fmtStat("攻撃", item.attack).trim(),
+        fmtStat("魔法攻撃", item.magicAttack).trim(),
+        fmtStat("回復力", item.healPower).trim(),
+        fmtStat("防御", item.defense).trim(),
+        fmtStat("命中", item.accuracy, "%").trim(),
+        fmtStat("回避", item.evasion, "%").trim(),
+      ]
+        .filter(Boolean)
+        .join(" ");
+
       const card = `
         <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${item.rarity}" onclick="toggleEquip(${idx})">
           <div class="item-row">
             <div class="item-main">
-              <div class="item-name">${item.name}${item.randomOptions > 0 ? ` +${item.randomOptions}` : ""}</div>
-              <div class="item-stats">
-                ${fmtStat("攻撃", item.attack)}
-                ${fmtStat("魔法攻撃", item.magicAttack)}
-                ${fmtStat("回復力", item.healPower)}
-                ${fmtStat("防御", item.defense)}
-                ${fmtStat("命中", item.accuracy, "%")}
-                ${fmtStat("回避", item.evasion, "%")}
-                ${item.effects ? item.effects.map((e) => formatEffectText(e)).filter(Boolean).join(", ") : ""}
+              <div class="item-name">${displayName}</div>
+              ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
+
+              <div class="item-effects">
+                <div class="effect-section">
+                  <div class="effect-title">装備固有能力</div>
+                  ${renderEffectListHtml(fixedTexts)}
+                </div>
+                <div class="effect-section">
+                  <div class="effect-title">ランダムオプション</div>
+                  ${renderEffectListHtml(randomTexts, "なし")}
+                </div>
               </div>
-              ${equipped ? `<div class="equipped-label">${equippedSlotsFor(item).join(" / \u2009")}に装備中</div>` : ""}
+
+              ${equipped ? `<div class="equipped-label">${equippedSlotsFor(item).join(" /  ")}に装備中</div>` : ""}
               ${!equipped && locked ? `<div class="locked-label">ロック中</div>` : ""}
             </div>
             <div class="item-actions">
