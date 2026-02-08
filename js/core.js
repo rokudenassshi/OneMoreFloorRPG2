@@ -254,7 +254,7 @@
       gameData.player.status = {
         poisonTurns: 0,
         burnTurns: 0,
-stunTurns: 0,
+        stunTurns: 0,
         slowTurns: 0,
         slowRate: 0,
         vulnerableTurns: 0,
@@ -1290,6 +1290,10 @@ stunTurns: 0,
     recordPlayerDamage(damage);
     log(`${damage}のダメージ${isCrit ? " クリティカル！" : ""}`);
 
+    if (typeof processOnHitEffects === "function") {
+      processOnHitEffects(gameData.enemy);
+    }
+
     // 装飾品：吸血（与えたダメージの%を回復）
     const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
@@ -1463,11 +1467,9 @@ stunTurns: 0,
 
     // 通常攻撃と同じ基礎命中（上限95%）
     const baseSkillHitChance = Math.min(95, combat.accuracy - enemy.agi);
-    const skillHitChance =
-      baseSkillHitChance * (clamp(skillAcc, 0, 200) / 100);
+    const skillHitChance = baseSkillHitChance * (clamp(skillAcc, 0, 200) / 100);
 
     const rollSkillHit = () => Math.random() * 100 <= skillHitChance;
-
 
     // 装飾品：スキル威力UP（%）
     const skillPowerPct = Number(getAccessoryBonus("skillPower") || 0);
@@ -1671,7 +1673,6 @@ stunTurns: 0,
         }
       }
     }
-
 
     {
       const jtCd = jobs?.[gameData.player?.job]?.traits || {};
@@ -2755,7 +2756,7 @@ stunTurns: 0,
     if (
       type === "poisonResist" ||
       type === "burnResist" ||
-type === "stunResist" ||
+      type === "stunResist" ||
       type === "slowResist" ||
       type === "vulnerableResist" ||
       type === "silenceResist" ||
@@ -2796,7 +2797,7 @@ type === "stunResist" ||
 
     const item = {
       baseName: type.name,
-      name: decorateEquipmentName(type.name, typeKey, category, rarity, floor),
+      name: "", // 後で設定
       type: typeKey,
       category: type.category,
       hands: type.hands,
@@ -2804,13 +2805,9 @@ type === "stunResist" ||
       locked: false,
     };
 
-    // UI表示用（固有能力/ランダムオプションの内訳）
-    item.fixedEffects = [];
-    item.randomOptionDetails = [];
-
     const statBase = 5 + floor * 3;
 
-    // 装備タイプごとの特性（ジャンル特性）
+    // 装備タイプごとの特性
     const bias = type.bias || {};
     const getBias = (key, fallback) => {
       const v = bias[key];
@@ -2824,7 +2821,6 @@ type === "stunResist" ||
       const attackMult = getBias("attackMult", 1);
       item.attack = Math.round(baseAttack * attackMult);
 
-      // 杖/金棒など：攻撃力とは別に、魔法攻撃力/回復力を持てる
       if (typeof bias.magicAttackMult !== "undefined") {
         const baseMagic = statBase * (1 + Math.random() * 0.6);
         const mm = getBias("magicAttackMult", 1);
@@ -2836,14 +2832,12 @@ type === "stunResist" ||
         item.healPower = Math.round(baseHeal * hm);
       }
 
-      // 命中（マイナスもあり）
       if (typeof bias.accuracy !== "undefined") {
         item.accuracy = Math.round(getBias("accuracy", 0));
       } else {
         item.accuracy = Math.round(5 + floor * 0.5);
       }
 
-      // 武器でも追加ステータスを持てる（例：杖の防御など）
       if (typeof bias.defense !== "undefined")
         item.defense = Math.round(getBias("defense", 0));
       if (typeof bias.evasion !== "undefined")
@@ -2853,14 +2847,12 @@ type === "stunResist" ||
       const defenseMult = getBias("defenseMult", 1);
       item.defense = Math.round(baseDefense * defenseMult);
 
-      // 回避（マイナスもあり）
       if (typeof bias.evasion !== "undefined") {
         item.evasion = Math.round(getBias("evasion", 0));
       } else {
         item.evasion = Math.round(3 + floor * 0.3);
       }
 
-      // 防具でも命中補正を持てる（例：篭手、盾など）
       if (typeof bias.accuracy !== "undefined")
         item.accuracy = Math.round(getBias("accuracy", 0));
     } else {
@@ -2871,71 +2863,70 @@ type === "stunResist" ||
           accessoryEffects[Math.floor(Math.random() * accessoryEffects.length)];
         item.effects.push(makeScaledAccessoryEffect(effect, floor, rarity));
       }
-
-      // 生成時の参照（将来の再計算やデバッグ用。UIには出さない）
       item.generatedFloor = floor;
-
-      // UI表示用：アクセサリーは効果=ランダムオプション
-      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
     }
 
-        // ランダムオプション（表示の「+」＝オプション数）
-    // - UI側で「装備固有能力 / ランダムオプション」を分けて表示できるよう、内訳も保持する
+    // ランダムオプション
     let optionCount = 0;
 
-    if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
-    if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
-
-    // アクセサリー：効果数＝オプション数（effects と同じ）
     if (category === "accessory") {
       optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
-      // 念のため、randomOptionDetails を effects と同期
-      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
       item.randomOptions = optionCount;
     } else {
-      // 武器/防具：追加で付く強化/効果の回数をオプション数として扱う
       optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
-
-      // 付与された内訳を列挙する（UI用）
-      item.randomOptionDetails = [];
+      item.randomOptions = optionCount;
 
       for (let i = 0; i < optionCount; i++) {
         if (Math.random() < 0.5) {
-          /** @type {Record<string, number>} */
-          const deltas = {};
-          if (item.attack) {
-            const d = Math.round(statBase * 0.2);
-            item.attack += d;
-            deltas.attack = d;
-          }
-          if (item.defense) {
-            const d = Math.round(statBase * 0.2);
-            item.defense += d;
-            deltas.defense = d;
-          }
-          if (Object.keys(deltas).length) {
-            item.randomOptionDetails.push({ kind: "stat", deltas });
-          } else {
-            // 保険：何も増えない場合でも、オプション回数としてはカウントする
-            item.randomOptionDetails.push({ kind: "stat", deltas: {} });
-          }
+          if (item.attack) item.attack += Math.round(statBase * 0.2);
+          if (item.defense) item.defense += Math.round(statBase * 0.2);
         } else {
           if (!item.effects) item.effects = [];
-          const eff = accessoryEffects[Math.floor(Math.random() * accessoryEffects.length)];
-          const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
-          const finalEff = {
-            ...scaledEff,
-            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
-          };
-          item.effects.push(finalEff);
-          item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
+          const eff =
+            accessoryEffects[
+              Math.floor(Math.random() * accessoryEffects.length)
+            ];
+          item.effects.push({ ...eff, value: Math.round(eff.value * 0.5) });
         }
       }
-
-      item.randomOptions = item.randomOptionDetails.length;
     }
 
-// 永続化用ID（装備の復元に使用）
+    // ===== 特殊接頭語の抽選と適用 =====
+    let specialPrefix = null;
+
+    // 武器と防具のみ特殊接頭語を付与（装飾品は除外）
+    if (category !== "accessory" && typeof rollSpecialPrefix === "function") {
+      specialPrefix = rollSpecialPrefix(rarity, floor);
+
+      if (specialPrefix) {
+        // 特殊効果を適用
+        if (typeof applySpecialPrefixEffects === "function") {
+          applySpecialPrefixEffects(item, specialPrefix);
+        }
+      }
+    }
+
+    // 装備名の生成
+    if (specialPrefix) {
+      // 特殊接頭語 + 基本名
+      item.name = `${specialPrefix.name}${item.baseName}`;
+    } else {
+      // 通常の装飾名
+      item.name = decorateEquipmentName(
+        item.baseName,
+        typeKey,
+        category,
+        rarity,
+        floor,
+      );
+    }
+
+    // +値の表示
+    if (item.randomOptions > 0) {
+      item.name += ` +${item.randomOptions}`;
+    }
+
+    // 永続化用ID
     if (typeof item.uid !== "string" || !item.uid) item.uid = generateUid();
 
     return item;
@@ -2952,6 +2943,106 @@ type === "stunResist" ||
     return "legendary";
   }
 
+  /**
+   * 装備の特殊効果（攻撃時発動）を処理する
+   * @param {object} enemy - 敵データ
+   */
+  function processOnHitEffects(enemy) {
+    if (!enemy || !gameData.player || !gameData.player.equipment) return;
+
+    const equipment = gameData.player.equipment;
+    const slots = [equipment.slot1, equipment.slot2];
+
+    for (const item of slots) {
+      if (!item || !item.specialEffects) continue;
+
+      for (const effect of item.specialEffects) {
+        if (effect.type !== "onHit") continue;
+
+        // 発動判定
+        if (Math.random() > effect.chance) continue;
+
+        // 敵に状態異常を付与
+        if (!enemy.status) {
+          enemy.status = {
+            poisonTurns: 0,
+            burnTurns: 0,
+            bleedTurns: 0,
+            stunTurns: 0,
+            slowTurns: 0,
+            slowRate: 0,
+            vulnerableTurns: 0,
+            vulnerableRate: 0,
+            silenceTurns: 0,
+            accuracyDownTurns: 0,
+            accuracyDownRate: 0,
+          };
+        }
+
+        const st = enemy.status;
+        const turns = effect.turns || 1;
+
+        switch (effect.effect) {
+          case "poison":
+            st.poisonTurns = Math.max(st.poisonTurns || 0, turns);
+            log(`☠ 毒を付与した！（${turns}ターン）`);
+            break;
+
+          case "burn":
+            st.burnTurns = Math.max(st.burnTurns || 0, turns);
+            log(`🔥 火傷を付与した！（${turns}ターン）`);
+            break;
+
+          case "bleed":
+            st.bleedTurns = Math.max(st.bleedTurns || 0, turns);
+            log(`🩸 出血を付与した！（${turns}ターン）`);
+            break;
+
+          case "stun":
+            st.stunTurns = Math.max(st.stunTurns || 0, turns);
+            log(`⚡ しびれを付与した！（${turns}ターン）`);
+            break;
+
+          case "slow":
+            st.slowTurns = Math.max(st.slowTurns || 0, turns);
+            st.slowRate = Math.max(st.slowRate || 0, effect.rate || 0.2);
+            log(
+              `🐌 鈍足を付与した！（${turns}ターン、-${Math.round((effect.rate || 0.2) * 100)}%）`,
+            );
+            break;
+
+          case "vulnerable":
+            st.vulnerableTurns = Math.max(st.vulnerableTurns || 0, turns);
+            st.vulnerableRate = Math.max(
+              st.vulnerableRate || 0,
+              effect.rate || 0.25,
+            );
+            log(
+              `💥 脆弱を付与した！（${turns}ターン、+${Math.round((effect.rate || 0.25) * 100)}%被ダメ）`,
+            );
+            break;
+
+          case "silence":
+            st.silenceTurns = Math.max(st.silenceTurns || 0, turns);
+            log(`🔇 封印を付与した！（${turns}ターン）`);
+            break;
+
+          case "accuracyDown":
+            st.accuracyDownTurns = Math.max(st.accuracyDownTurns || 0, turns);
+            st.accuracyDownRate = Math.max(
+              st.accuracyDownRate || 0,
+              effect.rate || 0.25,
+            );
+            log(
+              `👁 命中低下を付与した！（${turns}ターン、-${Math.round((effect.rate || 0.25) * 100)}%）`,
+            );
+            break;
+        }
+      }
+    }
+  }
+
+  // グローバルに公開
   // -------------------
   // グローバル公開（HTMLのonclickから呼べるように）
   // -------------------
@@ -2961,6 +3052,7 @@ type === "stunResist" ||
   window.getAchievementExpBonusRate = getAchievementExpBonusRate;
   window.getAchievementExpBonusPercent = getAchievementExpBonusPercent;
   window.checkAndUnlockAchievements = checkAndUnlockAchievements;
+  window.processOnHitEffects = processOnHitEffects;
 
   // UI側から呼ぶ用
   window.isAutosaveEnabled = isAutosaveEnabled;
