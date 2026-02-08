@@ -356,7 +356,6 @@
     { name: "状態異常短縮", type: "ailmentDurationDown", value: 20 },
     { name: "毒耐性", type: "poisonResist", value: 35 },
     { name: "火傷耐性", type: "burnResist", value: 35 },
-    { name: "出血耐性", type: "bleedResist", value: 35 },
     { name: "しびれ耐性", type: "stunResist", value: 30 },
     { name: "鈍足耐性", type: "slowResist", value: 30 },
     { name: "脆弱耐性", type: "vulnerableResist", value: 30 },

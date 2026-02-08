@@ -62,8 +62,7 @@
       status: {
         poisonTurns: 0,
         burnTurns: 0,
-        bleedTurns: 0,
-        stunTurns: 0,
+stunTurns: 0,
         slowTurns: 0,
         slowRate: 0,
         vulnerableTurns: 0,
