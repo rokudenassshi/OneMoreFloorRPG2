@@ -5,12 +5,9 @@
 (function () {
   "use strict";
 
-  // バージョンは version.json（HTMLのブートローダー）で window.GAME_VERSION に設定される。
-  // ここでは未設定時のフォールバックのみ持つ。
-  const GAME_VERSION =
-    typeof window.GAME_VERSION === "string" && window.GAME_VERSION.trim()
-      ? window.GAME_VERSION.trim()
-      : "dev";
+  // version.json の値がローダーで window.GAME_VERSION に入る
+  // ここでは fallback を持つ（ローダーが無い環境でも動くように）
+  const GAME_VERSION = (typeof window.GAME_VERSION === "string" && window.GAME_VERSION) ? window.GAME_VERSION : "0.2.1";
 
   const gameData = {
     floor: 1,
@@ -86,6 +83,9 @@
 
       inventory: [],
       items: [{ name: "やくそう", heal: 50, count: 3 }],
+
+      // 貴重品（秘宝）
+      valuables: [],
     },
 
     enemy: null,

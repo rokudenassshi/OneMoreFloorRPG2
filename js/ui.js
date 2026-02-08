@@ -215,6 +215,28 @@
 
     updateBagUI();
   }
+
+  // -------------------
+  // UI - アイテム（消耗品/貴重品）サブタブ
+  // -------------------
+  function setItemSubTab(tab) {
+    const ev = window.event;
+    document.querySelectorAll(".item-sub-tab").forEach((t) => t.classList.remove("is-active"));
+    if (ev && ev.target) ev.target.classList.add("is-active");
+
+    const con = document.getElementById("consumablesSubTab");
+    const val = document.getElementById("valuablesSubTab");
+
+    if (tab === "valuables") {
+      if (con) con.style.display = "none";
+      if (val) val.style.display = "block";
+    } else {
+      if (con) con.style.display = "block";
+      if (val) val.style.display = "none";
+    }
+
+    updateBagUI();
+  }
   function fmtSigned(n) {
     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
     return n > 0 ? `+${n}` : `${n}`;
@@ -321,11 +343,13 @@ function sameItem(a, b) {
   function updateBagUI() {
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
-    const itemsList = document.getElementById("itemsList");
+    const consumablesList = document.getElementById("consumablesList") || document.getElementById("itemsList");
+    const valuablesList = document.getElementById("valuablesList");
 
     weaponsList.innerHTML = "";
     accessoriesList.innerHTML = "";
-    itemsList.innerHTML = "";
+    if (consumablesList) consumablesList.innerHTML = "";
+    if (valuablesList) valuablesList.innerHTML = "";
 
     // 装備品
     gameData.player.inventory.forEach((item, idx) => {
@@ -366,17 +390,53 @@ function sameItem(a, b) {
       }
     });
 
-    // アイテム
-    gameData.player.items.forEach((item) => {
-      const isHerb = item.name === "やくそう";
-      const desc = isHerb ? "現在HPの5%回復" : `HP ${item.heal}回復`;
-      itemsList.innerHTML += `
-        <div class="item-card" onclick="useItem('${item.name}')">
-          <div class="item-name">${item.name} x${item.count}</div>
-          <div class="item-stats">${desc}</div>
-        </div>
-      `;
-    });
+    // アイテム（消耗品）
+    if (consumablesList) {
+      const items = Array.isArray(gameData.player.items) ? gameData.player.items : [];
+      if (items.length === 0) {
+        consumablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">消耗品を持っていません</div>`;
+      } else {
+        items.forEach((item) => {
+          const isHerb = item.name === "やくそう";
+          const desc = isHerb ? "現在HPの5%回復" : `HP ${item.heal}回復`;
+          consumablesList.innerHTML += `
+            <div class="item-card" onclick="useItem('${item.name}')">
+              <div class="item-name">${item.name} x${item.count}</div>
+              <div class="item-stats">${desc}</div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // アイテム（貴重品）
+    if (valuablesList) {
+      const vals = Array.isArray(gameData.player.valuables) ? gameData.player.valuables : [];
+      if (vals.length === 0) {
+        valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
+      } else {
+        const statName = {
+          strength: "⚔️ 力",
+          vitality: "❤️ 体力",
+          intelligence: "🧙 賢さ",
+          agility: "⚡ 素早さ",
+          dexterity: "🎯 器用さ",
+        };
+        vals.forEach((v) => {
+          const cnt = Number(v.count || 0);
+          if (!Number.isFinite(cnt) || cnt <= 0) return;
+          const key = String(v.statKey || "");
+          const sname = statName[key] || "ステータス";
+          const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
+          valuablesList.innerHTML += `
+            <div class="item-card">
+              <div class="item-name">✨ ${v.name} x${cnt}</div>
+              <div class="item-stats">所持効果：${effect}</div>
+            </div>
+          `;
+        });
+      }
+    }
 }
 
   // -------------------
@@ -865,7 +925,35 @@ function updateStatusUI() {
 
     if (advKeys.length > 0) {
       renderTitle("上級職");
-      advKeys.forEach(renderCard);
+
+      // 上級職は基礎職ごとにまとめて表示（2列グリッドで横並びになりやすくする）
+      // 例：剣士の上級職 →（剣聖 / 決闘士）
+      const groupMap = {};
+      for (const k of advKeys) {
+        const jd = jobs[k];
+        const base = (jd && (jd.baseJob || jd.skillGroup)) ? (jd.baseJob || jd.skillGroup) : "other";
+        if (!groupMap[base]) groupMap[base] = [];
+        groupMap[base].push(k);
+      }
+
+      const rendered = new Set();
+      for (const baseKey of baseKeys) {
+        const list = groupMap[baseKey];
+        if (!Array.isArray(list) || list.length === 0) continue;
+        const baseName = (jobs[baseKey] && jobs[baseKey].name) ? jobs[baseKey].name : baseKey;
+        grid.innerHTML += `<div class="job-group-title">${baseName}の上級職</div>`;
+        for (const k of list) {
+          rendered.add(k);
+          renderCard(k);
+        }
+      }
+
+      // baseJob などで紐づけられない上級職が将来追加されても表示されるようにする
+      const rest = advKeys.filter((k) => !rendered.has(k));
+      if (rest.length > 0) {
+        grid.innerHTML += `<div class="job-group-title">その他の上級職</div>`;
+        rest.forEach(renderCard);
+      }
     }
 
     document.getElementById("jobModal").classList.remove("hidden");
@@ -1221,6 +1309,7 @@ function updateStatusUI() {
   window.closeBag = closeBag;
   window.setBagTab = setBagTab;
   window.setEquipmentSubTab = setEquipmentSubTab;
+  window.setItemSubTab = setItemSubTab;
   window.updateBagUI = updateBagUI;
   window.toggleEquip = toggleEquip;
   window.toggleItemLock = toggleItemLock;

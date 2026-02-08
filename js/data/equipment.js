@@ -23,16 +23,6 @@
         accuracy: (floor) => Math.round(4 + floor * 0.18),
       },
     },
-    longsword: {
-      name: "長剣",
-      category: "weapon",
-      hands: 1,
-      // 標準より少し火力寄り
-      bias: {
-        attackMult: 1.08,
-        accuracy: (floor) => Math.round(2 + floor * 0.14),
-      },
-    },
     greatsword: {
       name: "大剣",
       category: "weapon",
@@ -52,17 +42,6 @@
         attackMult: 0.98,
         accuracy: (floor) => Math.round(9 + floor * 0.22),
         evasion: (floor) => Math.round(2 + floor * 0.1),
-      },
-    },
-    rapier: {
-      name: "レイピア",
-      category: "weapon",
-      hands: 1,
-      // 命中特化（火力は控えめ）
-      bias: {
-        attackMult: 0.86,
-        accuracy: (floor) => Math.round(14 + floor * 0.28),
-        evasion: (floor) => Math.round(1 + floor * 0.08),
       },
     },
     dagger: {
@@ -106,16 +85,6 @@
         accuracy: (floor) => Math.round(7 + floor * 0.2),
       },
     },
-    halberd: {
-      name: "戦斧槍",
-      category: "weapon",
-      hands: 2,
-      // 槍×斧：火力と命中の中間
-      bias: {
-        attackMult: 1.18,
-        accuracy: (floor) => Math.round(1 + floor * 0.08),
-      },
-    },
     mace: {
       name: "メイス",
       category: "weapon",
@@ -126,16 +95,6 @@
         accuracy: (floor) => -Math.round(1 + floor * 0.1),
         healPowerMult: 1.35,
         magicAttackMult: 0.85,
-      },
-    },
-    flail: {
-      name: "フレイル",
-      category: "weapon",
-      hands: 1,
-      // クセ強：命中は少し下がるが火力は高め
-      bias: {
-        attackMult: 1.18,
-        accuracy: (floor) => -Math.round(1 + floor * 0.14),
       },
     },
     hammer: {
@@ -281,16 +240,6 @@
         evasion: (floor) => -Math.round(1 + floor * 0.06),
       },
     },
-    hood: {
-      name: "フード",
-      category: "armor",
-      hands: 1,
-      // 回避寄り
-      bias: {
-        defenseMult: 0.7,
-        evasion: (floor) => Math.round(6 + floor * 0.16),
-      },
-    },
     circlet: {
       name: "サークレット",
       category: "armor",
@@ -302,23 +251,13 @@
       },
     },
     boots: {
-      name: "ブーツ",
+      name: "靴",
       category: "armor",
       hands: 1,
       // 回避寄り
       bias: {
         defenseMult: 0.75,
         evasion: (floor) => Math.round(8 + floor * 0.18),
-      },
-    },
-    greaves: {
-      name: "グリーヴ",
-      category: "armor",
-      hands: 1,
-      // 防御寄り
-      bias: {
-        defenseMult: 0.92,
-        evasion: (floor) => -Math.round(1 + floor * 0.05),
       },
     },
     gloves: {
@@ -377,9 +316,11 @@
     // -------------------
     // 装飾品（アクセ枠）
     // -------------------
+    // アクセは「指輪 / 耳飾り / 首飾り / 腕輪」の4種類のみ
     ring: { name: "指輪", category: "accessory", hands: 0 },
-    talisman: { name: "護符", category: "accessory", hands: 0 },
     earrings: { name: "耳飾り", category: "accessory", hands: 0 },
+    necklace: { name: "首飾り", category: "accessory", hands: 0 },
+    bracelet: { name: "腕輪", category: "accessory", hands: 0 },
   };
 
   // 装飾品効果
