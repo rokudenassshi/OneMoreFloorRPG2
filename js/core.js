@@ -1518,6 +1518,28 @@
           enemy.hp / enemy.maxHp <= 0.5
         ) {
           damage = Math.round(damage * (1 + Math.min(200, execPctSkill) / 100));
+      let damage =
+        (effect.baseDamage + combat.magicPower * (effect.magicScale || 1)) *
+        skillMul;
+      damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+      if (
+        Number.isFinite(execPctSkill) &&
+        execPctSkill > 0 &&
+        enemy.maxHp > 0 &&
+        enemy.hp / enemy.maxHp <= 0.5
+      ) {
+        damage = Math.round(damage * (1 + Math.min(200, execPctSkill) / 100));
+      }
+      enemy.hp -= damage;
+      if (Number.isFinite(hitHealSkill) && hitHealSkill > 0) {
+        const baseHeal = Math.max(1, Math.round(hitHealSkill));
+        const heal = adjustHealByStatus(baseHeal);
+        if (heal > 0) {
+          gameData.player.hp = Math.min(
+            gameData.player.maxHp,
+            gameData.player.hp + heal,
+          );
+          log(`✨ 攻撃で${heal}回復`);
         }
         enemy.hp -= damage;
 
@@ -1618,6 +1640,37 @@
             (combat.attack - enemy.defense * (effect.ignoreDef || 0.5)) *
               effect.damageMultiplier *
               skillMul,
+        damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+        if (
+          Number.isFinite(execPctSkill) &&
+          execPctSkill > 0 &&
+          enemy.maxHp > 0 &&
+          enemy.hp / enemy.maxHp <= 0.5
+        ) {
+          damage = Math.round(damage * (1 + Math.min(200, execPctSkill) / 100));
+        }
+        enemy.hp -= damage;
+        recordPlayerDamage(damage);
+        log(`${damage}のダメージ！`);
+        if (Number.isFinite(hitHealSkill) && hitHealSkill > 0) {
+          const baseHeal = Math.max(1, Math.round(hitHealSkill));
+          const heal = adjustHealByStatus(baseHeal);
+          if (heal > 0) {
+            gameData.player.hp = Math.min(
+              gameData.player.maxHp,
+              gameData.player.hp + heal,
+            );
+            log(`✨ 攻撃で${heal}回復`);
+          }
+        }
+
+        // 回復効果
+        if (effect.healPercent) {
+          const baseHeal = Math.round(damage * effect.healPercent);
+          const heal = adjustHealByStatus(baseHeal);
+          gameData.player.hp = Math.min(
+            gameData.player.maxHp,
+            gameData.player.hp + heal,
           );
           damage = Math.round(damage * (0.9 + Math.random() * 0.2));
           if (
@@ -2805,6 +2858,10 @@
       locked: false,
     };
 
+    // UI表示用（固有能力/ランダムオプションの内訳）
+    item.fixedEffects = [];
+    item.randomOptionDetails = [];
+
     const statBase = 5 + floor * 3;
 
     // 装備タイプごとの特性
@@ -2864,31 +2921,63 @@
         item.effects.push(makeScaledAccessoryEffect(effect, floor, rarity));
       }
       item.generatedFloor = floor;
-    }
 
-    // ランダムオプション
+      // UI表示用：アクセサリーは効果=ランダムオプション
+      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
+    }
+        // ランダムオプション（表示の「+」＝オプション数）
+    // - UI側で「装備固有能力 / ランダムオプション」を分けて表示できるよう、内訳も保持する
     let optionCount = 0;
 
+    if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+    if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
+
+    // アクセサリー：効果数＝オプション数（effects と同じ）
     if (category === "accessory") {
       optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
+      // 念のため、randomOptionDetails を effects と同期
+      item.randomOptionDetails = (Array.isArray(item.effects) ? item.effects : []).map((eff) => ({ kind: "effect", effect: eff }));
       item.randomOptions = optionCount;
     } else {
       optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
-      item.randomOptions = optionCount;
+
+      // 付与された内訳を列挙する（UI用）
+      item.randomOptionDetails = [];
 
       for (let i = 0; i < optionCount; i++) {
         if (Math.random() < 0.5) {
-          if (item.attack) item.attack += Math.round(statBase * 0.2);
-          if (item.defense) item.defense += Math.round(statBase * 0.2);
+          /** @type {Record<string, number>} */
+          const deltas = {};
+          if (item.attack) {
+            const d = Math.round(statBase * 0.2);
+            item.attack += d;
+            deltas.attack = d;
+          }
+          if (item.defense) {
+            const d = Math.round(statBase * 0.2);
+            item.defense += d;
+            deltas.defense = d;
+          }
+          if (Object.keys(deltas).length) {
+            item.randomOptionDetails.push({ kind: "stat", deltas });
+          } else {
+            // 保険：何も増えない場合でも、オプション回数としてはカウントする
+            item.randomOptionDetails.push({ kind: "stat", deltas: {} });
+          }
         } else {
           if (!item.effects) item.effects = [];
-          const eff =
-            accessoryEffects[
-              Math.floor(Math.random() * accessoryEffects.length)
-            ];
-          item.effects.push({ ...eff, value: Math.round(eff.value * 0.5) });
+          const eff = accessoryEffects[Math.floor(Math.random() * accessoryEffects.length)];
+          const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
+          const finalEff = {
+            ...scaledEff,
+            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
+          };
+          item.effects.push(finalEff);
+          item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
         }
       }
+
+      item.randomOptions = item.randomOptionDetails.length;
     }
 
     // ===== 特殊接頭語の抽選と適用 =====
