@@ -111,24 +111,17 @@ body {
 }
 
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-
-/* UI揺れ対策：row内のボタン/セルは常に等幅にする */
-.row > button,
-.row > .skill-cell,
-.row > .btn-cell {
-  flex: 1 1 0;
+.row > button {
+  width: 100%;
   min-width: 0;
 }
 
-/* row直下ボタンはwidth:100%指定を無視して等幅に合わせる */
-.row > button {
-  width: auto;
-}
 
 /* 戦闘UI：スキルボタン内に装備スキル名（小さめ表示） */
 .skill-cell {
