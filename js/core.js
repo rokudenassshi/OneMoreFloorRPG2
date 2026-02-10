@@ -558,6 +558,13 @@
         if (eff.type === "defenseBonus") combat.defense += eff.value * mult;
         if (eff.type === "accuracy") combat.accuracy += eff.value * mult;
 
+        // 固有効果（特殊接頭語）: %（乗算）ボーナス（ランダムオプションと差別化）
+        if (eff.type === "attackPct") combat.attackPct += eff.value * mult;
+        if (eff.type === "defensePct") combat.defensePct += eff.value * mult;
+        if (eff.type === "maxHpPct") combat.maxHpPct += eff.value * mult;
+        if (eff.type === "magicPowerPct") combat.magicPowerPct += eff.value * mult;
+        if (eff.type === "healPowerPct") combat.healPowerPct += eff.value * mult;
+
         // 回避率は「装飾品のみ」から反映（武器/防具の回避ソースは廃止）
         if (eff.type === "evasion" && item.category === "accessory") {
           combat.evasion += eff.value * mult;
@@ -588,6 +595,13 @@
       evasion: stats.agility * 1.2,
       critRate: 5 + stats.dexterity * 0.8,
       maxHp: 100 + stats.vitality * 10,
+
+      // 固有効果（特殊接頭語）: %（乗算）ボーナス
+      attackPct: 0,
+      defensePct: 0,
+      maxHpPct: 0,
+      magicPowerPct: 0,
+      healPowerPct: 0,
 
       // 索敵（0 だと二つ名が出ない）
       // 低レベル帯でも 0〜数程度になるように設計
@@ -694,6 +708,24 @@
       }
     }
     // 端数が出ないように丸める
+    // 固有効果（特殊接頭語）: %（乗算）を最後に反映
+    // - ランダムオプションは「加算」中心なので、ここで差別化される
+    if (Number.isFinite(combat.attackPct) && combat.attackPct !== 0) {
+      combat.attack = combat.attack * (1 + combat.attackPct / 100);
+    }
+    if (Number.isFinite(combat.defensePct) && combat.defensePct !== 0) {
+      combat.defense = combat.defense * (1 + combat.defensePct / 100);
+    }
+    if (Number.isFinite(combat.maxHpPct) && combat.maxHpPct !== 0) {
+      combat.maxHp = combat.maxHp * (1 + combat.maxHpPct / 100);
+    }
+    if (Number.isFinite(combat.magicPowerPct) && combat.magicPowerPct !== 0) {
+      combat.magicPower = combat.magicPower * (1 + combat.magicPowerPct / 100);
+    }
+    if (Number.isFinite(combat.healPowerPct) && combat.healPowerPct !== 0) {
+      combat.healPower = combat.healPower * (1 + combat.healPowerPct / 100);
+    }
+
     combat.attack = Math.round(combat.attack);
     combat.defense = Math.round(combat.defense);
     combat.magicPower = Math.round(combat.magicPower);
@@ -2901,7 +2933,7 @@ function startBattle(battleFloor) {
     // - 効果: item.effects に付与（既存の集計ロジックで反映される）
     // - UI: 固有能力（fixedEffects）として表示
     if (category !== "accessory" && typeof window.rollSpecialPrefix === "function" && typeof window.applySpecialPrefixEffects === "function") {
-      let sp = window.rollSpecialPrefix(rarity, floor);
+      let sp = window.rollSpecialPrefix(rarity, category, typeKey);
       if (sp) {
         window.applySpecialPrefixEffects(item, sp);
 
