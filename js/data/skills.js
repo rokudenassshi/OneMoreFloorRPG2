@@ -27,6 +27,17 @@
       effect: (lv) => ({ expBonus: lv }),
     },
 
+    common_heal: {
+      name: "ヒール",
+      type: "active",
+      accuracy: 100,
+      job: "all",
+      maxLevel: 1,
+      cooldown: 6,
+      desc: "HPを20%回復する",
+      effect: (_lv) => ({ healRate: 0.2 }),
+    },
+
     // ===================================
     // 剣士 (swordsman)
     // ===================================

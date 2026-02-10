@@ -11,7 +11,7 @@
     <div class="status">
       <div class="header-row">
         <div>Lv：<span id="playerLevel"></span></div>
-        <div class="floor-info">階層：<span id="floor"></span></div>
+        <div class="floor-info">階層：<span id="floor"></span> <button id="teleportBtn" type="button" onclick="openTeleportModal()">転移</button></div>
       </div>
       <div class="exp-bar">
         <div class="exp-bar-fill" id="expBarFill"></div>
@@ -39,17 +39,27 @@
         <button onclick="openStatus()">ステータス</button>
         <button onclick="openOptions()">オプション</button>
       </div>
-    </div>
+</div>
 
     <!-- 戦闘ボタン -->
     <div id="battleButtons" style="display:none;">
       <div class="row">
         <button onclick="attack()">たたかう</button>
-        <button onclick="useSkill()" id="skillBtn">スキル</button>
+        <div class="skill-cell">
+          <button onclick="useSkill(0)" id="skillBtn1" class="skill-button">
+            <div class="skill-button-main" id="skillBtn1Main">スキル1</div>
+            <div class="skill-button-sub" id="skillBtn1Sub">なし</div>
+          </button>
+        </div>
       </div>
       <div class="row">
         <button onclick="defend()">防御</button>
-        <button onclick="openBag()">バッグ</button>
+        <div class="skill-cell">
+          <button onclick="useSkill(1)" id="skillBtn2" class="skill-button">
+            <div class="skill-button-main" id="skillBtn2Main">スキル2</div>
+            <div class="skill-button-sub" id="skillBtn2Sub">なし</div>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -169,7 +179,7 @@
             スキルポイント: <strong id="skillPoints">0</strong>
           </div>
           <div class="equipped-skill">
-            装備中スキル: <span id="equippedSkillName">なし</span>
+            装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
           </div>
           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
         </div>
@@ -237,6 +247,26 @@
           </label>
         </div>
     </div>
+
+    <!-- 転移モーダル -->
+    <div id="teleportModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-content">
+        <h2>転移</h2>
+        <div class="status-note">最大到達: <strong id="teleportMaxReached">1</strong>階</div>
+
+        <div class="teleport-row">
+          <label for="teleportSelect">転移先</label>
+          <select id="teleportSelect" class="teleport-select"></select>
+        </div>
+        <div class="status-note">※転移は50階層刻み（1階は常に選択できます）</div>
+
+        <div class="modal-actions">
+          <button type="button" onclick="confirmTeleport()">転移する</button>
+          <button type="button" onclick="closeTeleportModal()">キャンセル</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 装備先選択モーダル -->
     <div id="equipSlotModal" class="modal hidden">
       <div class="modal-content">
@@ -290,6 +320,7 @@
         "js/data/skills.js",
         "js/data/enemies.js",
         "js/data/equipment.js",
+        "js/data/equipment_special_prefix.js",
         "js/data/achievements.js",
         "js/core.js",
         "js/ui.js",

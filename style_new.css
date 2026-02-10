@@ -42,6 +42,15 @@ body {
   gap: 8px;
 }
 
+
+/* ヘッダー（階層表示）の転移ボタンは小さく表示 */
+.floor-info #teleportBtn {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
 .exp-bar {
   height: 8px;
   background: #111;
@@ -91,6 +100,7 @@ body {
   background: #111;
   padding: 8px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   margin-bottom: 12px;
   font-size: 14px;
   border-radius: 8px;
@@ -104,6 +114,55 @@ body {
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+
+/* UI揺れ対策：row内のボタン/セルは常に等幅にする */
+.row > button,
+.row > .skill-cell,
+.row > .btn-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* row直下ボタンはwidth:100%指定を無視して等幅に合わせる */
+.row > button {
+  width: auto;
+}
+
+/* 戦闘UI：スキルボタン内に装備スキル名（小さめ表示） */
+.skill-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-cell button {
+  flex: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 10px;
+}
+
+.skill-button-main {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.skill-button-sub {
+  font-size: 11px;
+  font-weight: normal;
+  opacity: 0.85;
+  line-height: 1.15;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button {
@@ -467,6 +526,30 @@ button:active {
   margin: 0;
 }
 
+/* 転移モーダル */
+.teleport-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.teleport-row label {
+  font-size: 13px;
+  color: #ddd;
+  min-width: 56px;
+}
+
+.teleport-select {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #666;
+  background: #222;
+  color: #fff;
+}
+
 .stat-alloc-item {
   display: flex;
   justify-content: space-between;
@@ -514,6 +597,7 @@ button:active {
 .item-card.equipped {
   border-color: #4caf50;
   background: #1a3d1a;
+  border-left: 4px solid #4caf50;
 }
 
 .item-card.locked {
@@ -573,11 +657,8 @@ button.item-action-btn:disabled {
   font-size: 12px;
 }
 
-.item-card.common { border-left: 4px solid #888; }
-.item-card.uncommon { border-left: 4px solid #4caf50; }
-.item-card.rare { border-left: 4px solid #2196f3; }
-.item-card.epic { border-left: 4px solid #9c27b0; }
-.item-card.legendary { border-left: 4px solid #ff9800; }
+.item-card:not(.equipped).cat-weapon { border-left: 4px solid #e74c3c; }
+.item-card:not(.equipped).cat-armor { border-left: 4px solid #4a6cf7; }
 
 .item-name {
   font-weight: bold;
@@ -759,4 +840,51 @@ button.item-action-btn:disabled {
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.15);
   line-height: 1.4;
+}
+
+/* =========================
+   操作ボタンのUI揺れ対策
+   ========================= */
+
+/* 探索/戦闘でボタンの高さが変わらないようにする */
+#exploreButtons button,
+#battleButtons button {
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+/* 戦闘：左ボタン（たたかう/防御）もスキルボタンと同じ余白にして見た目を揃える */
+#battleButtons .row > button {
+  padding: 12px 10px;
+}
+
+/* 戦闘：左右セルの横幅がテキストで変わらないようにする */
+#battleButtons .row > button,
+#battleButtons .skill-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+#battleButtons .skill-cell button {
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+/* 戦闘：ボタン内テキストが折り返して高さが変わるのを防ぐ */
+.skill-button-main,
+.skill-button-sub {
+  width: 100%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-button-main {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 無効化ボタンがブラウザ既定スタイルで見た目が変わらないようにする */
+#battleButtons button:disabled {
+  opacity: 0.6;
 }

@@ -12,15 +12,12 @@
     const p = gameData.player;
 
     // 初期化前でも安全に動くように、必要なDOM参照は都度確保する
-    if (!gameData.battleButtons)
-      gameData.battleButtons = document.getElementById("battleButtons");
-    if (!gameData.exploreButtons)
-      gameData.exploreButtons = document.getElementById("exploreButtons");
+    if (!gameData.battleButtons) gameData.battleButtons = document.getElementById("battleButtons");
+    if (!gameData.exploreButtons) gameData.exploreButtons = document.getElementById("exploreButtons");
 
     document.getElementById("playerLevel").textContent = p.level;
     document.getElementById("floor").textContent = gameData.floor;
-    document.getElementById("playerHp").textContent =
-      `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
+    document.getElementById("playerHp").textContent = `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
 
     // 経験値バー
     const expRate = Math.min(1, Math.max(0, p.exp / getExpNeeded()));
@@ -30,8 +27,7 @@
     if (gameData.enemy) {
       const e = gameData.enemy;
       document.getElementById("enemyName").textContent = e.displayName;
-      document.getElementById("enemyHp").textContent =
-        `HP：${Math.round(e.hp)}/${Math.round(e.maxHp)}`;
+      document.getElementById("enemyHp").textContent = `HP：${Math.round(e.hp)}/${Math.round(e.maxHp)}`;
     } else {
       document.getElementById("enemyName").textContent = "";
       document.getElementById("enemyHp").textContent = "---";
@@ -44,7 +40,7 @@
       if (gameData.gameState === "BATTLE") {
         gameData.battleButtons.style.display = "block";
         gameData.exploreButtons.style.display = "none";
-        updateSkillButton();
+        updateSkillButtons();
       } else {
         gameData.battleButtons.style.display = "none";
         gameData.exploreButtons.style.display = "block";
@@ -52,15 +48,48 @@
     }
   }
 
-  function updateSkillButton() {
-    const btn = document.getElementById("skillBtn");
-    const skill = gameData.player.equippedSkill;
+  function getEquippedSkillKey(slotIndex) {
+    const p = (gameData && gameData.player) ? gameData.player : {};
+    const list = Array.isArray(p.equippedSkills)
+      ? p.equippedSkills
+      : [p.equippedSkill, null];
+    const idx = Number(slotIndex) === 1 ? 1 : 0;
+    const key = list[idx] != null ? String(list[idx]) : "";
+    return key ? key : null;
+  }
 
-    if (!skill) {
-      btn.textContent = "スキル";
-      btn.disabled = true;
-      return;
-    }
+  function updateSkillButtons() {
+    const btn1 = document.getElementById("skillBtn1");
+    const btn2 = document.getElementById("skillBtn2");
+
+    // ボタン内に2行表示（上: ラベル / 下: 装備スキル名）
+    const main1El = document.getElementById("skillBtn1Main");
+    const main2El = document.getElementById("skillBtn2Main");
+    const sub1El = document.getElementById("skillBtn1Sub");
+    const sub2El = document.getElementById("skillBtn2Sub");
+
+    if (!btn1 || !btn2) return;
+
+    const setMain = (btn, mainEl, text) => {
+      if (mainEl) {
+        mainEl.textContent = text;
+      } else {
+        btn.textContent = text;
+      }
+    };
+
+    const setSub = (subEl, text) => {
+      if (subEl) subEl.textContent = text;
+    };
+
+    const sk1 = getEquippedSkillKey(0);
+    const sk2 = getEquippedSkillKey(1);
+
+    const def1 = sk1 ? skills[sk1] : null;
+    const def2 = sk2 ? skills[sk2] : null;
+
+    setSub(sub1El, def1 ? (def1.name || sk1) : "なし");
+    setSub(sub2El, def2 ? (def2.name || sk2) : "なし");
 
     // クールタイム値の正規化（NaN対策）
     let cd = Number(gameData.player.skillCooldown || 0);
@@ -68,21 +97,33 @@
     gameData.player.skillCooldown = cd;
 
     // 封印中はスキルボタン自体を無効化
-    const st = gameData && gameData.player ? gameData.player.status || {} : {};
+    const st = (gameData && gameData.player) ? (gameData.player.status || {}) : {};
     if (gameData.gameState === "BATTLE" && st.silenceTurns > 0) {
-      btn.textContent = `スキル(封印:${st.silenceTurns})`;
-      btn.disabled = true;
+      setMain(btn1, main1El, `スキル1(封印:${st.silenceTurns})`);
+      setMain(btn2, main2El, `スキル2(封印:${st.silenceTurns})`);
+      btn1.disabled = true;
+      btn2.disabled = true;
       return;
     }
 
-    const skillDef = skills[skill];
-    if (cd > 0) {
-      btn.textContent = `スキル (${cd})`;
-      btn.disabled = true;
-    } else {
-      btn.textContent = `スキル`;
-      btn.disabled = false;
-    }
+    const apply = (btn, mainEl, idx, hasSkill) => {
+      const base = idx === 0 ? "スキル1" : "スキル2";
+      if (!hasSkill) {
+        setMain(btn, mainEl, base);
+        btn.disabled = true;
+        return;
+      }
+      if (cd > 0) {
+        setMain(btn, mainEl, `${base} (${cd})`);
+        btn.disabled = true;
+      } else {
+        setMain(btn, mainEl, base);
+        btn.disabled = false;
+      }
+    };
+
+    apply(btn1, main1El, 0, !!sk1);
+    apply(btn2, main2El, 1, !!sk2);
   }
 
   // -------------------
@@ -92,12 +133,12 @@
   function renderStatusEffects() {
     renderStatusEffectsFor(
       document.getElementById("playerStatusEffects"),
-      gameData && gameData.player ? gameData.player.status : null,
+      (gameData && gameData.player) ? gameData.player.status : null,
       true,
     );
     renderStatusEffectsFor(
       document.getElementById("enemyStatusEffects"),
-      gameData && gameData.enemy ? gameData.enemy.status : null,
+      (gameData && gameData.enemy) ? gameData.enemy.status : null,
       false,
     );
   }
@@ -116,41 +157,24 @@
     const badges = [];
 
     if (st.poisonTurns > 0) badges.push({ text: `☠ 毒 ${st.poisonTurns}T` });
-    if (st.burnTurns > 0)
-      badges.push({ text: `🔥 火傷(回復↓+継続) ${st.burnTurns}T` });
-    if (st.stunTurns > 0) badges.push({ text: `⚡ しびれ ${st.stunTurns}T` });
+    if (st.burnTurns > 0) badges.push({ text: `🔥 火傷(回復↓+継続) ${st.burnTurns}T` });
+if (st.stunTurns > 0) badges.push({ text: `⚡ しびれ ${st.stunTurns}T` });
 
     if (st.slowTurns > 0) {
       const rate = Math.round((st.slowRate || 0) * 100);
-      badges.push({
-        text:
-          rate > 0
-            ? `🐌 鈍足-${rate}% ${st.slowTurns}T`
-            : `🐌 鈍足 ${st.slowTurns}T`,
-      });
+      badges.push({ text: rate > 0 ? `🐌 鈍足-${rate}% ${st.slowTurns}T` : `🐌 鈍足 ${st.slowTurns}T` });
     }
 
     if (st.vulnerableTurns > 0) {
       const rate = Math.round((st.vulnerableRate || 0) * 100);
-      badges.push({
-        text:
-          rate > 0
-            ? `🛡 脆弱(防御-${rate}%) ${st.vulnerableTurns}T`
-            : `🛡 脆弱 ${st.vulnerableTurns}T`,
-      });
+      badges.push({ text: rate > 0 ? `🛡 脆弱(防御-${rate}%) ${st.vulnerableTurns}T` : `🛡 脆弱 ${st.vulnerableTurns}T` });
     }
 
-    if (st.silenceTurns > 0)
-      badges.push({ text: `🔇 封印 ${st.silenceTurns}T` });
+    if (st.silenceTurns > 0) badges.push({ text: `🔇 封印 ${st.silenceTurns}T` });
 
     if (st.accuracyDownTurns > 0) {
       const rate = Math.round((st.accuracyDownRate || 0) * 100);
-      badges.push({
-        text:
-          rate > 0
-            ? `👁 命中↓-${rate}% ${st.accuracyDownTurns}T`
-            : `👁 命中↓ ${st.accuracyDownTurns}T`,
-      });
+      badges.push({ text: rate > 0 ? `👁 命中↓-${rate}% ${st.accuracyDownTurns}T` : `👁 命中↓ ${st.accuracyDownTurns}T` });
     }
 
     if (isPlayer && st.defendingTurns > 0) {
@@ -206,9 +230,7 @@
 
   function setBagTab(tab) {
     const ev = window.event;
-    document
-      .querySelectorAll(".inventory-tab")
-      .forEach((t) => t.classList.remove("is-active"));
+    document.querySelectorAll(".inventory-tab").forEach((t) => t.classList.remove("is-active"));
     if (ev && ev.target) ev.target.classList.add("is-active");
 
     if (tab === "equipment") {
@@ -224,9 +246,7 @@
 
   function setEquipmentSubTab(tab) {
     const ev = window.event;
-    document
-      .querySelectorAll(".sub-tab")
-      .forEach((t) => t.classList.remove("is-active"));
+    document.querySelectorAll(".sub-tab").forEach((t) => t.classList.remove("is-active"));
     if (ev && ev.target) ev.target.classList.add("is-active");
 
     if (tab === "weapons") {
@@ -245,9 +265,7 @@
   // -------------------
   function setItemSubTab(tab) {
     const ev = window.event;
-    document
-      .querySelectorAll(".item-sub-tab")
-      .forEach((t) => t.classList.remove("is-active"));
+    document.querySelectorAll(".item-sub-tab").forEach((t) => t.classList.remove("is-active"));
     if (ev && ev.target) ev.target.classList.add("is-active");
 
     const con = document.getElementById("consumablesSubTab");
@@ -278,231 +296,203 @@
   // 例: ドロップ率+10% / 攻撃力+12 / クールタイム-1ターン
   function formatEffectText(eff) {
     if (!eff) return "";
+
     const v = Number(eff.value);
     const hasV = Number.isFinite(v);
     const sign = hasV ? (v >= 0 ? "+" : "") : "";
 
+    const cond = eff.cond || eff.condition;
+    const condPrefix =
+      cond === "unarmed"
+        ? "武器未装備時 "
+        : cond === "noArmor"
+          ? "防具未装備時 "
+          : cond === "twoHanded"
+            ? "両手武器装備時 "
+            : "";
+
     switch (eff.type) {
       case "dropRate":
-        return hasV ? `ドロップ率${sign}${v}%` : "ドロップ率";
+        return hasV ? `${condPrefix}ドロップ率${sign}${v}%` : `${condPrefix}ドロップ率`;
       case "expBonus":
-        return hasV ? `経験値${sign}${v}%` : "経験値";
+        return hasV ? `${condPrefix}経験値${sign}${v}%` : `${condPrefix}経験値`;
       case "skillPower":
-        return hasV ? `スキル威力${sign}${v}%` : "スキル威力";
+        return hasV ? `${condPrefix}スキル威力${sign}${v}%` : `${condPrefix}スキル威力`;
       case "critRate":
-        return hasV ? `クリ率${sign}${v}%` : "クリ率";
+        return hasV ? `${condPrefix}クリ率${sign}${v}%` : `${condPrefix}クリ率`;
       case "accuracy":
-        return hasV ? `命中${sign}${v}%` : "命中";
+        return hasV ? `${condPrefix}命中${sign}${v}%` : `${condPrefix}命中`;
       case "evasion":
-        return hasV ? `回避${sign}${v}%` : "回避";
+        return hasV ? `${condPrefix}回避${sign}${v}%` : `${condPrefix}回避`;
       case "attackBonus":
-        return hasV ? `攻撃力${sign}${v}` : "攻撃力";
+        return hasV ? `${condPrefix}攻撃力${sign}${v}` : `${condPrefix}攻撃力`;
       case "defenseBonus":
-        return hasV ? `防御力${sign}${v}` : "防御力";
+        return hasV ? `${condPrefix}防御力${sign}${v}` : `${condPrefix}防御力`;
       case "maxHpBonus":
-        return hasV ? `最大HP${sign}${v}` : "最大HP";
+        return hasV ? `${condPrefix}最大HP${sign}${v}` : `${condPrefix}最大HP`;
       case "search":
-        return hasV ? `索敵${sign}${v}` : "索敵";
+        return hasV ? `${condPrefix}索敵${sign}${v}` : `${condPrefix}索敵`;
+
       case "cooldownReduction":
         // 正値は短縮として扱う
-        return hasV ? `クールタイム-${Math.abs(v)}ターン` : "クールタイム短縮";
+        return hasV
+          ? `${condPrefix}クールタイム-${Math.abs(v)}ターン`
+          : `${condPrefix}クールタイム短縮`;
 
       case "magicPower":
-        return hasV ? `魔法攻撃力${sign}${v}` : "魔法攻撃力";
+        return hasV ? `${condPrefix}魔法攻撃力${sign}${v}` : `${condPrefix}魔法攻撃力`;
       case "healPower":
-        return hasV ? `回復力${sign}${v}` : "回復力";
+        return hasV ? `${condPrefix}回復力${sign}${v}` : `${condPrefix}回復力`;
       case "healReceived":
-        return hasV ? `回復量${sign}${v}%` : "回復量";
+        return hasV ? `${condPrefix}回復量${sign}${v}%` : `${condPrefix}回復量`;
       case "damageReduction":
-        return hasV ? `被ダメージ-${Math.abs(v)}%` : "被ダメージ軽減";
+        return hasV ? `${condPrefix}被ダメージ-${Math.abs(v)}%` : `${condPrefix}被ダメージ軽減`;
       case "critDamage":
-        return hasV ? `クリダメ${sign}${v}%` : "クリダメ";
+        return hasV ? `${condPrefix}クリダメ${sign}${v}%` : `${condPrefix}クリダメ`;
       case "lifeSteal":
-        return hasV ? `吸血${sign}${v}%` : "吸血";
+        return hasV ? `${condPrefix}吸血${sign}${v}%` : `${condPrefix}吸血`;
       case "regen":
-        return hasV ? `再生${sign}${v}%` : "再生";
-      case "multiStrikeChance":
-        return hasV ? `連続攻撃率${sign}${v}%` : "連続攻撃率";
-      case "multiStrikeDamage":
-        return hasV ? `連続攻撃威力${sign}${v}%` : "連続攻撃威力";
+        return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
       case "hitHeal":
-        return hasV ? `攻撃時回復${sign}${v}` : "攻撃時回復";
+        return hasV ? `${condPrefix}攻撃時HP回復${sign}${v}` : `${condPrefix}攻撃時HP回復`;
+
+      case "multiStrikeChance":
+        return hasV ? `${condPrefix}連続攻撃率${sign}${v}%` : `${condPrefix}連続攻撃率`;
+      case "multiStrikeDamage":
+        return hasV ? `${condPrefix}連続攻撃威力${sign}${v}%` : `${condPrefix}連続攻撃威力`;
       case "counterChance":
-        return hasV ? `反撃率${sign}${v}%` : "反撃率";
+        return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
       case "counterDamage":
-        return hasV ? `反撃威力${sign}${v}%` : "反撃威力";
+        return hasV ? `${condPrefix}反撃威力${sign}${v}%` : `${condPrefix}反撃威力`;
       case "desperationDamage":
-        return hasV ? `背水${sign}${v}%` : "背水";
+        return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
       case "executeDamage":
-        return hasV ? `追い打ち${sign}${v}%` : "追い打ち";
+        return hasV ? `${condPrefix}追い打ち${sign}${v}%` : `${condPrefix}追い打ち`;
       case "evadeHeal":
-        return hasV ? `回避回復${sign}${v}` : "回避回復";
-      case "herbPower":
-        return hasV ? `やくそう回復${sign}${v}%` : "やくそう回復";
+        return hasV ? `${condPrefix}回避回復${sign}${v}` : `${condPrefix}回避回復`;
       case "ailmentDurationDown":
-        return hasV ? `状態異常短縮${sign}${v}%` : "状態異常短縮";
-      case "poisonResist":
-        return hasV ? `毒耐性${sign}${v}%` : "毒耐性";
-      case "burnResist":
-        return hasV ? `火傷耐性${sign}${v}%` : "火傷耐性";
-      case "stunResist":
-        return hasV ? `しびれ耐性${sign}${v}%` : "しびれ耐性";
-      case "slowResist":
-        return hasV ? `鈍足耐性${sign}${v}%` : "鈍足耐性";
-      case "vulnerableResist":
-        return hasV ? `脆弱耐性${sign}${v}%` : "脆弱耐性";
-      case "silenceResist":
-        return hasV ? `封印耐性${sign}${v}%` : "封印耐性";
-      case "accuracyDownResist":
-        return hasV ? `命中低下耐性${sign}${v}%` : "命中低下耐性";
+        return hasV ? `${condPrefix}状態異常短縮${sign}${v}%` : `${condPrefix}状態異常短縮`;
+      case "ailmentResist":
+        return hasV ? `${condPrefix}状態異常耐性${sign}${v}%` : `${condPrefix}状態異常耐性`;
       default:
-        if (eff.name && hasV) return `${eff.name}(${sign}${v})`;
-        return eff.name || "";
+        if (eff.name && hasV) return `${condPrefix}${eff.name}(${sign}${v})`;
+        return `${condPrefix}${eff.name || ""}`;
     }
   }
-  function formatSpecialEffect(effect) {
-    if (!effect || effect.type !== "onHit") return "";
 
-    const chance = Math.round((effect.chance || 0) * 100);
-    const turns = effect.turns || 1;
 
-    const effectNames = {
-      poison: "毒",
-      burn: "火傷",
-      bleed: "出血",
-      stun: "しびれ",
-      slow: "鈍足",
-      vulnerable: "脆弱",
-      silence: "封印",
-      accuracyDown: "命中低下",
-    };
 
-    const name = effectNames[effect.effect] || effect.effect;
-    let text = `攻撃時${chance}%で${name}付与（${turns}T）`;
 
-    if (effect.rate) {
-      const rate = Math.round(effect.rate * 100);
-      if (effect.effect === "vulnerable") {
-        text += ` +${rate}%被ダメ`;
-      } else if (effect.effect === "slow" || effect.effect === "accuracyDown") {
-        text += ` -${rate}%`;
+// -------------------
+// 装備表示（固有能力 / ランダムオプション）
+// -------------------
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * @param {Record<string, number>|null|undefined} deltas
+ * @returns {string}
+ */
+function formatStatDeltaText(deltas) {
+  const d = deltas && typeof deltas === "object" ? deltas : {};
+  const parts = [];
+  const push = (label, v, suffix = "") => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n === 0) return;
+    const sign = n > 0 ? "+" : "";
+    parts.push(`${label}${sign}${n}${suffix}`);
+  };
+
+  push("攻撃力", d.attack);
+  push("防御", d.defense);
+  push("魔法攻撃", d.magicAttack);
+  push("回復力", d.healPower);
+  push("命中", d.accuracy, "%");
+  push("回避", d.evasion, "%");
+
+  return parts.length ? parts.join(" / ") : "能力強化（合算済み）";
+}
+
+/**
+ * @param {any} item
+ * @returns {string[]}
+ */
+function getFixedEffectTexts(item) {
+  const list = Array.isArray(item?.fixedEffects) ? item.fixedEffects : [];
+  return list
+    .map((x) => {
+      if (!x) return "";
+      if (typeof x === "string") return x;
+      if (x.text) return String(x.text);
+      return formatEffectText(x);
+    })
+    .filter(Boolean);
+}
+
+/**
+ * @param {any} item
+ * @returns {string[]}
+ */
+function getRandomOptionTexts(item) {
+  const texts = [];
+  const details = Array.isArray(item?.randomOptionDetails) ? item.randomOptionDetails : null;
+
+  if (details && details.length) {
+    for (const ent of details) {
+      if (!ent) continue;
+      if (ent.kind === "stat") {
+        texts.push(formatStatDeltaText(ent.deltas));
+        continue;
       }
-    }
-
-    return text;
-  }
-  // -------------------
-  // 装備表示（固有能力 / ランダムオプション）
-  // -------------------
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  /**
-   * @param {Record<string, number>|null|undefined} deltas
-   * @returns {string}
-   */
-  function formatStatDeltaText(deltas) {
-    const d = deltas && typeof deltas === "object" ? deltas : {};
-    const parts = [];
-    const push = (label, v, suffix = "") => {
-      const n = Number(v);
-      if (!Number.isFinite(n) || n === 0) return;
-      const sign = n > 0 ? "+" : "";
-      parts.push(`${label}${sign}${n}${suffix}`);
-    };
-
-    push("攻撃力", d.attack);
-    push("防御", d.defense);
-    push("魔法攻撃", d.magicAttack);
-    push("回復力", d.healPower);
-    push("命中", d.accuracy, "%");
-    push("回避", d.evasion, "%");
-
-    return parts.length ? parts.join(" / ") : "能力強化（合算済み）";
-  }
-
-  /**
-   * @param {any} item
-   * @returns {string[]}
-   */
-  function getFixedEffectTexts(item) {
-    const list = Array.isArray(item?.fixedEffects) ? item.fixedEffects : [];
-    return list
-      .map((x) => {
-        if (!x) return "";
-        if (typeof x === "string") return x;
-        if (x.text) return String(x.text);
-        return formatEffectText(x);
-      })
-      .filter(Boolean);
-  }
-
-  /**
-   * @param {any} item
-   * @returns {string[]}
-   */
-  function getRandomOptionTexts(item) {
-    const texts = [];
-    const details = Array.isArray(item?.randomOptionDetails)
-      ? item.randomOptionDetails
-      : null;
-
-    if (details && details.length) {
-      for (const ent of details) {
-        if (!ent) continue;
-        if (ent.kind === "stat") {
-          texts.push(formatStatDeltaText(ent.deltas));
-          continue;
-        }
-        if (ent.kind === "effect") {
-          const eff = ent.effect || ent;
-          const t = formatEffectText(eff);
-          if (t) texts.push(t);
-          continue;
-        }
-        // 互換：effectっぽいオブジェクトが直で入っている場合
-        const t = formatEffectText(ent);
+      if (ent.kind === "effect") {
+        const eff = ent.effect || ent;
+        const t = formatEffectText(eff);
         if (t) texts.push(t);
+        continue;
       }
-      return texts.filter(Boolean);
-    }
-
-    // 旧データ互換：effects と randomOptions から推測
-    const effects = Array.isArray(item?.effects) ? item.effects : [];
-    effects.forEach((eff) => {
-      const t = formatEffectText(eff);
+      // 互換：effectっぽいオブジェクトが直で入っている場合
+      const t = formatEffectText(ent);
       if (t) texts.push(t);
-    });
-
-    const desired = Math.max(0, Math.floor(Number(item?.randomOptions || 0)));
-    const missing = Math.max(0, desired - effects.length);
-    for (let i = 0; i < missing; i++) {
-      texts.push("能力強化（合算済み）");
     }
-
     return texts.filter(Boolean);
   }
 
-  /**
-   * @param {string[]} texts
-   * @param {string} emptyText
-   * @returns {string}
-   */
-  function renderEffectListHtml(texts, emptyText = "なし") {
-    if (!Array.isArray(texts) || texts.length === 0) {
-      return `<div class="effect-none">${escapeHtml(emptyText)}</div>`;
-    }
-    const li = texts.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
-    return `<ul class="effect-list">${li}</ul>`;
+  // 旧データ互換：effects と randomOptions から推測
+  const effects = Array.isArray(item?.effects) ? item.effects : [];
+  effects.forEach((eff) => {
+    const t = formatEffectText(eff);
+    if (t) texts.push(t);
+  });
+
+  const desired = Math.max(0, Math.floor(Number(item?.randomOptions || 0)));
+  const missing = Math.max(0, desired - effects.length);
+  for (let i = 0; i < missing; i++) {
+    texts.push("能力強化（合算済み）");
   }
 
-  function sameItem(a, b) {
+  return texts.filter(Boolean);
+}
+
+/**
+ * @param {string[]} texts
+ * @param {string} emptyText
+ * @returns {string}
+ */
+function renderEffectListHtml(texts, emptyText = "なし") {
+  if (!Array.isArray(texts) || texts.length === 0) {
+    return `<div class="effect-none">${escapeHtml(emptyText)}</div>`;
+  }
+  const li = texts.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+  return `<ul class="effect-list">${li}</ul>`;
+}
+
+function sameItem(a, b) {
     if (!a || !b) return false;
     if (a.uid && b.uid) return a.uid === b.uid;
     return a === b;
@@ -524,9 +514,7 @@
   function updateBagUI() {
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
-    const consumablesList =
-      document.getElementById("consumablesList") ||
-      document.getElementById("itemsList");
+    const consumablesList = document.getElementById("consumablesList") || document.getElementById("itemsList");
     const valuablesList = document.getElementById("valuablesList");
 
     weaponsList.innerHTML = "";
@@ -541,10 +529,25 @@
       const lockIcon = locked ? "🔒" : "🔓";
       const canDiscard = !locked && !equipped;
 
+      const categoryClass =
+        item.category === "weapon"
+          ? "cat-weapon"
+          : item.category === "armor"
+            ? "cat-armor"
+            : item.category === "accessory"
+              ? "cat-accessory"
+              : "";
+
       const fixedTexts = getFixedEffectTexts(item);
       const randomTexts = getRandomOptionTexts(item);
       const randomCount = randomTexts.length;
-      const displayName = `${item.name}${randomCount > 0 ? ` +${randomCount}` : ""}`;
+      // アイテム欄では「両手武器」を明示する
+      // 例: 破邪の弓（両手） +2
+      const twoHandSuffix =
+        item && item.category === "weapon" && Number(item.hands || 0) === 2
+          ? "（両手）"
+          : "";
+      const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
 
       const baseStatsText = [
         fmtStat("攻撃", item.attack).trim(),
@@ -552,13 +555,12 @@
         fmtStat("回復力", item.healPower).trim(),
         fmtStat("防御", item.defense).trim(),
         fmtStat("命中", item.accuracy, "%").trim(),
-        fmtStat("回避", item.evasion, "%").trim(),
       ]
         .filter(Boolean)
         .join(" ");
 
       const card = `
-        <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${item.rarity}" onclick="toggleEquip(${idx})">
+        <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${categoryClass}" onclick="toggleEquip(${idx})">
           <div class="item-row">
             <div class="item-main">
               <div class="item-name">${displayName}</div>
@@ -595,15 +597,13 @@
 
     // アイテム（消耗品）
     if (consumablesList) {
-      const items = Array.isArray(gameData.player.items)
-        ? gameData.player.items
-        : [];
+      const items = Array.isArray(gameData.player.items) ? gameData.player.items : [];
       if (items.length === 0) {
         consumablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">消耗品を持っていません</div>`;
       } else {
         items.forEach((item) => {
-          const isHerb = item.name === "やくそう";
-          const desc = isHerb ? "現在HPの5%回復" : `HP ${item.heal}回復`;
+          const heal = Number(item.heal || 0);
+          const desc = Number.isFinite(heal) && heal > 0 ? `HP ${heal}回復` : "";
           consumablesList.innerHTML += `
             <div class="item-card" onclick="useItem('${item.name}')">
               <div class="item-name">${item.name} x${item.count}</div>
@@ -616,9 +616,7 @@
 
     // アイテム（貴重品）
     if (valuablesList) {
-      const vals = Array.isArray(gameData.player.valuables)
-        ? gameData.player.valuables
-        : [];
+      const vals = Array.isArray(gameData.player.valuables) ? gameData.player.valuables : [];
       if (vals.length === 0) {
         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
       } else {
@@ -644,7 +642,7 @@
         });
       }
     }
-  }
+}
 
   // -------------------
   // 装備品：ロック / 捨てる
@@ -864,21 +862,13 @@
 
     item.count--;
     if (item.count <= 0) {
-      gameData.player.items = gameData.player.items.filter(
-        (i) => i.name !== name,
-      );
+      gameData.player.items = gameData.player.items.filter((i) => i.name !== name);
     }
 
-    let heal = item.heal;
+    let heal = Number(item.heal || 0);
 
-    if (name === "やくそう") {
-      heal = Math.max(1, Math.floor(gameData.player.hp * 0.05));
-    }
 
-    gameData.player.hp = Math.min(
-      gameData.player.maxHp,
-      gameData.player.hp + heal,
-    );
+    gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
     log(`${name}を使用！ ${heal}HP回復した！`);
 
     updateBagUI();
@@ -923,34 +913,123 @@
     updateUI();
   }
 
-  function setStatusTab(tab) {
-    const allowed = ["status", "achievements", "records"];
-    if (!allowed.includes(tab)) tab = "status";
-    currentStatusTab = tab;
+  // -------------------
+  // UI - 転移（50階層刻み）
+  // -------------------
+  let lastTeleportFocusEl = null;
 
-    const tabStatus = document.getElementById("tabStatus");
-    const tabAch = document.getElementById("tabAchievements");
-    const tabRec = document.getElementById("tabRecords");
+  function buildTeleportFloorList() {
+    const maxReached = Math.max(
+      1,
+      Math.floor(Number(gameData?.player?.maxReachedFloor || 1)),
+    );
 
-    if (tabStatus)
-      tabStatus.style.display = tab === "status" ? "block" : "none";
-    if (tabAch)
-      tabAch.style.display = tab === "achievements" ? "block" : "none";
-    if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+    /** @type {number[]} */
+    const list = [1];
+    const cap = Math.floor(maxReached / 50) * 50;
+    for (let f = 50; f <= cap; f += 50) list.push(f);
+    return { list, maxReached };
+  }
 
-    const btnS = document.getElementById("statusTabBtnStatus");
-    const btnA = document.getElementById("statusTabBtnAchievements");
-    const btnR = document.getElementById("statusTabBtnRecords");
-    if (btnS) btnS.classList.toggle("is-active", tab === "status");
-    if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
-    if (btnR) btnR.classList.toggle("is-active", tab === "records");
+  function openTeleportModal() {
+    if (!gameData || gameData.gameState !== "EXPLORE") {
+      log("⚠️ 戦闘中は転移できません");
+      return;
+    }
 
-    if (tab === "records") {
-      updateRecordsUI();
+    lastTeleportFocusEl = document.activeElement;
+
+    const modal = document.getElementById("teleportModal");
+    const maxEl = document.getElementById("teleportMaxReached");
+    const select = document.getElementById("teleportSelect");
+    if (!modal || !select || !maxEl) return;
+
+    const { list, maxReached } = buildTeleportFloorList();
+    maxEl.textContent = String(maxReached);
+
+    // options
+    select.innerHTML = "";
+    for (const f of list) {
+      const opt = document.createElement("option");
+      opt.value = String(f);
+      opt.textContent = `${f}階`;
+      select.appendChild(opt);
+    }
+
+    // 初期選択：現在階層に最も近い（下方向）
+    const cur = Math.max(1, Math.floor(Number(gameData.floor || 1)));
+    let initial = 1;
+    if (cur >= 50) {
+      initial = Math.floor(cur / 50) * 50;
+      if (initial === 0) initial = 1;
+    }
+    if (initial > maxReached) initial = Math.floor(maxReached / 50) * 50 || 1;
+    select.value = String(initial);
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    // 次フレームでフォーカス（iOS対策）
+    setTimeout(() => {
+      try {
+        select.focus();
+      } catch (e) {}
+    }, 0);
+  }
+
+  function closeTeleportModal() {
+    const modal = document.getElementById("teleportModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+
+    // フォーカスを戻す（aria-hidden警告回避）
+    const btn = document.getElementById("teleportBtn");
+    const target = btn || lastTeleportFocusEl;
+    if (target && typeof target.focus === "function") {
+      setTimeout(() => {
+        try {
+          target.focus();
+        } catch (e) {}
+      }, 0);
     }
   }
 
-  function updateRecordsUI() {
+  function confirmTeleport() {
+    const select = document.getElementById("teleportSelect");
+    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
+
+    if (typeof window.teleportToFloor === "function") {
+      const ok = window.teleportToFloor(dest);
+      if (ok) closeTeleportModal();
+    }
+  }
+
+    function setStatusTab(tab) {
+      const allowed = ["status", "achievements", "records"];
+      if (!allowed.includes(tab)) tab = "status";
+      currentStatusTab = tab;
+
+      const tabStatus = document.getElementById("tabStatus");
+      const tabAch = document.getElementById("tabAchievements");
+      const tabRec = document.getElementById("tabRecords");
+
+      if (tabStatus) tabStatus.style.display = tab === "status" ? "block" : "none";
+      if (tabAch) tabAch.style.display = tab === "achievements" ? "block" : "none";
+      if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+
+      const btnS = document.getElementById("statusTabBtnStatus");
+      const btnA = document.getElementById("statusTabBtnAchievements");
+      const btnR = document.getElementById("statusTabBtnRecords");
+      if (btnS) btnS.classList.toggle("is-active", tab === "status");
+      if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
+      if (btnR) btnR.classList.toggle("is-active", tab === "records");
+
+      if (tab === "records") {
+        updateRecordsUI();
+      }
+    }
+
+function updateRecordsUI() {
     const elKills = document.getElementById("recordTotalKills");
     const elMax = document.getElementById("recordMaxDamage");
     if (!elKills && !elMax) return;
@@ -963,17 +1042,14 @@
     if (elMax) elMax.textContent = maxDamage;
   }
 
-  function updateAchievementsUI() {
+function updateAchievementsUI() {
     const el = document.getElementById("achievementsContent");
     if (!el) return;
 
     const p = gameData.player;
-    if (!p.achievements || typeof p.achievements !== "object")
-      p.achievements = {};
+    if (!p.achievements || typeof p.achievements !== "object") p.achievements = {};
 
-    const defs = Array.isArray(window.achievementDefs)
-      ? window.achievementDefs
-      : [];
+    const defs = Array.isArray(window.achievementDefs) ? window.achievementDefs : [];
 
     // 解除状態と進捗を組み立て（解除済みは下へ）
     const list = defs
@@ -1004,10 +1080,7 @@
       .map((a) => {
         const mark = a.done ? "✅" : "⬜";
         const bonusText =
-          a.done &&
-          a.bonus &&
-          typeof a.bonus.expRate === "number" &&
-          a.bonus.expRate > 0
+          a.done && a.bonus && typeof a.bonus.expRate === "number" && a.bonus.expRate > 0
             ? ` / ボーナス：経験値+${Math.round(a.bonus.expRate * 100)}%`
             : "";
         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
@@ -1020,25 +1093,28 @@
     if (cb) cb.checked = isAutosaveEnabled();
   }
 
-  function updateStatusUI() {
+function updateStatusUI() {
     const p = gameData.player;
     const stats = getTotalStats();
     const combat = getCombatStats();
 
+    // 紋章（貴重品）による加算値（0なら表示しない）
+    const emblem = typeof getEmblemBonus === "function" ? getEmblemBonus() : null;
+    const fmtStat = (val, bonus) => {
+      const b = Math.max(0, Math.floor(Number(bonus || 0)));
+      return b > 0 ? `${val}（+${b}）` : `${val}`;
+    };
+
     const job = jobs[p.job] || { name: "-", favoredType: null };
     const favoredKey = job.favoredType;
-    const favoredName =
-      favoredKey && equipTypes?.[favoredKey]?.name
-        ? equipTypes[favoredKey].name
-        : "なし";
-    document.getElementById("currentJob").textContent =
-      `${job.name}（得意: ${favoredName}）`;
+    const favoredName = favoredKey && equipTypes?.[favoredKey]?.name ? equipTypes[favoredKey].name : "なし";
+    document.getElementById("currentJob").textContent = `${job.name}（得意: ${favoredName}）`;
 
-    document.getElementById("statStr").textContent = stats.strength;
-    document.getElementById("statVit").textContent = stats.vitality;
-    document.getElementById("statInt").textContent = stats.intelligence;
-    document.getElementById("statAgi").textContent = stats.agility;
-    document.getElementById("statDex").textContent = stats.dexterity;
+    document.getElementById("statStr").textContent = fmtStat(stats.strength, emblem && emblem.strength);
+    document.getElementById("statVit").textContent = fmtStat(stats.vitality, emblem && emblem.vitality);
+    document.getElementById("statInt").textContent = fmtStat(stats.intelligence, emblem && emblem.intelligence);
+    document.getElementById("statAgi").textContent = fmtStat(stats.agility, emblem && emblem.agility);
+    document.getElementById("statDex").textContent = fmtStat(stats.dexterity, emblem && emblem.dexterity);
     document.getElementById("statPoints").textContent = p.statPoints;
 
     // 装備スロット表示
@@ -1046,26 +1122,17 @@
     const slot2 = p.equipment.slot2;
     const acc = p.equipment.accessory;
 
-    const twoHandLock =
-      slot1 && slot1.hands === 2 ? 1 : slot2 && slot2.hands === 2 ? 2 : 0;
+    const twoHandLock = slot1 && slot1.hands === 2 ? 1 : slot2 && slot2.hands === 2 ? 2 : 0;
 
-    document.getElementById("equipSlot1").textContent =
-      twoHandLock === 2
-        ? "装備1: 空（両手装備中。上書きで切替可）"
-        : slot1
-          ? `装備1: ${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}（装備中）`
-          : "装備1: 空";
+    document.getElementById("equipSlot1").textContent = twoHandLock === 2
+      ? "装備1: 空（両手装備中。上書きで切替可）"
+      : slot1 ? `装備1: ${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}（装備中）` : "装備1: 空";
 
-    document.getElementById("equipSlot2").textContent =
-      twoHandLock === 1
-        ? "装備2: 空（両手装備中。上書きで切替可）"
-        : slot2
-          ? `装備2: ${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}（装備中）`
-          : "装備2: 空";
+    document.getElementById("equipSlot2").textContent = twoHandLock === 1
+      ? "装備2: 空（両手装備中。上書きで切替可）"
+      : slot2 ? `装備2: ${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}（装備中）` : "装備2: 空";
 
-    document.getElementById("equipAccessorySlot").textContent = acc
-      ? `装飾品（装備中）: ${acc.name}`
-      : "装飾品: 空";
+    document.getElementById("equipAccessorySlot").textContent = acc ? `装飾品（装備中）: ${acc.name}` : "装飾品: 空";
 
     // 計算後ステータス
     // 得意装備を付けているか（武器/防具のみ）
@@ -1075,22 +1142,81 @@
         (slot2 && slot2.type === favoredKey && slot2.category !== "accessory"))
     );
 
-    document.getElementById("calcStats").innerHTML = `
-      <div>攻撃力: ${Math.round(combat.attack)}</div>
-      <div>防御力: ${Math.round(combat.defense)}</div>
-      <div>魔法威力: ${Math.round(combat.magicPower)}</div>
-      <div>命中率: ${Math.round(combat.accuracy)}%</div>
-      <div>回避率: ${Math.round(combat.evasion)}%</div>
-      <div>クリティカル: ${Math.round(combat.critRate)}%</div>
-      <div>索敵: ${Math.round(combat.search)}</div>
-      <div>得意装備補正: ${favoredOn ? "ON（+20%）" : "OFF"}</div>
-      <div>経験値補正: +${Math.round((getAccessoryBonus("expBonus") || 0) + (p.skills.exp_up || 0))}%（実績+${typeof getAchievementExpBonusPercent === "function" ? getAchievementExpBonusPercent() : 0}%）</div>
-    `;
+    {
+      const rows = [];
+      const push = (text) => rows.push(`<div>${text}</div>`);
+
+      // 基本（計算後）
+      push(`最大HP: ${Math.round(combat.maxHp)}`);
+      push(`攻撃力: ${Math.round(combat.attack)}`);
+      push(`防御力: ${Math.round(combat.defense)}`);
+      push(`魔法威力: ${Math.round(combat.magicPower)}`);
+      push(`回復力: ${Math.round(combat.healPower || 0)}`);
+      push(`命中率: ${Math.round(combat.accuracy)}%`);
+      push(`回避率: ${Math.round(combat.evasion)}%`);
+      push(`クリティカル: ${Math.round(combat.critRate)}%`);
+      push(`索敵: ${Math.round(combat.search)}`);
+
+      // 得意装備補正
+      const jobTraits = jobs?.[p.job]?.traits || {};
+      const favoredMult = Number.isFinite(jobTraits.favoredMultiplier)
+        ? jobTraits.favoredMultiplier
+        : 1.2;
+      const favoredPct = Math.round((favoredMult - 1) * 100);
+      push(`得意装備補正: ${favoredOn ? `ON（+${favoredPct}%）` : "OFF"}`);
+
+      // 追加効果（0は表示しない）
+      const addBonus = (type, overrideValue = null) => {
+        const v = overrideValue === null ? Number(getAccessoryBonus(type) || 0) : Number(overrideValue);
+        if (!Number.isFinite(v) || v === 0) return;
+        const t = formatEffectText({ type, value: v });
+        if (t) push(t);
+      };
+
+      // 経験値は「装備＋スキル＋実績」の合算で表示
+      const expEquip = Math.round(Number(getAccessoryBonus("expBonus") || 0) + Number(p.skills.exp_up || 0));
+      const expAch = (typeof getAchievementExpBonusPercent === "function") ? Number(getAchievementExpBonusPercent() || 0) : 0;
+      const expTotal = expEquip + expAch;
+      if (Number.isFinite(expTotal) && expTotal !== 0) {
+        push(`経験値+${expTotal}%${expAch ? `（実績+${expAch}%）` : ""}`);
+      }
+
+      addBonus("dropRate");
+      addBonus("skillPower");
+      addBonus("cooldownReduction");
+
+      addBonus("healReceived");
+      addBonus("damageReduction");
+
+      addBonus("critDamage");
+      addBonus("lifeSteal");
+      addBonus("regen");
+      addBonus("hitHeal");
+
+      addBonus("multiStrikeChance");
+      addBonus("multiStrikeDamage");
+      addBonus("counterChance");
+      addBonus("counterDamage");
+
+      addBonus("desperationDamage");
+      addBonus("executeDamage");
+      addBonus("evadeHeal");
+
+      addBonus("ailmentDurationDown");
+      addBonus("ailmentResist");
+
+      document.getElementById("calcStats").innerHTML = rows.join("");
+    }
 
     document.getElementById("skillPoints").textContent = p.skillPoints;
-    document.getElementById("equippedSkillName").textContent = p.equippedSkill
-      ? "あり"
-      : "なし";
+
+    // 装備中スキル（2枠）表示
+    const sk1 = getEquippedSkillKey(0);
+    const sk2 = getEquippedSkillKey(1);
+    const el1 = document.getElementById("equippedSkillName1");
+    const el2 = document.getElementById("equippedSkillName2");
+    if (el1) el1.textContent = sk1 ? (skills[sk1]?.name || sk1) : "なし";
+    if (el2) el2.textContent = sk2 ? (skills[sk2]?.name || sk2) : "なし";
   }
 
   // 職業選択
@@ -1099,10 +1225,8 @@
     grid.innerHTML = "";
 
     const p = gameData.player;
-    if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
-      p.unlockedJobs = {};
-    if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
-      p.jobUnlockProgress = {};
+    if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
+    if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object") p.jobUnlockProgress = {};
 
     const getUnlockInfo = (jobKey) => {
       const jd = jobs[jobKey];
@@ -1111,12 +1235,7 @@
       const group = jd.skillGroup || jd.baseJob || jobKey;
       const type = jd.unlock.type;
       const target = Number(jd.unlock.target || 0);
-      const cur = Number(
-        (p.jobUnlockProgress &&
-          p.jobUnlockProgress[group] &&
-          p.jobUnlockProgress[group][type]) ||
-          0,
-      );
+      const cur = Number((p.jobUnlockProgress && p.jobUnlockProgress[group] && p.jobUnlockProgress[group][type]) || 0);
       const minLevel = Number(jd.unlock.minLevel || 0);
       const level = Number(p.level || 0);
       const levelOk = !minLevel || level >= minLevel;
@@ -1128,9 +1247,7 @@
     };
 
     const keys = Object.keys(jobs);
-    const baseKeys = keys.filter(
-      (k) => !jobs[k] || jobs[k].tier !== "advanced",
-    );
+    const baseKeys = keys.filter((k) => !jobs[k] || jobs[k].tier !== "advanced");
     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
 
     const renderTitle = (title) => {
@@ -1142,10 +1259,7 @@
       const isSelected = gameData.player.job === key;
 
       const favoredKey = job.favoredType;
-      const et =
-        typeof equipTypes === "object" && equipTypes && favoredKey
-          ? equipTypes[favoredKey]
-          : null;
+      const et = (typeof equipTypes === "object" && equipTypes && favoredKey) ? equipTypes[favoredKey] : null;
       const favoredName = et && et.name ? et.name : "なし";
 
       const unlockInfo = getUnlockInfo(key);
@@ -1178,10 +1292,7 @@
       const groupMap = {};
       for (const k of advKeys) {
         const jd = jobs[k];
-        const base =
-          jd && (jd.baseJob || jd.skillGroup)
-            ? jd.baseJob || jd.skillGroup
-            : "other";
+        const base = (jd && (jd.baseJob || jd.skillGroup)) ? (jd.baseJob || jd.skillGroup) : "other";
         if (!groupMap[base]) groupMap[base] = [];
         groupMap[base].push(k);
       }
@@ -1190,8 +1301,7 @@
       for (const baseKey of baseKeys) {
         const list = groupMap[baseKey];
         if (!Array.isArray(list) || list.length === 0) continue;
-        const baseName =
-          jobs[baseKey] && jobs[baseKey].name ? jobs[baseKey].name : baseKey;
+        const baseName = (jobs[baseKey] && jobs[baseKey].name) ? jobs[baseKey].name : baseKey;
         grid.innerHTML += `<div class="job-group-title">${baseName}の上級職</div>`;
         for (const k of list) {
           rendered.add(k);
@@ -1221,20 +1331,13 @@
 
     // 上級職は未解放なら選べない
     if (jd.unlock) {
-      if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
-        p.unlockedJobs = {};
-      if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
-        p.jobUnlockProgress = {};
+      if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
+      if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object") p.jobUnlockProgress = {};
 
       const group = jd.skillGroup || jd.baseJob || jobKey;
       const type = jd.unlock.type;
       const target = Number(jd.unlock.target || 0);
-      const cur = Number(
-        (p.jobUnlockProgress &&
-          p.jobUnlockProgress[group] &&
-          p.jobUnlockProgress[group][type]) ||
-          0,
-      );
+      const cur = Number((p.jobUnlockProgress && p.jobUnlockProgress[group] && p.jobUnlockProgress[group][type]) || 0);
       const minLevel = Number(jd.unlock.minLevel || 0);
       const level = Number(p.level || 0);
       const levelOk = !minLevel || level >= minLevel;
@@ -1257,14 +1360,12 @@
       return;
     }
 
-    const prevJobDef = jobs && jobs[prevJob] ? jobs[prevJob] : null;
-    const prevGroup =
-      prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
+    const prevJobDef = (jobs && jobs[prevJob]) ? jobs[prevJob] : null;
+    const prevGroup = (prevJobDef && prevJobDef.skillGroup) ? prevJobDef.skillGroup : prevJob;
     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
 
     // 職業ごとの割り振り保存領域（※スキルグループ単位）
-    if (!p.jobSkillBuilds || typeof p.jobSkillBuilds !== "object")
-      p.jobSkillBuilds = {};
+    if (!p.jobSkillBuilds || typeof p.jobSkillBuilds !== "object") p.jobSkillBuilds = {};
 
     // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
     const prevBuild = {};
@@ -1272,10 +1373,7 @@
     for (const sk of Object.keys(skills)) {
       const def = skills[sk];
       if (!def || def.job !== prevGroup) continue;
-      const lv = Math.max(
-        0,
-        Math.floor(Number((p.skills && p.skills[sk]) || 0)),
-      );
+      const lv = Math.max(0, Math.floor(Number((p.skills && p.skills[sk]) || 0)));
       if (lv > 0) {
         prevBuild[sk] = lv;
         refund += lv;
@@ -1286,13 +1384,11 @@
       }
     }
     p.jobSkillBuilds[prevGroup] = prevBuild;
-    p.skillPoints = Math.max(
-      0,
-      Math.floor(Number(p.skillPoints || 0)) + refund,
-    );
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + refund);
 
-    // 2) 職業変更：装備中スキルは解除
+    // 2) 職業変更：装備中スキルは解除（2枠）
     p.job = jobKey;
+    p.equippedSkills = [null, null];
     p.equippedSkill = null;
     p.skillCooldown = 0;
 
@@ -1304,8 +1400,7 @@
         if (!def || def.job !== newGroup) continue;
         let lv = Math.max(0, Math.floor(Number(build[sk] || 0)));
         if (lv <= 0) continue;
-        if (def.maxLevel !== Infinity)
-          lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
+        if (def.maxLevel !== Infinity) lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
         lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0)));
         if (lv <= 0) break;
         if (!p.skills || typeof p.skills !== "object") p.skills = {};
@@ -1349,8 +1444,7 @@
       `;
     }
 
-    document.getElementById("remainingPoints").textContent =
-      gameData.player.statPoints;
+    document.getElementById("remainingPoints").textContent = gameData.player.statPoints;
     document.getElementById("statModal").classList.remove("hidden");
   }
 
@@ -1371,8 +1465,7 @@
     gameData.player.statPoints -= delta;
 
     document.getElementById(`alloc-${stat}`).textContent = newValue;
-    document.getElementById("remainingPoints").textContent =
-      gameData.player.statPoints;
+    document.getElementById("remainingPoints").textContent = gameData.player.statPoints;
   }
 
   function resetStatAllocation() {
@@ -1403,9 +1496,8 @@
   function updateSkillUI() {
     const p = gameData.player;
     const currentJob = p.job;
-    const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
-    const currentGroup =
-      curJobDef && curJobDef.skillGroup ? curJobDef.skillGroup : currentJob;
+    const curJobDef = (jobs && jobs[currentJob]) ? jobs[currentJob] : null;
+    const currentGroup = (curJobDef && curJobDef.skillGroup) ? curJobDef.skillGroup : currentJob;
 
     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
 
@@ -1426,8 +1518,7 @@
       const shownLv = level > 0 ? level : 1;
       let eff = {};
       try {
-        if (typeof skill.effect === "function")
-          eff = skill.effect(shownLv) || {};
+        if (typeof skill.effect === "function") eff = skill.effect(shownLv) || {};
       } catch (e) {
         eff = {};
       }
@@ -1469,8 +1560,7 @@
       const formatNumber = (v) => {
         if (!Number.isFinite(v)) return "";
         const rounded = Math.round(v * 100) / 100;
-        if (Math.abs(rounded - Math.round(rounded)) < 1e-9)
-          return String(Math.round(rounded));
+        if (Math.abs(rounded - Math.round(rounded)) < 1e-9) return String(Math.round(rounded));
         return String(rounded);
       };
 
@@ -1484,10 +1574,8 @@
       if (skill.job && !isCommon && skill.job !== currentGroup) continue;
 
       const level = p.skills[key] || 0;
-      const maxLv =
-        skill.maxLevel === Infinity ? Infinity : Number(skill.maxLevel);
-      const canLevelUp =
-        (maxLv === Infinity || level < maxLv) && p.skillPoints > 0;
+      const maxLv = skill.maxLevel === Infinity ? Infinity : Number(skill.maxLevel);
+      const canLevelUp = (maxLv === Infinity || level < maxLv) && p.skillPoints > 0;
 
       // 命中率表示（攻撃系スキルのみ）
       const shownLvForAcc = level > 0 ? level : 1;
@@ -1504,9 +1592,13 @@
       const accPct = Number.isFinite(Number(skill.accuracy))
         ? Math.round(Number(skill.accuracy))
         : 100;
+      const accDelta = accPct - 100;
+      const accDeltaSign = accDelta > 0 ? "+" : "";
+      // 表示ルール：命中が100%（等倍）の場合は表示しない。100未満/超過のみ表示。
+      // 表記は「命中率+20%」「命中率-30%」のように差分表示。
       const accLine =
-        skill.type === "active" && isOffensiveSkill
-          ? `<div style="font-size: 11px; color: #aaa;">命中: ${accPct}%</div>`
+        skill.type === "active" && isOffensiveSkill && accDelta !== 0
+          ? `<div style="font-size: 11px; color: #aaa;">命中率${accDeltaSign}${accDelta}%</div>`
           : "";
 
       const html = `
@@ -1520,7 +1612,12 @@
           <div class="skill-actions">
             <div class="skill-level">Lv.${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
             ${canLevelUp ? `<button class="small-btn" onclick="levelUpSkill('${key}')">+</button>` : ""}
-            ${skill.type === "active" && level > 0 ? `<button class="small-btn" onclick="equipSkill('${key}')">装備</button>` : ""}
+            ${skill.type === "active" && level > 0 ? `
+              <button class="small-btn" onclick="equipSkillToSlot('${key}',0)">①</button>
+              <button class="small-btn" onclick="equipSkillToSlot('${key}',1)">②</button>
+              ${getEquippedSkillKey(0) === key ? `<button class="small-btn" onclick="unequipSkillSlot(0)">外①</button>` : ""}
+              ${getEquippedSkillKey(1) === key ? `<button class="small-btn" onclick="unequipSkillSlot(1)">外②</button>` : ""}
+            ` : ""}
           </div>
         </div>
       `;
@@ -1535,8 +1632,7 @@
     }
 
     if (commonList && commonList.innerHTML.trim() === "") {
-      commonList.innerHTML =
-        '<div style="font-size:12px; color:#aaa; padding:8px;">（共通スキルはまだありません）</div>';
+      commonList.innerHTML = '<div style="font-size:12px; color:#aaa; padding:8px;">（共通スキルはまだありません）</div>';
     }
   }
 
@@ -1555,11 +1651,52 @@
     getCombatStats();
   }
 
-  function equipSkill(key) {
-    gameData.player.equippedSkill = key;
-    log(`${skills[key].name}を装備した`);
+  function ensureEquippedSkillsArray(p) {
+    if (!p || typeof p !== "object") return;
+    if (!Array.isArray(p.equippedSkills)) {
+      p.equippedSkills = [p.equippedSkill != null ? String(p.equippedSkill) : null, null];
+    }
+    p.equippedSkills = p.equippedSkills
+      .slice(0, 2)
+      .map((v) => (v == null || v === "" ? null : String(v)));
+    while (p.equippedSkills.length < 2) p.equippedSkills.push(null);
+    // 旧フィールド互換（slot1相当）
+    p.equippedSkill = p.equippedSkills[0] || null;
+  }
+
+  function equipSkillToSlot(key, slotIndex) {
+    const p = gameData.player;
+    if (!p) return;
+    ensureEquippedSkillsArray(p);
+    const idx = Number(slotIndex) === 1 ? 1 : 0;
+
+    // 同じスキルを2枠に重複装備させない
+    const otherIdx = idx === 0 ? 1 : 0;
+    if (p.equippedSkills[otherIdx] === key) p.equippedSkills[otherIdx] = null;
+
+    p.equippedSkills[idx] = key;
+    p.equippedSkill = p.equippedSkills[0] || null;
+
+    log(`${skills[key].name}をスキル${idx + 1}に装備した`);
     updateSkillUI();
     updateStatusUI();
+    updateSkillButtons();
+  }
+
+  function unequipSkillSlot(slotIndex) {
+    const p = gameData.player;
+    if (!p) return;
+    ensureEquippedSkillsArray(p);
+    const idx = Number(slotIndex) === 1 ? 1 : 0;
+    if (!p.equippedSkills[idx]) return;
+    const key = p.equippedSkills[idx];
+    p.equippedSkills[idx] = null;
+    p.equippedSkill = p.equippedSkills[0] || null;
+    if (!p.equippedSkills[0] && !p.equippedSkills[1]) p.skillCooldown = 0;
+    log(`スキル${idx + 1}から${skills[key]?.name || key}を外した`);
+    updateSkillUI();
+    updateStatusUI();
+    updateSkillButtons();
   }
 
   function resetSkills() {
@@ -1574,12 +1711,10 @@
     }
 
     p.skills = {};
-    p.skillPoints = Math.max(
-      0,
-      Math.floor(Number(p.skillPoints || 0)) + refund,
-    );
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + refund);
 
     // 装備中スキルを解除
+    p.equippedSkills = [null, null];
     p.equippedSkill = null;
     p.skillCooldown = 0;
 
@@ -1590,7 +1725,7 @@
     getCombatStats();
     updateSkillUI();
     updateStatusUI();
-    updateSkillButton();
+    updateSkillButtons();
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
@@ -1598,7 +1733,8 @@
   // グローバル公開
   // -------------------
   window.updateUI = updateUI;
-  window.updateSkillButton = updateSkillButton;
+  // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+  window.updateSkillButton = updateSkillButtons;
   window.log = log;
   window.clearLog = clearLog;
 
@@ -1606,6 +1742,9 @@
   window.openOptions = openOptions;
   window.closeOptions = closeOptions;
   window.closeBag = closeBag;
+  window.openTeleportModal = openTeleportModal;
+  window.closeTeleportModal = closeTeleportModal;
+  window.confirmTeleport = confirmTeleport;
   window.setBagTab = setBagTab;
   window.setEquipmentSubTab = setEquipmentSubTab;
   window.setItemSubTab = setItemSubTab;
@@ -1618,6 +1757,7 @@
   window.chooseEquipSlot = chooseEquipSlot;
   window.useItem = useItem;
 
+  
   // =====================
   // Save Data Import / Export (参考実装に準拠)
   // =====================
@@ -1690,11 +1830,7 @@
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await getSaveExportKey();
     const encoded = encoder.encode(JSON.stringify(snapshot));
-    const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      encoded,
-    );
+    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
     return {
       schema: SAVE_EXPORT_SCHEMA_V2,
       gameVersion: snapshot.gameVersion || null,
@@ -1707,17 +1843,12 @@
   }
 
   async function decryptSavePayload(payload) {
-    if (!payload || typeof payload !== "object")
-      throw new Error("invalid payload");
+    if (!payload || typeof payload !== "object") throw new Error("invalid payload");
     if (payload.schema !== SAVE_EXPORT_SCHEMA_V2) return payload;
     const iv = base64ToUint8(String(payload.iv || ""));
     const data = base64ToUint8(String(payload.data || ""));
     const key = await getSaveExportKey();
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
-      key,
-      data,
-    );
+    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
     const decoder = new TextDecoder();
     return JSON.parse(decoder.decode(decrypted));
   }
@@ -1739,10 +1870,7 @@
       const snapshot = buildSaveDataSnapshot();
       const encrypted = await encryptSaveSnapshot(snapshot);
       const safeVersion = snapshot.gameVersion || "unknown";
-      const dateLabel = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .slice(0, 19);
+      const dateLabel = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
       const filename = `OneMoreFloorRPG_save_${safeVersion}_${dateLabel}.json`;
       downloadTextFile(filename, JSON.stringify(encrypted));
       log("🔐 セーブデータをエクスポートしました");
@@ -1764,9 +1892,7 @@
   function handleSaveDataImport(event) {
     const file = event?.target?.files?.[0];
     if (!file) return;
-    const ok = window.confirm(
-      "この端末の現在のセーブデータを上書きします。よろしいですか？",
-    );
+    const ok = window.confirm("この端末の現在のセーブデータを上書きします。よろしいですか？");
     if (!ok) return;
 
     const reader = new FileReader();
@@ -1779,9 +1905,7 @@
 
         const isKnownEncrypted = parsed?.schema === SAVE_EXPORT_SCHEMA_V2;
         if (!isKnownEncrypted && decrypted?.schema !== SAVE_EXPORT_SCHEMA_V1) {
-          const proceed = window.confirm(
-            "このファイルは想定形式と異なる可能性があります。続行しますか？",
-          );
+          const proceed = window.confirm("このファイルは想定形式と異なる可能性があります。続行しますか？");
           if (!proceed) return;
         }
 
@@ -1828,7 +1952,12 @@
   window.closeSkillScreen = closeSkillScreen;
   window.updateSkillUI = updateSkillUI;
   window.levelUpSkill = levelUpSkill;
-  window.equipSkill = equipSkill;
+  // 新: 2枠スキル
+  window.equipSkillToSlot = equipSkillToSlot;
+  window.unequipSkillSlot = unequipSkillSlot;
+  // 互換: 旧UIが equipSkill(key) を呼んでも slot1 に装備する
+  window.equipSkill = function (key) {
+    equipSkillToSlot(key, 0);
+  };
   window.resetSkills = resetSkills;
-  window.formatSpecialEffect = formatSpecialEffect;
 })();

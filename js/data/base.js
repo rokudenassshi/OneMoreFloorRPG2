@@ -81,7 +81,7 @@ stunTurns: 0,
       },
 
       inventory: [],
-      items: [{ name: "やくそう", heal: 50, count: 3 }],
+      items: [],
 
       // 貴重品（秘宝）
       valuables: [],

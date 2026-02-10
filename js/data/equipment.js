@@ -41,7 +41,6 @@
       bias: {
         attackMult: 0.98,
         accuracy: (floor) => Math.round(9 + floor * 0.22),
-        evasion: (floor) => Math.round(2 + floor * 0.1),
       },
     },
     dagger: {
@@ -52,7 +51,6 @@
       bias: {
         attackMult: 0.85,
         accuracy: (floor) => Math.round(8 + floor * 0.22),
-        evasion: (floor) => Math.round(4 + floor * 0.12),
       },
     },
     handaxe: {
@@ -125,7 +123,6 @@
       bias: {
         attackMult: 0.9,
         accuracy: (floor) => Math.round(14 + floor * 0.26),
-        evasion: (floor) => -Math.round(1 + floor * 0.06),
       },
     },
     staff: {
@@ -176,7 +173,6 @@
       // 標準（守りはそこそこ、回避は下がる）
       bias: {
         defenseMult: 1.0,
-        evasion: (floor) => -Math.round(1 + floor * 0.1),
       },
     },
     light_armor: {
@@ -186,7 +182,6 @@
       // 回避寄り（防御低め、回避が上がる）
       bias: {
         defenseMult: 0.85,
-        evasion: (floor) => Math.round(6 + floor * 0.2),
       },
     },
     heavy_armor: {
@@ -196,17 +191,15 @@
       // 鉄壁（防御高いが回避がマイナス）
       bias: {
         defenseMult: 1.3,
-        evasion: (floor) => -Math.round(3 + floor * 0.18),
       },
     },
     shield: {
       name: "盾",
       category: "armor",
       hands: 1,
-      // 守り寄り（防御高い、命中が少し下がる）
+      // 守り寄り（防御高い）
       bias: {
         defenseMult: 1.15,
-        accuracy: (floor) => -Math.round(1 + floor * 0.1),
       },
     },
     buckler: {
@@ -216,7 +209,6 @@
       // 回避寄りの盾
       bias: {
         defenseMult: 0.85,
-        evasion: (floor) => Math.round(6 + floor * 0.18),
       },
     },
     tower_shield: {
@@ -226,8 +218,6 @@
       // 超堅い盾：回避が大きく下がる
       bias: {
         defenseMult: 1.35,
-        evasion: (floor) => -Math.round(3 + floor * 0.2),
-        accuracy: (floor) => -Math.round(1 + floor * 0.08),
       },
     },
     helmet: {
@@ -237,7 +227,6 @@
       // 守り少し、回避少し下がる
       bias: {
         defenseMult: 0.95,
-        evasion: (floor) => -Math.round(1 + floor * 0.06),
       },
     },
     circlet: {
@@ -257,7 +246,6 @@
       // 回避寄り
       bias: {
         defenseMult: 0.75,
-        evasion: (floor) => Math.round(8 + floor * 0.18),
       },
     },
     gloves: {
@@ -277,7 +265,6 @@
       // 回避＋防御の中間
       bias: {
         defenseMult: 0.78,
-        evasion: (floor) => Math.round(4 + floor * 0.12),
       },
     },
     robe: {
@@ -287,7 +274,6 @@
       // 魔法寄り（回避少し、命中少し）
       bias: {
         defenseMult: 0.8,
-        evasion: (floor) => Math.round(3 + floor * 0.1),
         accuracy: (floor) => Math.round(2 + floor * 0.08),
       },
     },
@@ -298,7 +284,6 @@
       // 回避特化（防御低め、回避が高い）
       bias: {
         defenseMult: 0.6,
-        evasion: (floor) => Math.round(12 + floor * 0.25),
       },
     },
     mantle: {
@@ -308,7 +293,6 @@
       // 回避＋命中
       bias: {
         defenseMult: 0.62,
-        evasion: (floor) => Math.round(10 + floor * 0.22),
         accuracy: (floor) => Math.round(3 + floor * 0.1),
       },
     },
@@ -323,20 +307,18 @@
     bracelet: { name: "腕輪", category: "accessory", hands: 0 },
   };
 
-  // 装飾品効果
-  const accessoryEffects = [
-    { name: "ドロップ率UP", type: "dropRate", value: 10 },
-    { name: "回避率UP", type: "evasion", value: 5 },
-    { name: "経験値UP", type: "expBonus", value: 15 },
-    { name: "スキル威力UP", type: "skillPower", value: 10 },
-    { name: "クールタイム軽減", type: "cooldownReduction", value: 1 },
+  // -------------------
+  // ランダムオプション（テーブルを分離）
+  // -------------------
+
+  // 装備品（武器・防具）用：基本戦闘に関するオプションのみ
+  const equipmentOptionEffects = [
+{ name: "経験値UP", type: "expBonus", value: 15 },
     { name: "クリティカル率UP", type: "critRate", value: 5 },
     { name: "最大HP UP", type: "maxHpBonus", value: 20 },
     { name: "攻撃力UP", type: "attackBonus", value: 10 },
     { name: "防御力UP", type: "defenseBonus", value: 10 },
     { name: "命中率UP", type: "accuracy", value: 5 },
-    // 索敵(= 二つ名遭遇に影響するパラメータ)を装飾品でも伸ばせるようにしておく
-    { name: "索敵UP", type: "search", value: 1 },
     { name: "魔法攻撃力UP", type: "magicPower", value: 18 },
     { name: "回復力UP", type: "healPower", value: 18 },
     { name: "回復量UP", type: "healReceived", value: 15 },
@@ -346,23 +328,43 @@
     { name: "再生", type: "regen", value: 2 },
     { name: "連続攻撃", type: "multiStrikeChance", value: 6 },
     { name: "連続攻撃威力UP", type: "multiStrikeDamage", value: 20 },
-    { name: "攻撃時HP回復", type: "hitHeal", value: 2 },
     { name: "反撃率UP", type: "counterChance", value: 6 },
     { name: "反撃威力UP", type: "counterDamage", value: 25 },
     { name: "背水強化", type: "desperationDamage", value: 20 },
     { name: "追い打ち", type: "executeDamage", value: 15 },
     { name: "回避時HP回復", type: "evadeHeal", value: 2 },
-    { name: "やくそう効果UP", type: "herbPower", value: 30 },
     { name: "状態異常短縮", type: "ailmentDurationDown", value: 20 },
-    { name: "毒耐性", type: "poisonResist", value: 35 },
-    { name: "火傷耐性", type: "burnResist", value: 35 },
-    { name: "しびれ耐性", type: "stunResist", value: 30 },
-    { name: "鈍足耐性", type: "slowResist", value: 30 },
-    { name: "脆弱耐性", type: "vulnerableResist", value: 30 },
-    { name: "封印耐性", type: "silenceResist", value: 30 },
-    { name: "命中低下耐性", type: "accuracyDownResist", value: 30 },
+    { name: "状態異常耐性", type: "ailmentResist", value: 30 },
+  ];
+
+  // 装飾品（アクセ）用：特殊な効果を発揮するもの
+  // - cond:
+  //   - "unarmed"   : 武器を装備していない時
+  //   - "noArmor"   : 防具を装備していない時
+  //   - "twoHanded" : 両手武器を装備している時
+  const accessoryOptionEffects = [
+    { name: "スキル威力UP", type: "skillPower", value: 10 },
+    { name: "クールタイム軽減", type: "cooldownReduction", value: 1 },
+
+    { name: "武器未装備時、回避率UP", type: "evasion", value: 10, cond: "unarmed" },
+    { name: "武器未装備時、反撃率UP", type: "counterChance", value: 12, cond: "unarmed" },
+
+    { name: "防具未装備時、連続攻撃率UP", type: "multiStrikeChance", value: 14, cond: "noArmor" },
+    { name: "防具未装備時、回避率UP", type: "evasion", value: 10, cond: "noArmor" },
+
+    { name: "両手武器装備時、攻撃力UP", type: "attackBonus", value: 20, cond: "twoHanded" },
+
+    { name: "索敵UP", type: "search", value: 1 },
+    { name: "ドロップ率UP", type: "dropRate", value: 10 },
   ];
 
   window.equipTypes = equipTypes;
-  window.accessoryEffects = accessoryEffects;
+
+  // 参照先を分離して公開
+  window.equipmentOptionEffects = equipmentOptionEffects;
+  window.accessoryOptionEffects = accessoryOptionEffects;
+
+  // 互換（旧名）：accessoryEffects はアクセ用テーブルを指す
+  window.accessoryEffects = accessoryOptionEffects;
 })();
+
