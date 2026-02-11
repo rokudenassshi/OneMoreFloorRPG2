@@ -109,7 +109,7 @@
 
   /**
    * 紋章（貴重品）によるステータス加算値を返す（UI表示用）
-   * ※モンク系の「武器未装備で基礎ステ2倍」が有効な場合は、紋章分も2倍で返す
+   * ※格闘家系の「武器未装備で基礎ステ2倍」が有効な場合は、紋章分も2倍で返す
    * @returns {{strength:number, vitality:number, intelligence:number, agility:number, dexterity:number}}
    */
   function getEmblemBonus() {
@@ -478,7 +478,7 @@
         (relicBonus.dexterity || 0),
     };
 
-    // モンク系：武器を装備していない場合、基礎ステータスを2倍
+    // 格闘家系：武器を装備していない場合、基礎ステータスを2倍
     const isMonkFamily = p.job === "monk" || (jobDef && jobDef.baseJob === "monk");
     if (isMonkFamily) {
       const eq = p.equipment || {};
@@ -558,13 +558,6 @@
         if (eff.type === "defenseBonus") combat.defense += eff.value * mult;
         if (eff.type === "accuracy") combat.accuracy += eff.value * mult;
 
-        // 固有効果（特殊接頭語）: %（乗算）ボーナス（ランダムオプションと差別化）
-        if (eff.type === "attackPct") combat.attackPct += eff.value * mult;
-        if (eff.type === "defensePct") combat.defensePct += eff.value * mult;
-        if (eff.type === "maxHpPct") combat.maxHpPct += eff.value * mult;
-        if (eff.type === "magicPowerPct") combat.magicPowerPct += eff.value * mult;
-        if (eff.type === "healPowerPct") combat.healPowerPct += eff.value * mult;
-
         // 回避率は「装飾品のみ」から反映（武器/防具の回避ソースは廃止）
         if (eff.type === "evasion" && item.category === "accessory") {
           combat.evasion += eff.value * mult;
@@ -579,7 +572,170 @@
     }
   }
 
-  function getCombatStats() {
+  // -------------------
+// 職固有の戦闘リソース/トリガー
+// -------------------
+function ensurePlayerBattleState() {
+  const p = gameData.player || (gameData.player = {});
+  if (!p.battleState || typeof p.battleState !== "object") p.battleState = {};
+  return p.battleState;
+}
+
+function resetPlayerBattleStateForBattle() {
+  const bs = ensurePlayerBattleState();
+  // 戦闘中のみ使う値
+  bs.stance = 0; // 剣士：構え
+  bs.qi = 0; // 格闘家：気
+  bs.holy = 0; // 僧侶：聖力
+  bs.axe = 0; // 斧使い：破壊衝動
+  bs.nextCritTurns = 0; // 盗賊：ジャスト回避
+  // 反撃/上限/ボーナス（getCombatStats のパッシブ集計で加算される）
+  bs.counterChanceBonus = 0;
+  bs.counterDamageBonus = 0;
+  bs.stanceMaxBonus = 0;
+  bs.qiMaxBonus = 0;
+  bs.markMaxBonus = 0;
+  bs.holyMaxBonus = 0;
+  // 敵側マーク管理用（戦闘開始時にリセット）
+  // enemy.status.arcaneMarkStacks を使う
+  return bs;
+}
+
+function getMaxStance() {
+  const bs = ensurePlayerBattleState();
+  return 3 + (Number(bs.stanceMaxBonus) || 0);
+}
+function getMaxQi() {
+  const bs = ensurePlayerBattleState();
+  return 10 + (Number(bs.qiMaxBonus) || 0);
+}
+function getMaxHoly(combat) {
+  const bs = ensurePlayerBattleState();
+  const base = Math.max(1, Math.round((combat?.maxHp || 1) * 0.5));
+  const bonus = Math.max(0, Number(bs.holyMaxBonus) || 0);
+  return base + bonus;
+}
+function getMaxArcaneMark() {
+  const bs = ensurePlayerBattleState();
+  return 3 + (Number(bs.markMaxBonus) || 0);
+}
+
+function gainStance(n = 1) {
+  const bs = ensurePlayerBattleState();
+  bs.stance = clamp(bs.stance + Math.max(0, n), 0, getMaxStance());
+}
+function consumeAllStance() {
+  const bs = ensurePlayerBattleState();
+  const s = clamp(Number(bs.stance) || 0, 0, getMaxStance());
+  bs.stance = 0;
+  return s;
+}
+
+function gainQi(n = 1) {
+  const bs = ensurePlayerBattleState();
+  bs.qi = clamp(bs.qi + Math.max(0, n), 0, getMaxQi());
+}
+function consumeQi(amount) {
+  const bs = ensurePlayerBattleState();
+  const a = clamp(Number(amount) || 0, 0, getMaxQi());
+  const take = Math.min(bs.qi || 0, a);
+  bs.qi = Math.max(0, (bs.qi || 0) - take);
+  return take;
+}
+
+function gainHoly(amount, combat) {
+  const bs = ensurePlayerBattleState();
+  const add = Math.max(0, Math.floor(Number(amount) || 0));
+  const max = getMaxHoly(combat);
+  bs.holy = clamp((bs.holy || 0) + add, 0, max);
+}
+function consumeHoly(amount) {
+  const bs = ensurePlayerBattleState();
+  const a = Math.max(0, Math.floor(Number(amount) || 0));
+  const take = Math.min(bs.holy || 0, a);
+  bs.holy = Math.max(0, (bs.holy || 0) - take);
+  return take;
+}
+
+function gainAxeStack(n = 1) {
+  const bs = ensurePlayerBattleState();
+  bs.axe = clamp((bs.axe || 0) + Math.max(0, n), 0, 5);
+}
+function consumeAllAxeStack() {
+  const bs = ensurePlayerBattleState();
+  const s = clamp(Number(bs.axe) || 0, 0, 5);
+  bs.axe = 0;
+  return s;
+}
+
+function setNextCrit(turns = 1) {
+  const bs = ensurePlayerBattleState();
+  bs.nextCritTurns = Math.max(bs.nextCritTurns || 0, Math.floor(turns));
+}
+function consumeNextCritFlag() {
+  const bs = ensurePlayerBattleState();
+  if ((bs.nextCritTurns || 0) > 0) {
+    bs.nextCritTurns--;
+    return true;
+  }
+  return false;
+}
+
+function onPlayerEvade() {
+  // 盗賊：ジャスト回避 → 次の攻撃が確定クリティカル
+  if (gameData.player?.job === "thief") {
+    const lv = Number(gameData.player?.skills?.thief_just_dodge || 0);
+    if (lv > 0) setNextCrit(1);
+  }
+  // 剣士：回避で構えが溜まる
+  if (gameData.player?.job === "swordsman") {
+    const lv = Number(gameData.player?.skills?.swordsman_stance_mastery || 0);
+    if (lv > 0) gainStance(1);
+  }
+}
+
+function onPlayerHit({ kind, isCrit } = {}) {
+  // 剣士：クリティカルで構え
+  if (gameData.player?.job === "swordsman") {
+    const lv = Number(gameData.player?.skills?.swordsman_stance_mastery || 0);
+    if (lv > 0 && isCrit) gainStance(1);
+  }
+  // 格闘家：当たるたび気が溜まる
+  if (gameData.player?.job === "monk") {
+    const lv = Number(gameData.player?.skills?.monk_ki_mastery || 0);
+    if (lv > 0) gainQi(1);
+  }
+  // 斧使い：当たるたび破壊衝動が溜まる
+  if (gameData.player?.job === "axeman") {
+    const lv = Number(gameData.player?.skills?.axeman_rampage || 0);
+    if (lv > 0) gainAxeStack(1);
+  }
+}
+
+function addArcaneMarkOnEnemy(enemy) {
+  if (!enemy) return;
+  const lv = Number(gameData.player?.skills?.mage_arcane_mark || 0);
+  if (lv <= 0) return;
+  const chance = clamp(0.45 + lv * 0.12, 0, 0.95);
+  if (Math.random() > chance) return;
+  enemy.status = enemy.status || {};
+  const max = getMaxArcaneMark();
+  enemy.status.arcaneMarkStacks = clamp(
+    Number(enemy.status.arcaneMarkStacks || 0) + 1,
+    0,
+    max,
+  );
+  log(`🔷 魔印が刻まれた（${enemy.status.arcaneMarkStacks}/${max}）`);
+}
+
+function consumeArcaneMark(enemy) {
+  if (!enemy || !enemy.status) return 0;
+  const s = clamp(Number(enemy.status.arcaneMarkStacks || 0), 0, getMaxArcaneMark());
+  enemy.status.arcaneMarkStacks = 0;
+  return s;
+}
+
+function getCombatStats() {
     const stats = getTotalStats();
     const favoredType = jobs?.[gameData.player?.job]?.favoredType || null;
     const jobTraits = jobs?.[gameData.player?.job]?.traits || {};
@@ -595,13 +751,6 @@
       evasion: stats.agility * 1.2,
       critRate: 5 + stats.dexterity * 0.8,
       maxHp: 100 + stats.vitality * 10,
-
-      // 固有効果（特殊接頭語）: %（乗算）ボーナス
-      attackPct: 0,
-      defensePct: 0,
-      maxHpPct: 0,
-      magicPowerPct: 0,
-      healPowerPct: 0,
 
       // 索敵（0 だと二つ名が出ない）
       // 低レベル帯でも 0〜数程度になるように設計
@@ -664,6 +813,38 @@
         combat.defense += effect.allStatsBonus;
       }
       if (effect.searchBonus) combat.search += effect.searchBonus;
+      if (effect.accuracyBonus) combat.accuracy += effect.accuracyBonus;
+      if (effect.maxHpBonus) combat.maxHp += effect.maxHpBonus;
+      if (effect.healPowerBonus) combat.healPower += effect.healPowerBonus;
+
+      // 反撃系（battleState で参照）
+      if (effect.counterChanceBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.counterChanceBonus = (bs.counterChanceBonus || 0) + effect.counterChanceBonus;
+      }
+      if (effect.counterDamageBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.counterDamageBonus = (bs.counterDamageBonus || 0) + effect.counterDamageBonus;
+      }
+
+      // 固有リソース上限（battleState で参照）
+      if (effect.stanceMaxBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.stanceMaxBonus = (bs.stanceMaxBonus || 0) + effect.stanceMaxBonus;
+      }
+      if (effect.qiMaxBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.qiMaxBonus = (bs.qiMaxBonus || 0) + effect.qiMaxBonus;
+      }
+      if (effect.markMaxBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.markMaxBonus = (bs.markMaxBonus || 0) + effect.markMaxBonus;
+      }
+      if (effect.holyMaxBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.holyMaxBonus = (bs.holyMaxBonus || 0) + effect.holyMaxBonus;
+      }
+
     }
 
     // 上級職などの職業特性（traits）
@@ -708,24 +889,6 @@
       }
     }
     // 端数が出ないように丸める
-    // 固有効果（特殊接頭語）: %（乗算）を最後に反映
-    // - ランダムオプションは「加算」中心なので、ここで差別化される
-    if (Number.isFinite(combat.attackPct) && combat.attackPct !== 0) {
-      combat.attack = combat.attack * (1 + combat.attackPct / 100);
-    }
-    if (Number.isFinite(combat.defensePct) && combat.defensePct !== 0) {
-      combat.defense = combat.defense * (1 + combat.defensePct / 100);
-    }
-    if (Number.isFinite(combat.maxHpPct) && combat.maxHpPct !== 0) {
-      combat.maxHp = combat.maxHp * (1 + combat.maxHpPct / 100);
-    }
-    if (Number.isFinite(combat.magicPowerPct) && combat.magicPowerPct !== 0) {
-      combat.magicPower = combat.magicPower * (1 + combat.magicPowerPct / 100);
-    }
-    if (Number.isFinite(combat.healPowerPct) && combat.healPowerPct !== 0) {
-      combat.healPower = combat.healPower * (1 + combat.healPowerPct / 100);
-    }
-
     combat.attack = Math.round(combat.attack);
     combat.defense = Math.round(combat.defense);
     combat.magicPower = Math.round(combat.magicPower);
@@ -1256,6 +1419,40 @@ function startBattle(battleFloor) {
 
     gameData.enemy = enemy;
 
+
+    // 戦闘開始：職固有リソースを初期化
+    resetPlayerBattleStateForBattle();
+
+    // 弓使い：先制射撃（戦闘開始時に追加攻撃）
+    if (gameData.player?.job === "archer") {
+      const lv = Number(gameData.player?.skills?.archer_preemptive_shot || 0);
+      if (lv > 0) {
+        const chance = clamp(0.25 + lv * 0.12, 0, 0.95);
+        if (Math.random() < chance) {
+          log("🏹 先制射撃！");
+          const combat0 = getCombatStats();
+          const hitChance0 = Math.min(98, combat0.accuracy - getEnemyAgiForHit(enemy) + 10);
+          if (Math.random() * 100 <= hitChance0) {
+            const dmg0 = Math.max(1, Math.round((combat0.attack - enemy.defense * 0.4) * (0.6 + lv * 0.08)));
+            const d0 = applyEnemyIncomingReduction(enemy, dmg0);
+            const d1 = applyEnemyVulnerableTaken(enemy, d0);
+            enemy.hp -= d1;
+            recordPlayerDamage(d1);
+            log(`先制で${d1}ダメージ！`);
+            applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
+            onPlayerHit({ kind: "physical", isCrit: false });
+            if (checkBattleEnd() === true) {
+              return;
+            }
+          } else {
+            log("先制射撃は外れた！");
+          }
+        }
+      }
+    }
+
+
     log(`⚔ ${enemy.displayName} があらわれた！`);
     if (epithet) log("強力な二つ名を持っている！");
 
@@ -1409,7 +1606,8 @@ function startBattle(battleFloor) {
     addJobProgress("attackHit", 1);
 
     // クリティカル判定
-    const isCrit = Math.random() * 100 < combat.critRate;
+    const forceCrit = consumeNextCritFlag();
+    const isCrit = forceCrit ? true : Math.random() * 100 < combat.critRate;
     const jt = jobs?.[gameData.player?.job]?.traits || {};
     const baseCritMul =
       typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
@@ -1435,7 +1633,13 @@ function startBattle(battleFloor) {
       1,
       (combat.attack - enemy.defense * 0.5) * critMul * execMul,
     );
-    damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+    
+// 職固有：剣士の「構え」(物理ダメージ+)
+const bsAtk = ensurePlayerBattleState();
+if (gameData.player?.job === "swordsman" && (bsAtk.stance || 0) > 0) {
+  damage = damage * (1 + Math.min(0.6, (bsAtk.stance || 0) * 0.06));
+}
+damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     damage = applyEnemyIncomingReduction(enemy, damage);
 
@@ -1447,6 +1651,7 @@ function startBattle(battleFloor) {
 
     // 特殊接頭語（onHit）
     applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
 
     // 装飾品：吸血（与えたダメージの%を回復）
     const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
@@ -1499,6 +1704,7 @@ function startBattle(battleFloor) {
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
 
         // 吸血（追撃分）
         const ls2 = Number(getAccessoryBonus("lifeSteal") || 0);
@@ -1631,6 +1837,22 @@ function startBattle(battleFloor) {
         gameData.player.hp + heal,
       );
       log(`${heal}HP回復した！`);
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
     } else if (typeof effect.healAmount === "number") {
       // 回復スキル（自分対象のため命中判定なし）
       addJobProgress("heal", 1);
@@ -1648,6 +1870,22 @@ function startBattle(battleFloor) {
         gameData.player.hp + heal,
       );
       log(`${heal}HP回復した！`);
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
     } else if (effect.baseDamage) {
       // 魔法攻撃
       addJobProgress("magic", 1);
@@ -1656,9 +1894,31 @@ function startBattle(battleFloor) {
       if (!rollSkillHit()) {
         log("攻撃は外れた！");
       } else {
-        let damage =
-          (effect.baseDamage + combat.magicPower * (effect.magicScale || 1)) *
-          skillMul;
+        
+let base = effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
+
+// 僧侶：回復力参照攻撃 ＋ 聖力上乗せ
+if (skillKey === "cleric_judgement" || skillKey === "cleric_holy_burst") {
+  base = effect.baseDamage + combat.healPower * (effect.healScale || 1.2);
+  const take = consumeHoly(Math.round(Math.max(0, base) * 0.25));
+  if (take > 0) {
+    base += take;
+    log(`✨ 聖力${take}を解放！`);
+  }
+}
+
+// 魔法使い：起爆（魔印を消費して追加ダメージ）
+if (skillKey === "mage_detonate") {
+  const stacks = consumeArcaneMark(enemy);
+  if (stacks > 0) {
+    base += combat.magicPower * (0.6 + lv * 0.15) * stacks;
+    log(`💥 魔印${stacks}を起爆！`);
+  } else {
+    log("💥 魔印がない…");
+  }
+}
+
+let damage = base * skillMul;
         damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         if (
           Number.isFinite(execPctSkill) &&
@@ -1676,6 +1936,7 @@ function startBattle(battleFloor) {
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
 
       }
     } else if (effect.damageMultiplier) {
@@ -1699,6 +1960,40 @@ function startBattle(battleFloor) {
               effect.damageMultiplier *
               skillMul,
           );
+
+// 盗賊：ジャスト回避 → 次の攻撃は確定クリティカル（スキルでも有効）
+const forceCritSkill = consumeNextCritFlag();
+if (forceCritSkill) damage = damage * 2;
+
+// 剣士：構え（物理ダメージ+）
+const bsS = ensurePlayerBattleState();
+if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
+  damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
+}
+
+// 斧使い：破壊衝動（スタックに応じて物理ダメージ+）
+if (gameData.player?.job === "axeman" && (bsS.axe || 0) > 0) {
+  damage = damage * (1 + Math.min(0.3, (bsS.axe || 0) * 0.06));
+}
+
+// 剣士：居合い（構えを全消費して威力上昇）
+if (skillKey === "swordsman_iai") {
+  const s = consumeAllStance();
+  if (s > 0) {
+    damage = damage * (1 + s * 0.25 + lv * 0.1);
+    log(`⚔ 構え${s}を消費！`);
+  }
+}
+
+// 斧使い：大振り（破壊衝動を全消費して威力上昇）
+if (skillKey === "axeman_overhead") {
+  const s = consumeAllAxeStack();
+  if (s > 0) {
+    damage = damage * (1 + s * 0.3 + lv * 0.08);
+    log(`🪓 破壊衝動${s}を解放！`);
+  }
+}
+
           damage = Math.round(damage * (0.9 + Math.random() * 0.2));
           if (
             Number.isFinite(execPctSkill) &&
@@ -1716,6 +2011,7 @@ function startBattle(battleFloor) {
 
           // 特殊接頭語（onHit）
           applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
 
         }
 
@@ -1756,6 +2052,40 @@ function startBattle(battleFloor) {
               effect.damageMultiplier *
               skillMul,
           );
+
+// 盗賊：ジャスト回避 → 次の攻撃は確定クリティカル（スキルでも有効）
+const forceCritSkill = consumeNextCritFlag();
+if (forceCritSkill) damage = damage * 2;
+
+// 剣士：構え（物理ダメージ+）
+const bsS = ensurePlayerBattleState();
+if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
+  damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
+}
+
+// 斧使い：破壊衝動（スタックに応じて物理ダメージ+）
+if (gameData.player?.job === "axeman" && (bsS.axe || 0) > 0) {
+  damage = damage * (1 + Math.min(0.3, (bsS.axe || 0) * 0.06));
+}
+
+// 剣士：居合い（構えを全消費して威力上昇）
+if (skillKey === "swordsman_iai") {
+  const s = consumeAllStance();
+  if (s > 0) {
+    damage = damage * (1 + s * 0.25 + lv * 0.1);
+    log(`⚔ 構え${s}を消費！`);
+  }
+}
+
+// 斧使い：大振り（破壊衝動を全消費して威力上昇）
+if (skillKey === "axeman_overhead") {
+  const s = consumeAllAxeStack();
+  if (s > 0) {
+    damage = damage * (1 + s * 0.3 + lv * 0.08);
+    log(`🪓 破壊衝動${s}を解放！`);
+  }
+}
+
           damage = Math.round(damage * (0.9 + Math.random() * 0.2));
           if (
             Number.isFinite(execPctSkill) &&
@@ -1774,6 +2104,7 @@ function startBattle(battleFloor) {
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
 
           // 回復効果（与ダメの%回復）
           if (effect.healPercent) {
@@ -1784,6 +2115,22 @@ function startBattle(battleFloor) {
               gameData.player.hp + heal,
             );
             log(`${heal}HP回復した！`);
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
+      // 僧侶：回復→聖力
+      if (gameData.player?.job === "cleric") {
+        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
+        if (lv > 0) {
+          const add = Math.round(heal * (0.15 + lv * 0.07));
+          gainHoly(add, combat);
+        }
+      }
           }
 
           // 装飾品：吸血
@@ -2306,7 +2653,12 @@ function startBattle(battleFloor) {
 
     const combat = getCombatStats();
     const dmgPct = Number(getAccessoryBonus("counterDamage") || 0);
-    const mul = 1 + (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100;
+    const bsC = ensurePlayerBattleState();
+    const passivePct = Number(bsC.counterDamageBonus || 0);
+    const mul =
+      1 +
+      (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100 +
+      (Number.isFinite(passivePct) ? Math.min(200, passivePct) : 0) / 100;
 
     let damage = Math.max(
       1,
@@ -2322,6 +2674,7 @@ function startBattle(battleFloor) {
 
     // 特殊接頭語（onHit）
     applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
     checkBattleEnd();
   }
 
@@ -2332,6 +2685,7 @@ function startBattle(battleFloor) {
       addJobProgress("evade", 1);
       log(`${enemy.displayName}の攻撃を回避した！`);
       applyEvadeHeal();
+      onPlayerEvade();
       return;
     }
 
@@ -2383,6 +2737,7 @@ function startBattle(battleFloor) {
       addJobProgress("evade", 1);
       log("しかし攻撃は回避された！");
       applyEvadeHeal();
+      onPlayerEvade();
       return;
     }
 
@@ -2881,7 +3236,18 @@ function startBattle(battleFloor) {
       helmet: { defenseBonus: 1.15, maxHpBonus: 1.1, ailmentResist: 1.15 },
       circlet: { accuracy: 1.45, critRate: 1.15, magicPower: 1.15, defenseBonus: 0.85 },
       boots: { evasion: 1.45, evadeHeal: 1.15, defenseBonus: 0.85 },
-      gloves: { accuracy: 1.35, critRate: 1.15, attackBonus: 1.05, defenseBonus: 0.8 },
+      // 篭手：手数と反撃が乗りやすい（拳・連撃イメージ）
+      gloves: {
+        accuracy: 1.35,
+        critRate: 1.15,
+        attackBonus: 1.05,
+        defenseBonus: 0.8,
+        // ここから要望反映：連続攻撃/反撃系のオプションが付きやすい
+        multiStrikeChance: 1.9,
+        multiStrikeDamage: 1.6,
+        counterChance: 1.8,
+        counterDamage: 1.5,
+      },
       bracers: { evasion: 1.2, defenseBonus: 1.0, counterChance: 1.1 },
       robe: { magicPower: 1.35, healPower: 1.2, healReceived: 1.15, defenseBonus: 0.9, evasion: 1.05, ailmentResist: 1.1 },
       cloak: { evasion: 1.6, multiStrikeChance: 1.15, defenseBonus: 0.8, damageReduction: 0.8 },
@@ -2895,6 +3261,111 @@ function startBattle(battleFloor) {
     // 最低でも 0.2（極端に0へ落ちないように）
     return Math.max(0.2, base * mult);
   }
+
+  // -------------------
+  // 装備名：数値レンジによる名称テーブル
+  // - 通常の接頭語が無い前提で、武器/防具の「ベース名」を数値で変化させる
+  // - 例：攻撃力100～200 → 鉄の剣
+  // -------------------
+  const EQUIPMENT_NAME_TIERS = {
+    weapon: {
+      attack: [
+        { min: 0, max: 99, template: "木の{base}" },
+        { min: 100, max: 200, template: "鉄の{base}" },
+        { min: 201, max: 400, template: "鋼の{base}" },
+        { min: 401, max: 800, template: "ミスリルの{base}" },
+        { min: 801, max: 1400, template: "オリハルコンの{base}" },
+        { min: 1401, max: 2200, template: "神鋼の{base}" },
+        { min: 2201, max: 3300, template: "星鉄の{base}" },
+        { min: 3301, max: 4800, template: "竜骨の{base}" },
+        { min: 4801, max: 7000, template: "虚空の{base}" },
+        { min: 7001, template: "終焉の{base}" },
+      ],
+      magicAttack: [
+        { min: 0, max: 99, template: "見習いの{base}" },
+        { min: 100, max: 200, template: "魔導の{base}" },
+        { min: 201, max: 400, template: "ルーンの{base}" },
+        { min: 401, max: 800, template: "秘儀の{base}" },
+        { min: 801, max: 1400, template: "賢者の{base}" },
+        { min: 1401, max: 2200, template: "大賢者の{base}" },
+        { min: 2201, max: 3300, template: "星詠みの{base}" },
+        { min: 3301, max: 4800, template: "禁呪の{base}" },
+        { min: 4801, max: 7000, template: "虚無の{base}" },
+        { min: 7001, template: "叡智の果ての{base}" },
+      ],
+      healPower: [
+        { min: 0, max: 99, template: "癒しの{base}" },
+        { min: 100, max: 200, template: "祈りの{base}" },
+        { min: 201, max: 400, template: "祝福の{base}" },
+        { min: 401, max: 800, template: "聖なる{base}" },
+        { min: 801, max: 1400, template: "神聖なる{base}" },
+        { min: 1401, max: 2200, template: "大聖堂の{base}" },
+        { min: 2201, max: 3300, template: "救済の{base}" },
+        { min: 3301, max: 4800, template: "奇跡の{base}" },
+        { min: 4801, max: 7000, template: "天啓の{base}" },
+        { min: 7001, template: "神話の{base}" },
+      ],
+    },
+    armor: {
+      defense: [
+        { min: 0, max: 99, template: "布の{base}" },
+        { min: 100, max: 200, template: "鉄の{base}" },
+        { min: 201, max: 400, template: "鋼の{base}" },
+        { min: 401, max: 800, template: "ミスリルの{base}" },
+        { min: 801, max: 1400, template: "オリハルコンの{base}" },
+        { min: 1401, max: 2200, template: "神鋼の{base}" },
+        { min: 2201, max: 3300, template: "星鉄の{base}" },
+        { min: 3301, max: 4800, template: "竜鱗の{base}" },
+        { min: 4801, max: 7000, template: "虚空の{base}" },
+        { min: 7001, template: "終焉の{base}" },
+      ],
+    },
+  };
+
+  function pickTierTemplate(tiers, value) {
+    const v = Math.max(0, Number(value) || 0);
+    const list = Array.isArray(tiers) ? tiers : [];
+    for (const t of list) {
+      if (v >= (t.min ?? 0) && (typeof t.max !== "number" || v <= t.max)) return t.template;
+    }
+    return list.length ? list[list.length - 1].template : "{base}";
+  }
+
+  function buildTieredBaseName(item, base) {
+    const b = typeof base === "string" && base ? base : "装備";
+    if (!item || typeof item !== "object") return b;
+
+    if (item.category === "weapon") {
+      const a = Number(item.attack) || 0;
+      const m = Number(item.magicAttack) || 0;
+      const h = Number(item.healPower) || 0;
+
+      // 武器種ごとに「名前に使う主役ステータス」を固定する
+      // - 杖/ワンド：魔法攻撃力
+      // - メイス/聖杖：回復力
+      // - それ以外：攻撃力
+      const type = String(item.type || "");
+      let key = "attack";
+      if (type === "staff" || type === "wand") key = "magicAttack";
+      if (type === "mace" || type === "holy_staff") key = "healPower";
+
+      const top =
+        key === "magicAttack" ? m : key === "healPower" ? h : a;
+
+      const tmpl = pickTierTemplate(EQUIPMENT_NAME_TIERS.weapon[key], top);
+      return String(tmpl).replace("{base}", b);
+    }
+
+    if (item.category === "armor") {
+      const d = Number(item.defense) || 0;
+      const tmpl = pickTierTemplate(EQUIPMENT_NAME_TIERS.armor.defense, d);
+      return String(tmpl).replace("{base}", b);
+    }
+
+    return b;
+  }
+
+
 
   function generateEquipment() {
     const floor = getScalingFloor();
@@ -2933,14 +3404,15 @@ function startBattle(battleFloor) {
     // - 効果: item.effects に付与（既存の集計ロジックで反映される）
     // - UI: 固有能力（fixedEffects）として表示
     if (category !== "accessory" && typeof window.rollSpecialPrefix === "function" && typeof window.applySpecialPrefixEffects === "function") {
+      // 特殊接頭語抽選（rarity / category / typeKey）
       let sp = window.rollSpecialPrefix(rarity, category, typeKey);
       if (sp) {
         window.applySpecialPrefixEffects(item, sp);
 
         // 表示名に追加（例: 全知全能の破邪の剣）
         if (sp.name && typeof sp.name === "string") {
-          item.name = `${sp.name}${item.name}`;
-        }
+          item._specialPrefixName = sp.name;
+}
 
         // UIの「装備固有能力」に表示
         if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
@@ -3083,6 +3555,22 @@ function startBattle(battleFloor) {
       }
 
       item.randomOptions = item.randomOptionDetails.length;
+    }
+
+
+    // 装備名（ベース名）は、数値レンジに応じて変化させる
+    // - 特殊接頭語がある場合は、ここでまとめて先頭に付ける
+    if (category !== "accessory") {
+      const tiered = buildTieredBaseName(item, type.name);
+      item.baseName = tiered;
+      item.name = tiered;
+      if (item._specialPrefixName && typeof item._specialPrefixName === "string") {
+        item.name = `${item._specialPrefixName}${tiered}`;
+      }
+    } else {
+      // アクセサリーは従来どおり
+      item.baseName = type.name;
+      item.name = type.name;
     }
 
 // 永続化用ID（装備の復元に使用）

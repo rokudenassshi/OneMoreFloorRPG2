@@ -780,6 +780,21 @@ button.item-action-btn:disabled {
   gap:8px;
   flex-wrap:wrap;
 }
+.serial-row{
+  align-items:center;
+}
+.serial-input{
+  flex:1;
+  min-width:220px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06);
+  color:inherit;
+}
+.serial-input:disabled{
+  opacity:0.6;
+}
 .option-check{
   display:flex;
   align-items:center;

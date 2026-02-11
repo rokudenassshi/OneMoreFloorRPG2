@@ -66,19 +66,15 @@
       name: "栄光の",
       rarity: "rare",
       weight: 10,
-      effects: [
-        { type: "bonusPct", key: "expBonus", min: 10, max: 20 },
-      ],
-      describe: (r) => `経験値+${pct(r.expBonus)}`
+      effects: [{ type: "bonusPct", key: "expBonus", min: 10, max: 20 }],
+      describe: (r) => `経験値+${pct(r.expBonus)}`,
     },
     {
       name: "幸運の",
       rarity: "rare",
       weight: 8,
-      effects: [
-        { type: "bonusPct", key: "dropRate", min: 8, max: 18 },
-      ],
-      describe: (r) => `ドロップ率+${pct(r.dropRate)}`
+      effects: [{ type: "bonusPct", key: "dropRate", min: 8, max: 18 }],
+      describe: (r) => `ドロップ率+${pct(r.dropRate)}`,
     },
     {
       name: "不死なる",
@@ -88,7 +84,7 @@
         { type: "bonusPct", key: "regen", min: 2, max: 5 }, // regen は %/turn
         { type: "statPct", stat: "maxHp", min: 6, max: 12 },
       ],
-      describe: (r) => `再生${pct(r.regen)} / 最大HP+${pct(r.maxHpPct)}`
+      describe: (r) => `再生${pct(r.regen)} / 最大HP+${pct(r.maxHpPct)}`,
     },
   ];
 
@@ -102,7 +98,8 @@
         { type: "bonusPct", key: "executeDamage", min: 10, max: 22 },
         { type: "statPct", stat: "attack", min: 6, max: 12 },
       ],
-      describe: (r) => `追い打ち+${pct(r.executeDamage)} / 攻撃力+${pct(r.attackPct)}`
+      describe: (r) =>
+        `追い打ち+${pct(r.executeDamage)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "連撃の",
@@ -112,7 +109,8 @@
         { type: "bonusPct", key: "multiStrikeChance", min: 6, max: 14 },
         { type: "bonusPct", key: "multiStrikeDamage", min: 12, max: 28 },
       ],
-      describe: (r) => `連続攻撃+${pct(r.multiStrikeChance)} / 連続威力+${pct(r.multiStrikeDamage)}`
+      describe: (r) =>
+        `連続攻撃+${pct(r.multiStrikeChance)} / 連続威力+${pct(r.multiStrikeDamage)}`,
     },
     {
       name: "鬼神の",
@@ -122,25 +120,40 @@
         { type: "statPct", stat: "attack", min: 10, max: 18 },
         { type: "bonusPct", key: "critDamage", min: 18, max: 40 },
       ],
-      describe: (r) => `攻撃力+${pct(r.attackPct)} / クリダメ+${pct(r.critDamage)}`
+      describe: (r) =>
+        `攻撃力+${pct(r.attackPct)} / クリダメ+${pct(r.critDamage)}`,
     },
     {
       name: "毒々しい",
       rarity: "rare",
       weight: 10,
       effects: [
-        { type: "onHit", effect: "poison", chanceMin: 12, chanceMax: 22, turnsMin: 2, turnsMax: 4 },
+        {
+          type: "onHit",
+          effect: "poison",
+          chanceMin: 12,
+          chanceMax: 22,
+          turnsMin: 2,
+          turnsMax: 4,
+        },
       ],
-      describe: (r) => `攻撃時${pct(r.poisonChance)}で毒（${r.poisonTurns}T）`
+      describe: (r) => `攻撃時${pct(r.poisonChance)}で毒（${r.poisonTurns}T）`,
     },
     {
       name: "炎を纏いし",
       rarity: "rare",
       weight: 10,
       effects: [
-        { type: "onHit", effect: "burn", chanceMin: 10, chanceMax: 20, turnsMin: 2, turnsMax: 4 },
+        {
+          type: "onHit",
+          effect: "burn",
+          chanceMin: 10,
+          chanceMax: 20,
+          turnsMin: 2,
+          turnsMax: 4,
+        },
       ],
-      describe: (r) => `攻撃時${pct(r.burnChance)}で火傷（${r.burnTurns}T）`
+      describe: (r) => `攻撃時${pct(r.burnChance)}で火傷（${r.burnTurns}T）`,
     },
     {
       name: "神速の",
@@ -151,7 +164,8 @@
         { type: "bonusPct", key: "accuracy", min: 6, max: 12 },
         { type: "statPct", stat: "attack", min: 10, max: 16 },
       ],
-      describe: (r) => `クリ率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)}`
+      describe: (r) =>
+        `クリティカル率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)}`,
     },
   ];
 
@@ -165,7 +179,8 @@
         { type: "statPct", stat: "defense", min: 8, max: 14 },
         { type: "bonusPct", key: "damageReduction", min: 6, max: 12 },
       ],
-      describe: (r) => `防御力+${pct(r.defensePct)} / 被ダメ軽減+${pct(r.damageReduction)}`
+      describe: (r) =>
+        `防御力+${pct(r.defensePct)} / 被ダメ軽減+${pct(r.damageReduction)}`,
     },
     {
       name: "守護神の",
@@ -175,7 +190,8 @@
         { type: "statPct", stat: "maxHp", min: 10, max: 18 },
         { type: "bonusPct", key: "healReceived", min: 12, max: 25 },
       ],
-      describe: (r) => `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)}`
+      describe: (r) =>
+        `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)}`,
     },
     {
       name: "反撃の",
@@ -185,7 +201,8 @@
         { type: "bonusPct", key: "counterChance", min: 6, max: 14 },
         { type: "bonusPct", key: "counterDamage", min: 15, max: 35 },
       ],
-      describe: (r) => `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)}`
+      describe: (r) =>
+        `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)}`,
     },
     {
       name: "浄化の",
@@ -195,7 +212,8 @@
         { type: "bonusPct", key: "ailmentResist", min: 12, max: 25 },
         { type: "bonusPct", key: "ailmentDurationDown", min: 10, max: 25 },
       ],
-      describe: (r) => `状態異常耐性+${pct(r.ailmentResist)} / 状態異常短縮+${pct(r.ailmentDurationDown)}`
+      describe: (r) =>
+        `状態異常耐性+${pct(r.ailmentResist)} / 状態異常短縮+${pct(r.ailmentDurationDown)}`,
     },
     {
       name: "不動の",
@@ -206,7 +224,8 @@
         { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
         { type: "bonusPct", key: "ailmentResist", min: 18, max: 35 },
       ],
-      describe: (r) => `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)}`
+      describe: (r) =>
+        `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)}`,
     },
   ];
 
@@ -223,7 +242,8 @@
   };
 
   function getAllowedPrefixRaritiesByItemRarity(itemRarity) {
-    if (itemRarity === "legendary") return new Set(["rare", "epic", "legendary"]);
+    if (itemRarity === "legendary")
+      return new Set(["rare", "epic", "legendary"]);
     if (itemRarity === "epic") return new Set(["rare", "epic"]);
     // common/uncommon/rare は rare のみ
     return new Set(["rare"]);
@@ -244,7 +264,9 @@
 
     const poolBase = [
       ...SPECIAL_PREFIXES_COMMON,
-      ...(category === "weapon" ? SPECIAL_PREFIXES_WEAPON : SPECIAL_PREFIXES_ARMOR),
+      ...(category === "weapon"
+        ? SPECIAL_PREFIXES_WEAPON
+        : SPECIAL_PREFIXES_ARMOR),
     ];
 
     // レア度で絞る

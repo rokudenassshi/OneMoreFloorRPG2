@@ -107,6 +107,16 @@
       desc: "最大HP+{value}",
       effect: (lv) => ({ maxHpBonus: lv * 15 }),
     },
+
+    warrior_counter_mastery: {
+      name: "反撃の心得",
+      type: "passive",
+      job: "warrior",
+      maxLevel: 5,
+      desc: "反撃率+{value}%",
+      effect: (lv) => ({ counterChanceBonus: lv * 6 }),
+    },
+
     shield_bash: {
       name: "シールドバッシュ",
       type: "active",
@@ -447,154 +457,6 @@
       desc: "気を込めた打撃（ダメージ{value}倍、与ダメの25%回復）",
       effect: (lv) => ({ damageMultiplier: 1.5 + lv * 0.4, healPercent: 0.25 }),
     },
-
-// ===================================
-// 職業特色スキル（固有ギミック）
-// ===================================
-
-// 剣士：構え（回避/クリティカルで溜まり、物理ダメージ増）
-swordsman_stance_mastery: {
-  name: "構えの極意",
-  type: "passive",
-  job: "swordsman",
-  maxLevel: 3,
-  desc: "回避/クリティカルで構えが溜まり、構え1につき物理ダメージ+6%。構え上限+{value}",
-  effect: (lv) => ({ stanceMaxBonus: lv }), // 上限 3+lv
-},
-swordsman_iai: {
-  name: "居合い",
-  type: "active",
-  accuracy: 115,
-  job: "swordsman",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "構えを全消費して斬撃（基本{value}倍 + 構えで大幅強化）",
-  effect: (lv) => ({ damageMultiplier: 1.1 + lv * 0.25 }),
-},
-
-// 戦士：反撃強化
-warrior_counter_mastery: {
-  name: "反撃の心得",
-  type: "passive",
-  job: "warrior",
-  maxLevel: 5,
-  desc: "反撃率が上がり、反撃ダメージも上がる",
-  effect: (lv) => ({
-    counterChanceBonus: lv * 6,
-    counterDamageBonus: lv * 10,
-  }),
-},
-
-// 盗賊：ジャスト回避
-thief_just_dodge: {
-  name: "ジャスト回避",
-  type: "passive",
-  job: "thief",
-  maxLevel: 3,
-  desc: "回避成功時、次の攻撃が確定クリティカル",
-  effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
-},
-
-// 魔法使い：魔印→起爆
-mage_arcane_mark: {
-  name: "魔印付与",
-  type: "passive",
-  job: "mage",
-  maxLevel: 3,
-  desc: "魔法攻撃命中時、確率で魔印を刻む（最大{value}）",
-  effect: (lv) => ({ markMaxBonus: lv }),
-},
-mage_detonate: {
-  name: "起爆",
-  type: "active",
-  accuracy: 110,
-  job: "mage",
-  maxLevel: 3,
-  cooldown: 5,
-  desc: "魔印を消費して大ダメージ（魔印が多いほど強い）",
-  effect: (lv) => ({ baseDamage: 10 + lv * 8, magicScale: 0.9 + lv * 0.2 }),
-},
-
-// 弓使い：先制射撃
-archer_preemptive_shot: {
-  name: "先制射撃",
-  type: "passive",
-  job: "archer",
-  maxLevel: 3,
-  desc: "戦闘開始時、確率で先制攻撃（Lvで確率/威力UP）",
-  effect: (lv) => ({ accuracyBonus: lv * 2 }),
-},
-
-// 僧侶：回復→聖力、回復力参照攻撃
-cleric_holy_conversion: {
-  name: "聖力転換",
-  type: "passive",
-  job: "cleric",
-  maxLevel: 3,
-  desc: "回復した量の一部を聖力として蓄積（上限+{value}）",
-  effect: (lv) => ({ holyMaxBonus: lv * 60 }),
-},
-cleric_judgement: {
-  name: "裁きの光",
-  type: "active",
-  accuracy: 110,
-  job: "cleric",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "回復力参照の攻撃。聖力があると上乗せ（基本{value}）",
-  effect: (lv) => ({ baseDamage: 8 + lv * 6, healScale: 1.15 + lv * 0.2 }),
-},
-cleric_holy_burst: {
-  name: "聖印爆裂",
-  type: "active",
-  accuracy: 105,
-  job: "cleric",
-  maxLevel: 3,
-  cooldown: 6,
-  desc: "回復力参照の攻撃。聖力を解放して大ダメージ（基本{value}）",
-  effect: (lv) => ({ baseDamage: 12 + lv * 8, healScale: 1.3 + lv * 0.25 }),
-},
-
-// 斧使い：破壊衝動
-axeman_rampage: {
-  name: "破壊衝動",
-  type: "passive",
-  job: "axeman",
-  maxLevel: 3,
-  desc: "攻撃命中で破壊衝動が溜まり、物理ダメージ+（最大5）",
-  effect: (lv) => ({ attackBonus: lv * 2 }),
-},
-axeman_overhead: {
-  name: "大振り",
-  type: "active",
-  accuracy: 90,
-  job: "axeman",
-  maxLevel: 3,
-  cooldown: 5,
-  desc: "破壊衝動を全消費して大ダメージ（基本{value}倍）",
-  effect: (lv) => ({ damageMultiplier: 1.4 + lv * 0.35, ignoreDef: 0.35 }),
-},
-
-// 格闘家：気
-monk_ki_mastery: {
-  name: "気功",
-  type: "passive",
-  job: "monk",
-  maxLevel: 3,
-  desc: "攻撃命中で気が溜まる。気上限+{value}",
-  effect: (lv) => ({ qiMaxBonus: lv * 2 }),
-},
-monk_ki_blast: {
-  name: "気弾",
-  type: "active",
-  accuracy: 110,
-  job: "monk",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "気を消費して遠距離攻撃（気が多いほど強い）",
-  effect: (lv) => ({ baseDamage: 6 + lv * 6, magicScale: 0.4 + lv * 0.15 }),
-},
-
   };
 
   window.skills = skills;

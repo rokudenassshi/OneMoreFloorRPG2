@@ -246,6 +246,22 @@
             オートセーブを有効にする
           </label>
         </div>
+
+        <div class="status-section">
+          <h4>シリアルコード</h4>
+          <div class="options-row serial-row">
+            <input
+              id="serialCodeInput"
+              class="serial-input"
+              type="text"
+              autocomplete="off"
+              placeholder="シリアルコードを入力"
+              onkeydown="handleSerialCodeKeydown(event)"
+            >
+            <button id="serialCodeSubmitBtn" class="small-btn" type="button" onclick="handleSerialCodeSubmit()">確認</button>
+          </div>
+          <div class="status-note">※大文字/小文字は区別しません</div>
+        </div>
     </div>
 
     <!-- 転移モーダル -->
@@ -322,6 +338,7 @@
         "js/data/equipment.js",
         "js/data/equipment_special_prefix.js",
         "js/data/achievements.js",
+        "js/data/serial-codes.js",
         "js/core.js",
         "js/ui.js",
       ];
