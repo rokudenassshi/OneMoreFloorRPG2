@@ -29,7 +29,8 @@
       hands: 2,
       // 高火力・命中が落ちる
       bias: {
-        attackMult: 1.32,
+        // 斧よりは少し控えめ（斬撃安定）
+        attackMult: 1.3,
         accuracy: (floor) => -Math.round(2 + floor * 0.18),
       },
     },
@@ -69,7 +70,8 @@
       hands: 2,
       // 一撃重視（攻撃高いが命中がマイナス）
       bias: {
-        attackMult: 1.28,
+        // 大剣より高火力
+        attackMult: 1.38,
         accuracy: (floor) => -Math.round(3 + floor * 0.22),
       },
     },
@@ -111,18 +113,19 @@
       hands: 2,
       // 命中高め（攻撃はやや控えめ）
       bias: {
-        attackMult: 0.95,
-        accuracy: (floor) => Math.round(10 + floor * 0.25),
+        // クロスボウよりは火力控えめ・命中寄り
+        attackMult: 0.92,
+        accuracy: (floor) => Math.round(12 + floor * 0.25),
       },
     },
     crossbow: {
       name: "クロスボウ",
       category: "weapon",
       hands: 2,
-      // 命中さらに高い（攻撃控えめ、回避は少し下がる）
+      // 弓より高火力（命中も高いが、弓よりはやや重め）
       bias: {
-        attackMult: 0.9,
-        accuracy: (floor) => Math.round(14 + floor * 0.26),
+        attackMult: 1.02,
+        accuracy: (floor) => Math.round(10 + floor * 0.22),
       },
     },
     staff: {
@@ -187,10 +190,16 @@
     heavy_armor: {
       name: "重鎧",
       category: "armor",
-      hands: 1,
-      // 鉄壁（防御高いが回避がマイナス）
+      hands: 2,
+      // 鉄壁（防御超高いが回避がマイナス）
       bias: {
-        defenseMult: 1.3,
+        defenseMult: 1.65,
+        // 回避はマイナス（%）。上限は低層でも効くようにする
+        evasion: (floor) => -Math.min(20, Math.round(4 + floor * 0.045)),
+        // 固有能力：被ダメ軽減（%）
+        fixedEffects: {
+          damageReduction: { base: 3, max: 8 },
+        },
       },
     },
     shield: {
@@ -209,34 +218,22 @@
       // 回避寄りの盾
       bias: {
         defenseMult: 0.85,
+        // 回避上昇（%）最大+10
+        evasion: (floor) => Math.min(10, Math.round(3 + floor * 0.03)),
       },
     },
     tower_shield: {
       name: "大盾",
       category: "armor",
-      hands: 1,
-      // 超堅い盾：回避が大きく下がる
+      hands: 2,
+      // 超堅い盾：回避は下がるが、反撃寄り
       bias: {
-        defenseMult: 1.35,
-      },
-    },
-    helmet: {
-      name: "兜",
-      category: "armor",
-      hands: 1,
-      // 守り少し、回避少し下がる
-      bias: {
-        defenseMult: 0.95,
-      },
-    },
-    circlet: {
-      name: "サークレット",
-      category: "armor",
-      hands: 1,
-      // 命中寄り（視界）
-      bias: {
-        defenseMult: 0.75,
-        accuracy: (floor) => Math.round(6 + floor * 0.14),
+        defenseMult: 1.55,
+        evasion: (floor) => -Math.min(15, Math.round(3 + floor * 0.03)),
+        // 固有能力：反撃率UP（%）最大+10
+        fixedEffects: {
+          counterChance: { base: 3, max: 10 },
+        },
       },
     },
     boots: {
@@ -246,6 +243,8 @@
       // 回避寄り
       bias: {
         defenseMult: 0.75,
+        // 回避上昇（%）最大+15
+        evasion: (floor) => Math.min(15, Math.round(4 + floor * 0.04)),
       },
     },
     gloves: {
@@ -256,15 +255,6 @@
       bias: {
         defenseMult: 0.65,
         accuracy: (floor) => Math.round(5 + floor * 0.16),
-      },
-    },
-    bracers: {
-      name: "腕当て",
-      category: "armor",
-      hands: 1,
-      // 回避＋防御の中間
-      bias: {
-        defenseMult: 0.78,
       },
     },
     robe: {
@@ -281,19 +271,11 @@
       name: "マント",
       category: "armor",
       hands: 1,
-      // 回避特化（防御低め、回避が高い）
+      // 魔法攻撃力・回復力寄り（防御は低め）
       bias: {
-        defenseMult: 0.6,
-      },
-    },
-    mantle: {
-      name: "外套",
-      category: "armor",
-      hands: 1,
-      // 回避＋命中
-      bias: {
-        defenseMult: 0.62,
-        accuracy: (floor) => Math.round(3 + floor * 0.1),
+        defenseMult: 0.65,
+        magicAttackMult: 1.25,
+        healPowerMult: 1.25,
       },
     },
 

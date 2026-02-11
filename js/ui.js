@@ -605,8 +605,10 @@
       // アイテム欄では「両手武器」を明示する
       // 例: 破邪の弓（両手） +2
       const twoHandSuffix =
-        item && item.category === "weapon" && Number(item.hands || 0) === 2
-          ? "（両手）"
+        item && Number(item.hands || 0) === 2
+          ? item.category === "weapon"
+            ? "（両手）"
+            : "（2枠）"
           : "";
       const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
 
@@ -616,6 +618,7 @@
         fmtStat("回復力", item.healPower).trim(),
         fmtStat("防御", item.defense).trim(),
         fmtStat("命中", item.accuracy, "%").trim(),
+        fmtStat("回避", item.evasion, "%").trim(),
       ]
         .filter(Boolean)
         .join(" ");

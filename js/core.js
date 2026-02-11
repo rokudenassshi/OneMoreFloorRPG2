@@ -509,22 +509,37 @@
     item,
     favoredType,
     favoredMult = FAVORED_EQUIP_MULTIPLIER,
+    slotKey = "",
   ) {
     if (!item) return;
 
     const mult = isFavoredEquip(item, favoredType) ? favoredMult : 1;
 
-    if (item.attack) combat.attack += item.attack * mult;
+    // 片手武器2本（いわゆる二刀流）の後半優位を抑える
+    // - 武器1本に対して装備枠が2つあるため、単純加算だと高層で「片手×2」が最適化されやすい
+    // - 装備2側の武器を「オフハンド」とみなし、基礎攻撃値のみ控えめに反映する
+    const eq = (gameData.player && gameData.player.equipment) || {};
+    const slot1 = eq.slot1 || null;
+    const slot2 = eq.slot2 || null;
+    const isDualWield = !!(
+      slot1 &&
+      slot2 &&
+      slot1.category === "weapon" &&
+      slot2.category === "weapon" &&
+      Number(slot1.hands || 0) === 1 &&
+      Number(slot2.hands || 0) === 1
+    );
+    const offhandMult = isDualWield && slotKey === "slot2" && item.category === "weapon" ? 0.6 : 1;
+
+    if (item.attack) combat.attack += item.attack * mult * offhandMult;
     if (item.defense) combat.defense += item.defense * mult;
     if (item.accuracy) combat.accuracy += item.accuracy * mult;
     if (item.magicAttack) combat.magicPower += item.magicAttack * mult;
     if (item.healPower) combat.healPower += item.healPower * mult;
+    // 防具の固有回避（%）
+    if (item.evasion) combat.evasion += item.evasion * mult;
 
     // 条件付き効果（アクセ向け）に対応
-    const eq = (gameData.player && gameData.player.equipment) || {};
-    const slot1 = eq.slot1 || null;
-    const slot2 = eq.slot2 || null;
-
     const hasWeapon = !!(
       (slot1 && slot1.category === "weapon") || (slot2 && slot2.category === "weapon")
     );
@@ -558,7 +573,7 @@
         if (eff.type === "defenseBonus") combat.defense += eff.value * mult;
         if (eff.type === "accuracy") combat.accuracy += eff.value * mult;
 
-        // 回避率は「装飾品のみ」から反映（武器/防具の回避ソースは廃止）
+        // 回避率は装飾品の効果から反映（防具固有回避は item.evasion で別処理）
         if (eff.type === "evasion" && item.category === "accessory") {
           combat.evasion += eff.value * mult;
         }
@@ -777,6 +792,7 @@ function getCombatStats() {
       gameData.player.equipment.slot1,
       favoredType,
       favoredMult,
+      "slot1",
     );
     if (gameData.player.equipment.slot2 !== gameData.player.equipment.slot1) {
       applyEquipBonuses(
@@ -784,6 +800,7 @@ function getCombatStats() {
         gameData.player.equipment.slot2,
         favoredType,
         favoredMult,
+        "slot2",
       );
     }
 
@@ -793,6 +810,7 @@ function getCombatStats() {
       gameData.player.equipment.accessory,
       favoredType,
       favoredMult,
+      "accessory",
     );
 
     // パッシブスキルボーナス
@@ -3250,7 +3268,8 @@ if (skillKey === "axeman_overhead") {
       },
       bracers: { evasion: 1.2, defenseBonus: 1.0, counterChance: 1.1 },
       robe: { magicPower: 1.35, healPower: 1.2, healReceived: 1.15, defenseBonus: 0.9, evasion: 1.05, ailmentResist: 1.1 },
-      cloak: { evasion: 1.6, multiStrikeChance: 1.15, defenseBonus: 0.8, damageReduction: 0.8 },
+      // マント：魔法攻撃/回復寄り（回避特化は廃止）
+      cloak: { magicPower: 1.35, healPower: 1.35, healReceived: 1.1, defenseBonus: 0.85 },
       mantle: { evasion: 1.45, accuracy: 1.15, defenseBonus: 0.85, multiStrikeChance: 1.1 },
     };
 
@@ -3466,6 +3485,43 @@ if (skillKey === "axeman_overhead") {
       const baseDefense = statBase * (1 + Math.random() * 0.35);
       const defenseMult = getBias("defenseMult", 1);
       item.defense = Math.round(baseDefense * defenseMult);
+
+      // 防具でも固有回避（%）や魔法/回復ステータスを持てる
+      if (typeof bias.evasion !== "undefined") {
+        item.evasion = Math.round(getBias("evasion", 0));
+      }
+      if (typeof bias.magicAttackMult !== "undefined") {
+        const baseMagic = statBase * (1 + Math.random() * 0.55);
+        const mm = getBias("magicAttackMult", 1);
+        item.magicAttack = Math.round(baseMagic * mm);
+      }
+      if (typeof bias.healPowerMult !== "undefined") {
+        const baseHeal = statBase * (1 + Math.random() * 0.55);
+        const hm = getBias("healPowerMult", 1);
+        item.healPower = Math.round(baseHeal * hm);
+      }
+
+      // 固有能力（固定効果）を付与
+      // equipment.js 側で bias.fixedEffects: { counterChance: {base,max}, ... } の形で定義
+      if (bias.fixedEffects && typeof bias.fixedEffects === "object") {
+        if (!item.effects) item.effects = [];
+        const defs = bias.fixedEffects;
+        Object.keys(defs).forEach((typeKey) => {
+          const def = defs[typeKey];
+          if (!def || typeof def !== "object") return;
+          const base = Number(def.base) || 0;
+          const max = Number.isFinite(Number(def.max)) ? Number(def.max) : null;
+          // 低層でも特徴が出るように、緩やかにスケール
+          let v = Math.round(base + floor * 0.012);
+          if (max != null) v = Math.min(v, max);
+          if (v <= 0) return;
+          const eff = { name: null, type: typeKey, value: v };
+          item.effects.push(eff);
+          if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+          // UIは effect の整形に任せる
+          item.fixedEffects.push(eff);
+        });
+      }
 
       // 防具でも命中補正を持てる（例：篭手、盾など）
       if (typeof bias.accuracy !== "undefined")
