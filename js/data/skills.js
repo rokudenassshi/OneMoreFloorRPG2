@@ -933,8 +933,9 @@
       accuracy: 100,
       maxLevel: 3,
       cooldown: 6,
-      desc: "HPを{value}%回復する（遊撃の回復）",
-      effect: (lv) => ({ healRate: 0.08 + lv * 0.05 }),
+      desc: "HP回復（{value}+回復力×0.6）",
+      // 回復力（賢さ由来）で伸びる回復にして、支援ビルドも成立させる
+      effect: (lv) => ({ healAmount: 40 + lv * 30, healScale: 0.6 }),
     },
     ranger_trap_shot: {
       name: "トラップショット",

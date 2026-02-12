@@ -97,14 +97,23 @@
     },
     sniper: {
       name: "狙撃手",
-      desc: "百発百中（上級職）",
+      desc: "精密射撃で仕留める（上級職）",
       tier: "advanced",
       skillGroup: "archer",
       baseJob: "archer",
-      favoredType: "bow",
+      // 弓/クロスボウどちらも得意にしてビルド幅を広げる
+      favoredType: ["bow", "crossbow"],
       unlock: { type: "attackHit", target: 200, text: "弓使いで攻撃を200回命中させる" },
       bonuses: { strength: 2, vitality: 1, intelligence: 0, agility: 2, dexterity: 6 },
-      traits: {"accuracyBonus": 14, "critRateBonus": 5, "attackMult": 1.1},
+      traits: {
+        "accuracyBonus": 14,
+        "critRateBonus": 5,
+        "critDamageMul": 2.25,
+        // 器用さで火力も伸びる（DEXビルドが成立）
+        "attackFromDex": 0.85,
+        "attackMult": 1.06,
+        "favoredMultiplier": 1.25,
+      },
     },
     fistmaster: {
       name: "拳聖",
@@ -119,14 +128,25 @@
     },
     warlord: {
       name: "騎士",
-      desc: "攻撃と統率の才（上級職）",
+      desc: "防御寄りだが攻撃もこなす（上級職）",
       tier: "advanced",
       skillGroup: "warrior",
       baseJob: "warrior",
-      favoredType: ["spear", "shield"],
+      // 槍＋盾で堅実。重鎧も得意にして“前線”感を出す
+      favoredType: ["spear", "shield", "heavy_armor"],
       unlock: { type: "attack", target: 300, text: "戦士で攻撃を300回行う" },
-      bonuses: { strength: 6, vitality: 4, intelligence: -1, agility: 1, dexterity: 1 },
-      traits: {"attackMult": 1.15, "critRateBonus": 3, "expRate": 0.03, "favoredMultiplier": 1.25},
+      // 体力を厚めにしつつ、力も残して“そこそこ高い攻撃”を担保
+      bonuses: { strength: 4, vitality: 6, intelligence: -1, agility: 0, dexterity: 1 },
+      traits: {
+        "attackMult": 1.12,
+        "defenseMult": 1.1,
+        "maxHpMult": 1.05,
+        // 防御時の被ダメ軽減も少し強い
+        "guardDamageMult": 0.6,
+        "critRateBonus": 2,
+        "expRate": 0.03,
+        "favoredMultiplier": 1.25,
+      },
     },
     trickster: {
       name: "怪盗",
@@ -152,14 +172,26 @@
     },
     ranger: {
       name: "遊撃手",
-      desc: "生存と探索に強い（上級職）",
+      desc: "機動・探索・支援を切り替える（上級職）",
       tier: "advanced",
       skillGroup: "archer",
       baseJob: "archer",
-      favoredType: "bow",
+      // 弓/クロスボウに加え、短剣も得意（近接遊撃ビルドも可能）
+      favoredType: ["bow", "crossbow", "dagger"],
       unlock: { type: "evade", target: 80, text: "弓使いで攻撃を80回回避する" },
-      bonuses: { strength: 2, vitality: 2, intelligence: 0, agility: 5, dexterity: 3 },
-      traits: {"evasionBonus": 10, "dropRateBonus": 5, "searchBonus": 1, "attackMult": 1.05, "favoredMultiplier": 1.25},
+      // 素早さ寄りにしつつ、支援ビルド用に賢さも少し上げる
+      bonuses: { strength: 2, vitality: 2, intelligence: 1, agility: 5, dexterity: 3 },
+      traits: {
+        "evasionBonus": 10,
+        "dropRateBonus": 5,
+        "searchBonus": 1,
+        // 素早さで火力が伸びる（AGIビルドが成立）
+        "attackFromAgi": 0.75,
+        // 回復スキル（healAmount系）を支援寄りに強化
+        "healMult": 1.1,
+        "attackMult": 1.03,
+        "favoredMultiplier": 1.25,
+      },
     },
     asura: {
       name: "修羅",

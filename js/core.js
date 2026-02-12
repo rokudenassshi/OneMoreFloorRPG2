@@ -935,6 +935,12 @@ function getCombatStats() {
       if (typeof jobTraits.searchBonus === "number")
         combat.search += jobTraits.searchBonus;
 
+      // 追加スケーリング：別ビルド用（職業特性で一部ステータスを攻撃へ変換）
+      if (typeof jobTraits.attackFromDex === "number")
+        combat.attack += stats.dexterity * jobTraits.attackFromDex;
+      if (typeof jobTraits.attackFromAgi === "number")
+        combat.attack += stats.agility * jobTraits.attackFromAgi;
+
       if (typeof jobTraits.attackMult === "number")
         combat.attack *= jobTraits.attackMult;
       if (typeof jobTraits.defenseMult === "number")
