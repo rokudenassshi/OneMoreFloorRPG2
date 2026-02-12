@@ -68,7 +68,15 @@ body {
 .battle-status {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   font-size: 14px;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 2.4em;
 }
 
 .player-hp {
@@ -222,6 +230,22 @@ button:active {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+/* バッグ（装備品タブ）上部の操作ボタン */
+.bag-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.danger-btn {
+  background: #6b2b2b;
+}
+
+.danger-btn:hover {
+  background: #7a3333;
 }
 
 .inventory-tab {

@@ -17,9 +17,11 @@
         <div class="exp-bar-fill" id="expBarFill"></div>
       </div>
       <div class="battle-status">
-        <div class="player-hp">HP：<span id="playerHp"></span></div>
-        <div id="playerGauges" class="player-gauges"></div>
-        <div id="playerStatusEffects" class="status-effects"></div>
+        <div class="player-info">
+          <div class="player-hp">HP：<span id="playerHp"></span></div>
+          <div id="playerGauges" class="player-gauges"></div>
+          <div id="playerStatusEffects" class="status-effects"></div>
+        </div>
         <div class="enemy-info">
           <div class="enemy-name"><span id="enemyName"></span></div>
           <div class="enemy-hp"><span id="enemyHp">---</span></div>
@@ -80,6 +82,10 @@
         <div class="sub-tabs">
           <button class="sub-tab is-active" onclick="setEquipmentSubTab('weapons')">武器・防具</button>
           <button class="sub-tab" onclick="setEquipmentSubTab('accessories')">装飾品</button>
+        </div>
+
+        <div class="bag-actions">
+          <button type="button" class="small-btn danger-btn" onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
         </div>
         <div id="weaponsSubTab">
           <div id="weaponsList"></div>

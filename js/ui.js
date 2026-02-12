@@ -6,6 +6,37 @@
   "use strict";
 
   // -------------------
+  // 得意装備（職業）ユーティリティ
+  // - favoredType は string または string[] を許容
+  // -------------------
+  function normalizeFavoredTypes(favoredType) {
+    if (!favoredType) return [];
+    return Array.isArray(favoredType) ? favoredType : [favoredType];
+  }
+
+  function getFavoredTypeLabel(favoredType) {
+    const keys = normalizeFavoredTypes(favoredType);
+    if (keys.length === 0) return "なし";
+    const names = keys
+      .map((k) => (equipTypes && equipTypes[k] && equipTypes[k].name ? equipTypes[k].name : k))
+      .filter((v) => !!v);
+    return names.length > 0 ? names.join(" / ") : "なし";
+  }
+
+  function isEquippedFavored(slot1, slot2, favoredType) {
+    const keys = normalizeFavoredTypes(favoredType);
+    if (keys.length === 0) return false;
+    const isFav = (it) =>
+      !!(
+        it &&
+        it.category !== "accessory" &&
+        typeof it.type === "string" &&
+        keys.includes(it.type)
+      );
+    return isFav(slot1) || isFav(slot2);
+  }
+
+  // -------------------
   // シリアルコード（オプション画面）
   // -------------------
   let serialCodePending = false;
@@ -33,18 +64,20 @@
       const bs = (p && p.battleState) || {};
       const parts = [];
 
-      // 気（格闘家）
+      const inBattle = gameData.gameState === "BATTLE";
+
+      // 気（格闘家）：戦闘中のみ表示（0 と 最大 は非表示）
       const qi = Math.max(0, Math.floor(Number(bs.qi) || 0));
       const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 0;
-      if (p.job === "monk" || qi > 0) {
+      if (inBattle && p.job === "monk" && qi > 0 && (qiMax <= 0 || qi < qiMax)) {
         parts.push(`気：${qi}${qiMax > 0 ? `/${qiMax}` : ""}`);
       }
 
-      // 構え（剣士）
+      // 構え（剣聖）：戦闘中のみ表示（0 と 最大 は非表示）
       const stance = Math.max(0, Math.floor(Number(bs.stance) || 0));
       const stanceMax =
         typeof getMaxStance === "function" ? Math.floor(getMaxStance()) : 0;
-      if (p.job === "swordsman" || stance > 0) {
+      if (inBattle && p.job === "blademaster" && stance > 0 && (stanceMax <= 0 || stance < stanceMax)) {
         parts.push(`構え：${stance}${stanceMax > 0 ? `/${stanceMax}` : ""}`);
       }
 
@@ -1277,11 +1310,7 @@
     };
 
     const job = jobs[p.job] || { name: "-", favoredType: null };
-    const favoredKey = job.favoredType;
-    const favoredName =
-      favoredKey && equipTypes?.[favoredKey]?.name
-        ? equipTypes[favoredKey].name
-        : "なし";
+    const favoredName = getFavoredTypeLabel(job.favoredType);
     document.getElementById("currentJob").textContent =
       `${job.name}（得意: ${favoredName}）`;
 
@@ -1335,11 +1364,7 @@
 
     // 計算後ステータス
     // 得意装備を付けているか（武器/防具のみ）
-    const favoredOn = !!(
-      favoredKey &&
-      ((slot1 && slot1.type === favoredKey && slot1.category !== "accessory") ||
-        (slot2 && slot2.type === favoredKey && slot2.category !== "accessory"))
-    );
+    const favoredOn = isEquippedFavored(slot1, slot2, job.favoredType);
 
     {
       const rows = [];
@@ -1475,12 +1500,7 @@
       const job = jobs[key];
       const isSelected = gameData.player.job === key;
 
-      const favoredKey = job.favoredType;
-      const et =
-        typeof equipTypes === "object" && equipTypes && favoredKey
-          ? equipTypes[favoredKey]
-          : null;
-      const favoredName = et && et.name ? et.name : "なし";
+      const favoredName = getFavoredTypeLabel(job.favoredType);
 
       const unlockInfo = getUnlockInfo(key);
       const locked = job.unlock && !unlockInfo.unlocked;
@@ -1758,8 +1778,7 @@
     const p = gameData.player;
     const currentJob = p.job;
     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
-    const currentGroup =
-      curJobDef && curJobDef.skillGroup ? curJobDef.skillGroup : currentJob;
+    const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
 
     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
 
@@ -1835,7 +1854,7 @@
     for (let key in skills) {
       const skill = skills[key];
       const isCommon = skill.job === "all";
-      if (skill.job && !isCommon && skill.job !== currentGroup) continue;
+      if (skill.job && !isCommon && skill.job !== currentJob) continue;
 
       const level = p.skills[key] || 0;
       const maxLv =

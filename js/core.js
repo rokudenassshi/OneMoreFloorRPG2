@@ -4,6 +4,11 @@
 
 (function () {
   "use strict";
+
+  // data/jobs.js は window.jobs に職業定義を載せる。
+  // 読み込み順や環境差で識別子 `jobs` が存在しないケースがあるため、
+  // ここで必ず参照先を確保して ReferenceError を防ぐ。
+  const jobs = window.jobs || window.JOBS || {};
   // -------------------
   // 状態異常: 追加ルール
   // -------------------
@@ -604,6 +609,11 @@ function resetPlayerBattleStateForBattle() {
   bs.holy = 0; // 僧侶：聖力
   bs.axe = 0; // 斧使い：破壊衝動
   bs.nextCritTurns = 0; // 盗賊：ジャスト回避
+  // 上級職/パッシブ用
+  bs.rageStacks = 0; // 狂戦士：被弾で増える怒り
+  bs.skillFollowUpChance = 0; // 暗殺者：スキル追撃率（0-0.3）
+  bs.lifeStealPctBonus = 0; // パッシブ吸血（%）
+
   // 反撃/上限/ボーナス（getCombatStats のパッシブ集計で加算される）
   bs.counterChanceBonus = 0;
   bs.counterDamageBonus = 0;
@@ -702,17 +712,24 @@ function onPlayerEvade() {
     const lv = Number(gameData.player?.skills?.thief_just_dodge || 0);
     if (lv > 0) setNextCrit(1);
   }
-  // 剣士：回避で構えが溜まる
-  if (gameData.player?.job === "swordsman") {
-    const lv = Number(gameData.player?.skills?.swordsman_kensei || 0);
+  // 剣聖：回避で構えが溜まる
+  if (gameData.player?.job === "blademaster") {
+    const lv = Number(gameData.player?.skills?.blademaster_stance_mastery || 0);
     if (lv > 0) gainStance(1);
+
+    // 流転の構え：回避時に追加で構え（確率。最大+1）
+    const lv2 = Number(gameData.player?.skills?.blademaster_flowing_guard || 0);
+    if (lv2 > 0) {
+      const chance = clamp(0.2 * lv2, 0, 1);
+      if (Math.random() < chance) gainStance(1);
+    }
   }
 }
 
 function onPlayerHit({ kind, isCrit } = {}) {
-  // 剣士：クリティカルで構え
-  if (gameData.player?.job === "swordsman") {
-    const lv = Number(gameData.player?.skills?.swordsman_kensei || 0);
+  // 剣聖：クリティカルで構え
+  if (gameData.player?.job === "blademaster") {
+    const lv = Number(gameData.player?.skills?.blademaster_stance_mastery || 0);
     if (lv > 0 && isCrit) gainStance(1);
   }
   // 格闘家：当たるたび気が溜まる
@@ -721,6 +738,20 @@ function onPlayerHit({ kind, isCrit } = {}) {
     if (lv > 0) gainQi(1);
   }
   // ※破壊衝動系スキルは削除
+}
+
+function onPlayerDamaged(damage) {
+  const d = Math.max(0, Math.round(Number(damage) || 0));
+  if (d <= 0) return;
+  // 狂戦士：被弾で怒りが溜まり、攻撃力と会心率が上がる
+  if (gameData.player?.job === "warfiend") {
+    const lv = Number(gameData.player?.skills?.warfiend_rage || 0);
+    if (lv > 0) {
+      const bs = ensurePlayerBattleState();
+      bs.rageStacks = clamp((bs.rageStacks || 0) + 1, 0, 10);
+      log(`🔥 怒りが高まる（${bs.rageStacks}/10）`);
+    }
+  }
 }
 
 function addArcaneMarkOnEnemy(enemy) {
@@ -782,6 +813,10 @@ function getCombatStats() {
       combat.accuracy = Math.max(1, combat.accuracy * (1 - rate));
       combat.evasion = Math.max(0, combat.evasion * (1 - rate));
     }
+
+	    // 装備品由来の「命中マイナス」は合計で最大 -30%（= -30pt）まで
+	    // ※状態異常やスキルによる命中低下は対象外（別要素としてそのまま反映）
+	    const baseAccuracyBeforeEquip = combat.accuracy;
     // 武器/防具 2枠
     applyEquipBonuses(
       combat,
@@ -809,13 +844,25 @@ function getCombatStats() {
       "accessory",
     );
 
+	    // 装備（武器/防具/装飾品）による命中差分のうち、マイナス方向だけを -30pt までに制限
+	    // 例：装備で -200 されても、最終的に -30 まで（命中を下げ過ぎない）
+	    {
+	      const equipDelta = combat.accuracy - baseAccuracyBeforeEquip;
+	      if (equipDelta < -30) {
+	        combat.accuracy = Math.max(1, baseAccuracyBeforeEquip - 30);
+	      }
+	    }
+
     // パッシブスキルボーナス
-    // ※「剣星」はアクティブだが、構え上限だけは常時反映したいので特例で通す
     for (let skillKey in gameData.player.skills) {
       const skillDef = skills[skillKey];
       if (!skillDef) continue;
-      const treatAsPassive = skillDef.type === "passive" || skillKey === "swordsman_kensei";
-      if (!treatAsPassive) continue;
+      if (skillDef.type !== "passive") continue;
+
+      // 現在の職業で有効なパッシブのみ適用（上位職は下位職パッシブを使えない）
+      const jobKey = gameData.player?.job;
+      const isCommon = skillDef.job === "all";
+      if (skillDef.job && !isCommon && skillDef.job !== jobKey) continue;
 
       const level = gameData.player.skills[skillKey];
       const effect = skillDef.effect(level);
@@ -860,6 +907,19 @@ function getCombatStats() {
       if (effect.holyMaxBonus) {
         const bs = ensurePlayerBattleState();
         bs.holyMaxBonus = (bs.holyMaxBonus || 0) + effect.holyMaxBonus;
+      }
+      // スキル追撃（battleState で参照）
+      if (effect.skillFollowUpChance) {
+        const bs = ensurePlayerBattleState();
+        // 0〜0.3（=30%）に正規化
+        const v = Number(effect.skillFollowUpChance) || 0;
+        bs.skillFollowUpChance = Math.max(bs.skillFollowUpChance || 0, clamp(v, 0, 0.3));
+      }
+
+      // パッシブ吸血（%）
+      if (effect.lifeStealPctBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.lifeStealPctBonus = (bs.lifeStealPctBonus || 0) + (Number(effect.lifeStealPctBonus) || 0);
       }
 
     }
@@ -1457,7 +1517,6 @@ function startBattle(battleFloor) {
             recordPlayerDamage(d1);
             log(`先制で${d1}ダメージ！`);
             applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
             onPlayerHit({ kind: "physical", isCrit: false });
             if (checkBattleEnd() === true) {
               return;
@@ -1653,7 +1712,7 @@ function startBattle(battleFloor) {
     
 // 職固有：剣士の「構え」(物理ダメージ+)
 const bsAtk = ensurePlayerBattleState();
-if (gameData.player?.job === "swordsman" && (bsAtk.stance || 0) > 0) {
+if ((gameData.player?.job === "swordsman" || gameData.player?.job === "blademaster") && (bsAtk.stance || 0) > 0) {
   damage = damage * (1 + Math.min(0.6, (bsAtk.stance || 0) * 0.06));
 }
 damage = Math.round(damage * (0.9 + Math.random() * 0.2));
@@ -1668,10 +1727,11 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     // 特殊接頭語（onHit）
     applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+    // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
+    onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
 
     // 装飾品：吸血（与えたダメージの%を回復）
-    const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+    const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
       const heal = adjustHealByStatus(baseHeal);
@@ -1721,10 +1781,10 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+          onPlayerHit({ kind: "physical", isCrit: extraCrit });
 
         // 吸血（追撃分）
-        const ls2 = Number(getAccessoryBonus("lifeSteal") || 0);
+        const ls2 = Number(getLifeStealPercent() || 0);
         if (Number.isFinite(ls2) && ls2 > 0) {
           const baseHeal = Math.max(1, Math.round(d2 * (ls2 / 100)));
           const heal = adjustHealByStatus(baseHeal);
@@ -1766,6 +1826,43 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     enemyTurn();
   }
 
+  function trySkillFollowUp(enemy, combat) {
+    if (!enemy || enemy.hp <= 0) return;
+    const bs = ensurePlayerBattleState();
+    const ch = Number(bs.skillFollowUpChance || 0);
+    if (!Number.isFinite(ch) || ch <= 0) return;
+    if (Math.random() >= ch) return;
+
+    const jt = jobs?.[gameData.player?.job]?.traits || {};
+    const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
+    const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+    const forceCrit = consumeNextCritFlag();
+    const isCrit = forceCrit ? true : Math.random() * 100 < combat.critRate;
+    const critMul = isCrit ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100) : 1;
+
+    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.55 * critMul);
+    damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+    damage = applyEnemyIncomingReduction(enemy, damage);
+    damage = applyEnemyVulnerableTaken(enemy, damage);
+    enemy.hp -= damage;
+    recordPlayerDamage(damage);
+    log(`🗡 追撃！ ${damage}ダメージ${isCrit ? " クリティカル！" : ""}`);
+
+    applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
+
+    // 吸血（追撃分）
+    const lsPct = Number(getLifeStealPercent() || 0);
+    if (Number.isFinite(lsPct) && lsPct > 0) {
+      const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
+      const heal = adjustHealByStatus(baseHeal);
+      if (heal > 0) {
+        gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
+        log(`🩸 吸血で${heal}回復`);
+      }
+    }
+  }
+
   function useSkill(slotIndex = 0) {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
@@ -1805,11 +1902,27 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       log("スキルが設定されていない");
       return;
     }
+    // 職業制限（上位職は下位職スキルを使用不可）
+    const curJob = gameData.player?.job;
+    const isCommonSkill = skillDef.job === "all";
+    if (skillDef.job && !isCommonSkill && skillDef.job !== curJob) {
+      log("この職業では使用できないスキルです");
+      return;
+    }
     const level =
       gameData.player.skills && gameData.player.skills[skillKey]
         ? gameData.player.skills[skillKey]
         : 0;
     const effect = skillDef.effect(level);
+
+    // 防御系スキルの共通処理
+    if (effect && typeof effect.defendTurns === "number" && effect.defendTurns > 0) {
+      const st2 = gameData.player.status || (gameData.player.status = {});
+      st2.defendingTurns = Math.max(st2.defendingTurns || 0, Math.floor(effect.defendTurns));
+    }
+    if (effect && typeof effect.gainStance === "number" && effect.gainStance > 0) {
+      gainStance(Math.floor(effect.gainStance));
+    }
 
     addJobProgress("skillUse", 1);
 
@@ -1883,6 +1996,18 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 let base = effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
 
 let damage = base * skillMul;
+
+        // クリティカル判定（スキルでも有効）
+        const forceCritSkill = consumeNextCritFlag();
+        const isCrit = forceCritSkill ? true : Math.random() * 100 < combat.critRate;
+        const jt = jobs?.[gameData.player?.job]?.traits || {};
+        const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
+        const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+        const critMul = isCrit
+          ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
+          : 1;
+        if (isCrit) addJobProgress("crit", 1);
+        damage = damage * critMul;
         damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         if (
           Number.isFinite(execPctSkill) &&
@@ -1900,7 +2025,11 @@ let damage = base * skillMul;
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+    // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
+    onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
+
+        // 暗殺者：スキル追撃（命中してダメージを与えた後）
+        trySkillFollowUp(enemy, combat);
 
       }
     } else if (effect.damageMultiplier) {
@@ -1925,21 +2054,30 @@ let damage = base * skillMul;
               skillMul,
           );
 
-// 盗賊：ジャスト回避 → 次の攻撃は確定クリティカル（スキルでも有効）
+// クリティカル判定（スキルでも有効）
 const forceCritSkill = consumeNextCritFlag();
-if (forceCritSkill) damage = damage * 2;
+const isCrit = forceCritSkill ? true : Math.random() * 100 < combat.critRate;
+const jt = jobs?.[gameData.player?.job]?.traits || {};
+const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
+const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+const critMul = isCrit
+  ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
+  : 1;
+if (isCrit) addJobProgress("crit", 1);
+damage = damage * critMul;
 
-// 剣士：構え（物理ダメージ+）
+// 剣聖：構え（物理ダメージ+）
 const bsS = ensurePlayerBattleState();
-if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
+if (gameData.player?.job === "blademaster" && (bsS.stance || 0) > 0) {
   damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
 }
 
-// 剣士：剣星（構えを全消費して威力上昇）
-if (skillKey === "swordsman_kensei") {
+// 剣聖：剣聖の境地（構えを全消費して威力上昇）
+if (skillKey === "blademaster_iai") {
   const s = consumeAllStance();
   if (s > 0) {
-    damage = damage * (1 + s * 0.25 + lv * 0.1);
+    // lv は useSkill 内で level という名前で保持しているため参照ミスを修正
+    damage = damage * (1 + s * 0.25 + level * 0.1);
     log(`⚔ 構え${s}を消費！`);
   }
 }
@@ -1961,7 +2099,8 @@ if (skillKey === "swordsman_kensei") {
 
           // 特殊接頭語（onHit）
           applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+    // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
+    onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
 
         }
 
@@ -1973,8 +2112,11 @@ if (skillKey === "swordsman_kensei") {
             }`,
           );
 
+          // 暗殺者：スキル追撃（命中してダメージを与えた後）
+          trySkillFollowUp(enemy, combat);
+
           // 装飾品：吸血（合計ダメージから）
-          const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+          const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(total * (lsPct / 100)));
             const heal = adjustHealByStatus(baseHeal);
@@ -2003,21 +2145,30 @@ if (skillKey === "swordsman_kensei") {
               skillMul,
           );
 
-// 盗賊：ジャスト回避 → 次の攻撃は確定クリティカル（スキルでも有効）
+// クリティカル判定（スキルでも有効）
 const forceCritSkill = consumeNextCritFlag();
-if (forceCritSkill) damage = damage * 2;
+const isCrit = forceCritSkill ? true : Math.random() * 100 < combat.critRate;
+const jt = jobs?.[gameData.player?.job]?.traits || {};
+const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
+const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+const critMul = isCrit
+  ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
+  : 1;
+if (isCrit) addJobProgress("crit", 1);
+damage = damage * critMul;
 
-// 剣士：構え（物理ダメージ+）
+// 剣聖：構え（物理ダメージ+）
 const bsS = ensurePlayerBattleState();
-if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
+if (gameData.player?.job === "blademaster" && (bsS.stance || 0) > 0) {
   damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
 }
 
-// 剣士：剣星（構えを全消費して威力上昇）
-if (skillKey === "swordsman_kensei") {
+// 剣聖：剣聖の境地（構えを全消費して威力上昇）
+if (skillKey === "blademaster_iai") {
   const s = consumeAllStance();
   if (s > 0) {
-    damage = damage * (1 + s * 0.25 + lv * 0.1);
+    // lv は useSkill 内で level という名前で保持しているため参照ミスを修正
+    damage = damage * (1 + s * 0.25 + level * 0.1);
     log(`⚔ 構え${s}を消費！`);
   }
 }
@@ -2040,7 +2191,11 @@ if (skillKey === "swordsman_kensei") {
 
         // 特殊接頭語（onHit）
         applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+    // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
+    onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
+
+          // 暗殺者：スキル追撃（命中してダメージを与えた後）
+          trySkillFollowUp(enemy, combat);
 
           // 回復効果（与ダメの%回復）
           if (effect.healPercent) {
@@ -2054,7 +2209,7 @@ if (skillKey === "swordsman_kensei") {
 }
 
           // 装飾品：吸血
-          const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
+          const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
             const heal = adjustHealByStatus(baseHeal);
@@ -2546,6 +2701,16 @@ if (skillKey === "swordsman_kensei") {
     return d;
   }
 
+  function getLifeStealPercent() {
+    const bs = ensurePlayerBattleState();
+    // 装備/装飾品の吸血（%） + 戦闘中パッシブ加算（%）
+    // ※ここで自分自身を呼ぶと再帰して落ちるので getAccessoryBonus を参照する
+    const a = Number(getAccessoryBonus("lifeSteal") || 0);
+    const p = Number(bs.lifeStealPctBonus || 0);
+    const sum = (Number.isFinite(a) ? a : 0) + (Number.isFinite(p) ? p : 0);
+    return Math.min(60, Math.max(0, sum));
+  }
+
   function applyEvadeHeal() {
     const v = Number(getAccessoryBonus("evadeHeal") || 0);
     if (!Number.isFinite(v) || v <= 0) return;
@@ -2594,7 +2759,7 @@ if (skillKey === "swordsman_kensei") {
 
     // 特殊接頭語（onHit）
     applyPlayerOnHitSpecialEffects(enemy);
-    onPlayerHit({ kind: "physical", isCrit });
+    onPlayerHit({ kind: "physical", isCrit: false });
     checkBattleEnd();
   }
 
@@ -2619,6 +2784,7 @@ if (skillKey === "swordsman_kensei") {
 
     gameData.player.hp -= damage;
     log(`◀ ${enemy.displayName}の攻撃！ ${damage}ダメージ`);
+    onPlayerDamaged(damage);
 
     applyOnHitStatuses(null);
     tryCounterAttack();
@@ -2677,6 +2843,7 @@ if (skillKey === "swordsman_kensei") {
       damage = applyPlayerIncomingReduction(damage);
       gameData.player.hp -= damage;
       total += damage;
+      onPlayerDamaged(damage);
 
       if (gameData.player.hp <= 0) break;
     }
