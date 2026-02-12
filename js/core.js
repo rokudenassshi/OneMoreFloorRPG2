@@ -623,7 +623,107 @@ function resetPlayerBattleStateForBattle() {
   bs.holyMaxBonus = 0;
   // 敵側マーク管理用（戦闘開始時にリセット）
   // enemy.status.arcaneMarkStacks を使う
+
+  // --- 装飾品：戦闘用の追加リソース ---
+  bs.barrier = 0; // 回復のあふれで得るバリア
+  bs.deathAvoidUsed = false; // 「一度だけ死亡回避」使用済み
+  bs.pursuitTriggeredThisAction = false; // 追撃のループ防止（1アクション1回）
   return bs;
+}
+
+// -------------------
+// 装飾品：バリア/死亡回避/追撃 など
+// -------------------
+function beginPlayerAction() {
+  const bs = ensurePlayerBattleState();
+  bs.pursuitTriggeredThisAction = false;
+}
+
+function getPlayerBarrier() {
+  const bs = ensurePlayerBattleState();
+  const v = Number(bs.barrier || 0);
+  return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+}
+
+function setPlayerBarrier(v) {
+  const bs = ensurePlayerBattleState();
+  const n = Number(v);
+  bs.barrier = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
+function getMaxPlayerBarrier() {
+  // value は「最大HPの%」。装飾品がない場合は0。
+  const capPct = Number(getAccessoryBonus("overhealBarrierCap") || 0);
+  if (!Number.isFinite(capPct) || capPct <= 0) return 0;
+  const pct = clamp(capPct, 0, 60) / 100;
+  const maxHp = Math.max(1, Math.round(gameData.player.maxHp || 1));
+  return Math.max(0, Math.floor(maxHp * pct));
+}
+
+function applyPlayerHeal(baseHeal) {
+  const heal = adjustHealByStatus(baseHeal);
+  if (heal <= 0) return { healed: 0, barrierGained: 0 };
+
+  const maxHp = Math.max(1, Math.round(gameData.player.maxHp || 1));
+  const beforeHp = Math.round(gameData.player.hp || 0);
+  const target = beforeHp + heal;
+  const newHp = Math.min(maxHp, target);
+  const overflow = Math.max(0, target - maxHp);
+  gameData.player.hp = newHp;
+
+  // 回復のあふれをバリア化（装飾品がある場合のみ）
+  let barrierGained = 0;
+  const maxBarrier = getMaxPlayerBarrier();
+  if (overflow > 0 && maxBarrier > 0) {
+    const cur = getPlayerBarrier();
+    const space = Math.max(0, maxBarrier - cur);
+    barrierGained = Math.min(space, overflow);
+    if (barrierGained > 0) setPlayerBarrier(cur + barrierGained);
+  }
+
+  return { healed: Math.max(0, newHp - beforeHp), barrierGained };
+}
+
+function tryDeathAvoidOnce() {
+  if (gameData.gameState !== "BATTLE") return false;
+  if (gameData.player.hp > 0) return false;
+  const has = Number(getAccessoryBonus("deathAvoidOnce") || 0);
+  if (!Number.isFinite(has) || has <= 0) return false;
+
+  const bs = ensurePlayerBattleState();
+  if (bs.deathAvoidUsed) return false;
+  bs.deathAvoidUsed = true;
+  // 踏みとどまる：HP1で復帰、バリアは消える
+  gameData.player.hp = 1;
+  setPlayerBarrier(0);
+  log("💫 装飾品の加護で踏みとどまった！");
+  return true;
+}
+
+function applyPlayerDamage(incoming) {
+  let dmg = Math.max(1, Math.round(Number(incoming) || 0));
+  if (!Number.isFinite(dmg) || dmg <= 0) return { total: 0, barrierUsed: 0, hpDamage: 0 };
+
+  const beforeBarrier = getPlayerBarrier();
+  const used = Math.min(beforeBarrier, dmg);
+  if (used > 0) setPlayerBarrier(beforeBarrier - used);
+
+  const remaining = dmg - used;
+  const beforeHp = Math.round(gameData.player.hp || 0);
+  if (remaining > 0) {
+    gameData.player.hp = beforeHp - remaining;
+  }
+
+  // 被弾トリガー（バリア吸収でもカウント）
+  onPlayerDamaged(dmg);
+
+  if (gameData.player.hp <= 0) {
+    // 1回だけ死亡回避
+    if (tryDeathAvoidOnce()) {
+      return { total: dmg, barrierUsed: used, hpDamage: remaining, deathAvoided: true };
+    }
+  }
+  return { total: dmg, barrierUsed: used, hpDamage: remaining };
 }
 
 function getMaxStance() {
@@ -934,12 +1034,6 @@ function getCombatStats() {
         combat.critRate += jobTraits.critRateBonus;
       if (typeof jobTraits.searchBonus === "number")
         combat.search += jobTraits.searchBonus;
-
-      // 追加スケーリング：別ビルド用（職業特性で一部ステータスを攻撃へ変換）
-      if (typeof jobTraits.attackFromDex === "number")
-        combat.attack += stats.dexterity * jobTraits.attackFromDex;
-      if (typeof jobTraits.attackFromAgi === "number")
-        combat.attack += stats.agility * jobTraits.attackFromAgi;
 
       if (typeof jobTraits.attackMult === "number")
         combat.attack *= jobTraits.attackMult;
@@ -1674,6 +1768,9 @@ function startBattle(battleFloor) {
 
     addJobProgress("attack", 1);
 
+    // このアクション内の追撃は1回まで
+    beginPlayerAction();
+
     const combat = getCombatStats();
     const enemy = gameData.enemy;
 
@@ -1740,13 +1837,13 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
-      const heal = adjustHealByStatus(baseHeal);
-      if (heal > 0) {
-        gameData.player.hp = Math.min(
-          gameData.player.maxHp,
-          gameData.player.hp + heal,
-        );
-        log(`🩸 吸血で${heal}回復`);
+      const r = applyPlayerHeal(baseHeal);
+      if (r.healed > 0 && r.barrierGained > 0) {
+        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+      } else if (r.healed > 0) {
+        log(`🩸 吸血で${r.healed}回復`);
+      } else if (r.barrierGained > 0) {
+        log(`🛡 バリア+${r.barrierGained}`);
       }
     }
 
@@ -1793,19 +1890,22 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         const ls2 = Number(getLifeStealPercent() || 0);
         if (Number.isFinite(ls2) && ls2 > 0) {
           const baseHeal = Math.max(1, Math.round(d2 * (ls2 / 100)));
-          const heal = adjustHealByStatus(baseHeal);
-          if (heal > 0) {
-            gameData.player.hp = Math.min(
-              gameData.player.maxHp,
-              gameData.player.hp + heal,
-            );
-            log(`🩸 吸血で${heal}回復`);
+          const r = applyPlayerHeal(baseHeal);
+          if (r.healed > 0 && r.barrierGained > 0) {
+            log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+          } else if (r.healed > 0) {
+            log(`🩸 吸血で${r.healed}回復`);
+          } else if (r.barrierGained > 0) {
+            log(`🛡 バリア+${r.barrierGained}`);
           }
         }
 
 
       }
     }
+
+    // 装飾品：追撃トリガー
+    tryAccessoryPursuit(enemy, combat);
     checkBattleEnd();
 
     if (gameData.gameState === "BATTLE") {
@@ -1861,10 +1961,73 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
-      const heal = adjustHealByStatus(baseHeal);
-      if (heal > 0) {
-        gameData.player.hp = Math.min(gameData.player.maxHp, gameData.player.hp + heal);
-        log(`🩸 吸血で${heal}回復`);
+      const r = applyPlayerHeal(baseHeal);
+      if (r.healed > 0 && r.barrierGained > 0) {
+        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+      } else if (r.healed > 0) {
+        log(`🩸 吸血で${r.healed}回復`);
+      } else if (r.barrierGained > 0) {
+        log(`🛡 バリア+${r.barrierGained}`);
+      }
+    }
+  }
+
+  // 装飾品：追撃（攻撃/スキル命中後に確率で追加攻撃。1アクションにつき最大1回）
+  function tryAccessoryPursuit(enemy, combat) {
+    if (!enemy || enemy.hp <= 0) return;
+    if (gameData.gameState !== "BATTLE") return;
+
+    const bs = ensurePlayerBattleState();
+    if (bs.pursuitTriggeredThisAction) return;
+
+    const pct = Number(getAccessoryBonus("pursuitChance") || 0);
+    if (!Number.isFinite(pct) || pct <= 0) return;
+    const chance = Math.min(0.35, Math.max(0, pct) / 100);
+    if (Math.random() >= chance) return;
+
+    bs.pursuitTriggeredThisAction = true;
+
+    const jt = jobs?.[gameData.player?.job]?.traits || {};
+    const baseCritMul = typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
+    const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
+    const forceCrit = consumeNextCritFlag();
+    const isCrit = forceCrit ? true : Math.random() * 100 < (combat?.critRate || 0);
+    const critMul = isCrit
+      ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
+      : 1;
+
+    // 追撃は控えめ（約40%）
+    const execPct = Number(getAccessoryBonus("executeDamage") || 0);
+    const execMul =
+      Number.isFinite(execPct) &&
+      execPct > 0 &&
+      enemy.maxHp > 0 &&
+      enemy.hp / enemy.maxHp <= 0.5
+        ? 1 + Math.min(200, execPct) / 100
+        : 1;
+
+    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.4 * critMul * execMul);
+    damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+    damage = applyEnemyIncomingReduction(enemy, damage);
+    damage = applyEnemyVulnerableTaken(enemy, damage);
+    enemy.hp -= damage;
+    recordPlayerDamage(damage);
+    log(`⚡ 追撃！ ${damage}ダメージ${isCrit ? " クリティカル！" : ""}`);
+
+    applyPlayerOnHitSpecialEffects(enemy);
+    onPlayerHit({ kind: "physical", isCrit });
+
+    // 吸血（追撃分）
+    const lsPct = Number(getLifeStealPercent() || 0);
+    if (Number.isFinite(lsPct) && lsPct > 0) {
+      const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
+      const r = applyPlayerHeal(baseHeal);
+      if (r.healed > 0 && r.barrierGained > 0) {
+        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+      } else if (r.healed > 0) {
+        log(`🩸 吸血で${r.healed}回復`);
+      } else if (r.barrierGained > 0) {
+        log(`🛡 バリア+${r.barrierGained}`);
       }
     }
   }
@@ -1932,6 +2095,9 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     addJobProgress("skillUse", 1);
 
+    // このアクション内の追撃は1回まで
+    beginPlayerAction();
+
     log(`🪄 ${skillDef.name || skillKey}を使用！`);
 
     const combat = getCombatStats();
@@ -1967,12 +2133,16 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       addJobProgress("heal", 1);
       const rate = clamp(Number(effect.healRate) || 0, 0, 2);
       const baseHeal = Math.round(combat.maxHp * rate);
-      const heal = adjustHealByStatus(baseHeal);
-      gameData.player.hp = Math.min(
-        gameData.player.maxHp,
-        gameData.player.hp + heal,
-      );
-      log(`${heal}HP回復した！`);
+      const r = applyPlayerHeal(baseHeal);
+      if (r.healed > 0 && r.barrierGained > 0) {
+        log(`${r.healed}HP回復した！（🛡+${r.barrierGained}）`);
+      } else if (r.healed > 0) {
+        log(`${r.healed}HP回復した！`);
+      } else if (r.barrierGained > 0) {
+        log(`🛡 バリア+${r.barrierGained}`);
+      } else {
+        log("HPは満タンだ");
+      }
 } else if (typeof effect.healAmount === "number") {
       // 回復スキル（自分対象のため命中判定なし）
       addJobProgress("heal", 1);
@@ -1984,12 +2154,16 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         (effect.healAmount * healMult + combat.healPower * healScale) *
           skillMul,
       );
-      const heal = adjustHealByStatus(baseHeal);
-      gameData.player.hp = Math.min(
-        gameData.player.maxHp,
-        gameData.player.hp + heal,
-      );
-      log(`${heal}HP回復した！`);
+      const r = applyPlayerHeal(baseHeal);
+      if (r.healed > 0 && r.barrierGained > 0) {
+        log(`${r.healed}HP回復した！（🛡+${r.barrierGained}）`);
+      } else if (r.healed > 0) {
+        log(`${r.healed}HP回復した！`);
+      } else if (r.barrierGained > 0) {
+        log(`🛡 バリア+${r.barrierGained}`);
+      } else {
+        log("HPは満タンだ");
+      }
 } else if (effect.baseDamage) {
       // 魔法攻撃
       addJobProgress("magic", 1);
@@ -2036,6 +2210,9 @@ let damage = base * skillMul;
 
         // 暗殺者：スキル追撃（命中してダメージを与えた後）
         trySkillFollowUp(enemy, combat);
+
+        // 装飾品：追撃トリガー
+        tryAccessoryPursuit(enemy, combat);
 
       }
     } else if (effect.damageMultiplier) {
@@ -2125,15 +2302,18 @@ if (skillKey === "blademaster_iai") {
           const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(total * (lsPct / 100)));
-            const heal = adjustHealByStatus(baseHeal);
-            if (heal > 0) {
-              gameData.player.hp = Math.min(
-                gameData.player.maxHp,
-                gameData.player.hp + heal,
-              );
-              log(`🩸 吸血で${heal}回復`);
+            const r = applyPlayerHeal(baseHeal);
+            if (r.healed > 0 && r.barrierGained > 0) {
+              log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+            } else if (r.healed > 0) {
+              log(`🩸 吸血で${r.healed}回復`);
+            } else if (r.barrierGained > 0) {
+              log(`🛡 バリア+${r.barrierGained}`);
             }
           }
+
+          // 装飾品：追撃トリガー
+          tryAccessoryPursuit(enemy, combat);
 
 
         } else {
@@ -2206,27 +2386,32 @@ if (skillKey === "blademaster_iai") {
           // 回復効果（与ダメの%回復）
           if (effect.healPercent) {
             const baseHeal = Math.round(damage * effect.healPercent);
-            const heal = adjustHealByStatus(baseHeal);
-            gameData.player.hp = Math.min(
-              gameData.player.maxHp,
-              gameData.player.hp + heal,
-            );
-            log(`${heal}HP回復した！`);
+            const r = applyPlayerHeal(baseHeal);
+            if (r.healed > 0 && r.barrierGained > 0) {
+              log(`${r.healed}HP回復した！（🛡+${r.barrierGained}）`);
+            } else if (r.healed > 0) {
+              log(`${r.healed}HP回復した！`);
+            } else if (r.barrierGained > 0) {
+              log(`🛡 バリア+${r.barrierGained}`);
+            }
 }
 
           // 装飾品：吸血
           const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
-            const heal = adjustHealByStatus(baseHeal);
-            if (heal > 0) {
-              gameData.player.hp = Math.min(
-                gameData.player.maxHp,
-                gameData.player.hp + heal,
-              );
-              log(`🩸 吸血で${heal}回復`);
+            const r = applyPlayerHeal(baseHeal);
+            if (r.healed > 0 && r.barrierGained > 0) {
+              log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+            } else if (r.healed > 0) {
+              log(`🩸 吸血で${r.healed}回復`);
+            } else if (r.barrierGained > 0) {
+              log(`🛡 バリア+${r.barrierGained}`);
             }
           }
+
+          // 装飾品：追撃トリガー
+          tryAccessoryPursuit(enemy, combat);
         }
       }
     }
@@ -2259,6 +2444,20 @@ if (skillKey === "blademaster_iai") {
       // 最低でも1ターンはクールタイムを発生させる（連続使用防止）
       const cdFinal = Math.max(1, Math.floor(cd));
       pendingSkillCdFinal = cdFinal;
+    }
+
+    // 装飾品：クールタイム踏み倒し（確率でCT0）
+    {
+      const cheatPct = Number(getAccessoryBonus("cooldownCheatChance") || 0);
+      if (
+        pendingSkillCdFinal > 0 &&
+        Number.isFinite(cheatPct) &&
+        cheatPct > 0 &&
+        Math.random() * 100 < Math.min(35, cheatPct)
+      ) {
+        pendingSkillCdFinal = 0;
+        log("⏱ クールタイムを踏み倒した！");
+      }
     }
 
     checkBattleEnd();
@@ -2340,9 +2539,9 @@ if (skillKey === "blademaster_iai") {
       const maxHp = Math.max(1, gameData.player.maxHp || 1);
       const pct = Math.round(POISON_MAXHP_RATE * 100);
       const dmg = Math.max(1, Math.round(maxHp * POISON_MAXHP_RATE));
-      gameData.player.hp -= dmg;
+      const r = applyPlayerDamage(dmg);
       st.poisonTurns--;
-      log(`☠ 毒で${dmg}ダメージ（最大HP${pct}%）`);
+      log(`☠ 毒で${r.total}ダメージ（最大HP${pct}%）${r.barrierUsed ? `（🛡-${r.barrierUsed}）` : ""}`);
       if (gameData.player.hp <= 0) {
         updateUI();
         checkPlayerDeath();
@@ -2354,9 +2553,9 @@ if (skillKey === "blademaster_iai") {
       const maxHp = Math.max(1, gameData.player.maxHp || 1);
       const pct = Math.round(BURN_DOT_MAXHP_RATE * 1000) / 10;
       const dmg = Math.max(1, Math.round(maxHp * BURN_DOT_MAXHP_RATE));
-      gameData.player.hp -= dmg;
+      const r = applyPlayerDamage(dmg);
       st.burnTurns--;
-      log(`🔥 火傷で${dmg}ダメージ（最大HP${pct}%）`);
+      log(`🔥 火傷で${r.total}ダメージ（最大HP${pct}%）${r.barrierUsed ? `（🛡-${r.barrierUsed}）` : ""}`);
       if (gameData.player.hp <= 0) {
         updateUI();
         checkPlayerDeath();
@@ -2372,12 +2571,16 @@ if (skillKey === "blademaster_iai") {
     const regenPct = Number(getAccessoryBonus("regen") || 0);
     if (Number.isFinite(regenPct) && regenPct > 0 && gameData.player.hp > 0) {
       const maxHp = Math.max(1, gameData.player.maxHp || 1);
-      if (gameData.player.hp < maxHp) {
+      const canGainBarrier = getMaxPlayerBarrier() > 0 && getPlayerBarrier() < getMaxPlayerBarrier();
+      if (gameData.player.hp < maxHp || canGainBarrier) {
         const baseHeal = Math.max(1, Math.round(maxHp * (regenPct / 100)));
-        const heal = adjustHealByStatus(baseHeal);
-        if (heal > 0) {
-          gameData.player.hp = Math.min(maxHp, gameData.player.hp + heal);
-          log(`✨ 再生で${heal}回復`);
+        const r = applyPlayerHeal(baseHeal);
+        if (r.healed > 0 && r.barrierGained > 0) {
+          log(`✨ 再生で${r.healed}回復（🛡+${r.barrierGained}）`);
+        } else if (r.healed > 0) {
+          log(`✨ 再生で${r.healed}回復`);
+        } else if (r.barrierGained > 0) {
+          log(`🛡 バリア+${r.barrierGained}`);
         }
       }
     }
@@ -2721,13 +2924,14 @@ if (skillKey === "blademaster_iai") {
     const v = Number(getAccessoryBonus("evadeHeal") || 0);
     if (!Number.isFinite(v) || v <= 0) return;
     const baseHeal = Math.max(1, Math.round(v));
-    const heal = adjustHealByStatus(baseHeal);
-    if (heal <= 0) return;
-    gameData.player.hp = Math.min(
-      gameData.player.maxHp,
-      gameData.player.hp + heal,
-    );
-    log(`✨ 回避で${heal}回復`);
+    const r = applyPlayerHeal(baseHeal);
+    if (r.healed > 0 && r.barrierGained > 0) {
+      log(`✨ 回避で${r.healed}回復（🛡+${r.barrierGained}）`);
+    } else if (r.healed > 0) {
+      log(`✨ 回避で${r.healed}回復`);
+    } else if (r.barrierGained > 0) {
+      log(`🛡 バリア+${r.barrierGained}`);
+    }
   }
 
   function tryCounterAttack() {
@@ -2788,9 +2992,8 @@ if (skillKey === "blademaster_iai") {
 
     damage = applyPlayerIncomingReduction(damage);
 
-    gameData.player.hp -= damage;
-    log(`◀ ${enemy.displayName}の攻撃！ ${damage}ダメージ`);
-    onPlayerDamaged(damage);
+    const r = applyPlayerDamage(damage);
+    log(`◀ ${enemy.displayName}の攻撃！ ${r.total}ダメージ${r.barrierUsed ? `（🛡-${r.barrierUsed}）` : ""}`);
 
     applyOnHitStatuses(null);
     tryCounterAttack();
@@ -2847,9 +3050,8 @@ if (skillKey === "blademaster_iai") {
 
       damage = applyPlayerGuardReduction(damage);
       damage = applyPlayerIncomingReduction(damage);
-      gameData.player.hp -= damage;
-      total += damage;
-      onPlayerDamaged(damage);
+      const r = applyPlayerDamage(damage);
+      total += r.total;
 
       if (gameData.player.hp <= 0) break;
     }
@@ -2951,6 +3153,11 @@ if (skillKey === "blademaster_iai") {
 
   function checkPlayerDeath() {
     if (gameData.player.hp <= 0) {
+      // 1回だけ死亡回避（ダメージ以外で0以下になったケースの保険）
+      if (tryDeathAvoidOnce()) {
+        updateUI();
+        return;
+      }
       log("☠ 力尽きた…");
       gameData.player.hp = gameData.player.maxHp;
       gameData.floor = Math.max(1, gameData.floor - 3);
@@ -2961,6 +3168,16 @@ if (skillKey === "blademaster_iai") {
   function endBattle(victory) {
     gameData.gameState = "EXPLORE";
     gameData.enemy = null;
+
+    // 戦闘専用リソースは戦闘終了で消す
+    try {
+      const bs = ensurePlayerBattleState();
+      bs.barrier = 0;
+      bs.deathAvoidUsed = false;
+      bs.pursuitTriggeredThisAction = false;
+    } catch (e) {
+      // no-op
+    }
 
     // 戦闘用階層は戦闘終了で解除
     gameData.battleFloor = null;
@@ -3071,6 +3288,12 @@ if (skillKey === "blademaster_iai") {
       return clamp(v, 1, 3);
     }
 
+    // 例外：数値固定のトリガー系
+    if (type === "deathAvoidOnce") {
+      // 戦闘中1回だけ死亡回避（値は常に1として扱う）
+      return 1;
+    }
+
     // 索敵は 1=1% のパラメータ。上げすぎると二つ名が出すぎるので控えめ＆上限
     if (type === "search") {
       const v = Math.round(base * (1 + (raw - 1) * 0.55));
@@ -3104,6 +3327,11 @@ if (skillKey === "blademaster_iai") {
 // タイプ別の上限（暴れ防止）
     if (type === "damageReduction") v = clamp(v, 0, 80);
     if (type === "ailmentDurationDown") v = clamp(v, 0, 80);
+
+    // 追加：装飾品の新軸効果
+    if (type === "cooldownCheatChance") v = clamp(v, 0, 25);
+    if (type === "pursuitChance") v = clamp(v, 0, 35);
+    if (type === "overhealBarrierCap") v = clamp(v, 0, 60);
 
     if (type === "lifeSteal") v = clamp(v, 0, 25);
     if (type === "regen") v = clamp(v, 0, 12);
@@ -3354,6 +3582,22 @@ if (skillKey === "blademaster_iai") {
 
     // 最低でも 0.2（極端に0へ落ちないように）
     return Math.max(0.2, base * mult);
+  }
+
+  // アクセサリー効果の重み（強力な効果は出現率を下げる）
+  function getAccessoryEffectWeight(effectType) {
+    switch (effectType) {
+      case "deathAvoidOnce":
+        return 0.08;
+      case "cooldownCheatChance":
+        return 0.18;
+      case "overhealBarrierCap":
+        return 0.35;
+      case "pursuitChance":
+        return 0.45;
+      default:
+        return 1;
+    }
   }
 
   // -------------------
@@ -3611,9 +3855,20 @@ if (skillKey === "blademaster_iai") {
           : Array.isArray(window.accessoryEffects)
             ? window.accessoryEffects
             : (typeof accessoryEffects !== "undefined" ? accessoryEffects : []);
-        const pool = Array.isArray(src) ? src : [];
-        if (!pool.length) continue;
-        const effect = pool[Math.floor(Math.random() * pool.length)];
+        const poolRaw = Array.isArray(src) ? src : [];
+        if (!poolRaw.length) continue;
+
+        // minFloor を持つ効果は、到達階層以降でのみ候補に入れる
+        const poolFiltered = poolRaw.filter((e) => {
+          if (!e || typeof e !== "object") return false;
+          const mf = Number(e.minFloor);
+          return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
+        });
+        const pool = poolFiltered.length ? poolFiltered : poolRaw;
+
+        const effect =
+          pickWeighted(pool, (e) => getAccessoryEffectWeight(e.type)) ||
+          pool[Math.floor(Math.random() * pool.length)];
         item.effects.push(makeScaledAccessoryEffect(effect, floor, rarity));
       }
 
@@ -3699,9 +3954,39 @@ if (skillKey === "blademaster_iai") {
         item.name = `${item._specialPrefixName}${tiered}`;
       }
     } else {
-      // アクセサリーは従来どおり
+      // アクセサリー名を「短く・分かりやすく」する（効果を先頭に出す）
       item.baseName = type.name;
-      item.name = type.name;
+
+      const eff0 = Array.isArray(item.effects) ? item.effects[0] : null;
+      const cond = eff0?.cond || eff0?.condition;
+      const condLabel =
+        cond === "unarmed"
+          ? "素手"
+          : cond === "noArmor"
+            ? "無防具"
+            : cond === "twoHanded"
+              ? "両手"
+              : "";
+
+      const labelMap = {
+        skillPower: "スキル",
+        cooldownReduction: "CT短縮",
+        cooldownCheatChance: "CT踏倒",
+        pursuitChance: "追撃",
+        deathAvoidOnce: "致死耐え",
+        overhealBarrierCap: "余剰回復盾",
+        evasion: "回避",
+        counterChance: "反撃",
+        multiStrikeChance: "連撃",
+        attackBonus: "攻撃",
+        search: "索敵",
+        dropRate: "ドロ率",
+      };
+
+      const label = (eff0 && labelMap[String(eff0.type)]) || (eff0?.name ? String(eff0.name) : "装飾");
+
+      // 目印は不要（表示名は短く）
+      item.name = `${condLabel}${label}${type.name}`;
     }
 
 // 永続化用ID（装備の復元に使用）
@@ -3728,6 +4013,8 @@ if (skillKey === "blademaster_iai") {
   window.getCombatStats = getCombatStats;
   window.getEmblemBonus = getEmblemBonus;
   window.getAccessoryBonus = getAccessoryBonus;
+  window.getPlayerBarrier = getPlayerBarrier;
+  window.getMaxPlayerBarrier = getMaxPlayerBarrier;
   window.getAchievementExpBonusRate = getAchievementExpBonusRate;
   window.getAchievementExpBonusPercent = getAchievementExpBonusPercent;
   window.checkAndUnlockAchievements = checkAndUnlockAchievements;
