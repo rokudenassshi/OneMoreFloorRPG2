@@ -18,6 +18,7 @@
       desc: "索敵+{value}（最大Lv.100）",
       effect: (lv) => ({ searchBonus: lv }),
     },
+
     exp_up: {
       name: "経験値増加",
       type: "passive",
@@ -88,6 +89,19 @@
       effect: (lv) => ({ damageMultiplier: 1.2 + lv * 0.3, healPercent: 0.3 }),
     },
 
+    // ---- 固有ギミック ----
+    swordsman_kensei: {
+      name: "剣星",
+      type: "active",
+      accuracy: 115,
+      job: "swordsman",
+      maxLevel: 3,
+      cooldown: 4,
+      desc: "回避/クリティカルで構えが溜まる。構えを全消費して斬撃（基本{value}倍 + 構えで大幅強化） / 構え上限+{value}",
+      // ※ stanceMaxBonus はパッシブ扱いで反映する（core.js 側で特例対応）
+      effect: (lv) => ({ damageMultiplier: 1.1 + lv * 0.25, stanceMaxBonus: lv }),
+    },
+
     // ===================================
     // 戦士 (warrior)
     // ===================================
@@ -127,15 +141,17 @@
       desc: "敵を威圧（ダメージ{value}倍、防御無視50%）",
       effect: (lv) => ({ damageMultiplier: 1.4 + lv * 0.3, ignoreDef: 0.5 }),
     },
-    revenge_strike: {
-      name: "リベンジストライク",
-      type: "active",
-      accuracy: 100,
+    // ---- 固有ギミック ----
+    warrior_counter_mastery: {
+      name: "反撃の心得",
+      type: "passive",
       job: "warrior",
-      maxLevel: 3,
-      cooldown: 6,
-      desc: "渾身の一撃（ダメージ{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 2.0 + lv * 0.5 }),
+      maxLevel: 5,
+      desc: "反撃率が上がり、反撃ダメージも上がる",
+      effect: (lv) => ({
+        counterChanceBonus: lv * 6,
+        counterDamageBonus: lv * 10,
+      }),
     },
 
     // ===================================
@@ -188,6 +204,18 @@
       effect: (lv) => ({ damageMultiplier: 1.3 + lv * 0.3, healPercent: 0.5 }),
     },
 
+    // ---- 固有ギミック ----
+    thief_just_dodge: {
+      name: "ジャスト回避",
+      type: "passive",
+      job: "thief",
+      // 仕様変更：最大Lv1、必要ポイント5
+      maxLevel: 1,
+      requiredPoints: 5,
+      desc: "回避成功時、次の攻撃が確定クリティカル",
+      effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
+    },
+
     // ===================================
     // 魔法使い (mage)
     // ===================================
@@ -217,26 +245,6 @@
       desc: "炎の魔法（基礎{value}+魔法威力×1.5）",
       effect: (lv) => ({ baseDamage: 40 + lv * 20, magicScale: 1.5 }),
     },
-    ice_lance: {
-      name: "アイスランス",
-      type: "active",
-      accuracy: 100,
-      job: "mage",
-      maxLevel: 3,
-      cooldown: 3,
-      desc: "氷の槍（基礎{value}+魔法威力×1.4）",
-      effect: (lv) => ({ baseDamage: 35 + lv * 18, magicScale: 1.4 }),
-    },
-    lightning_bolt: {
-      name: "ライトニングボルト",
-      type: "active",
-      accuracy: 100,
-      job: "mage",
-      maxLevel: 3,
-      cooldown: 4,
-      desc: "雷撃（基礎{value}+魔法威力×1.6）",
-      effect: (lv) => ({ baseDamage: 50 + lv * 25, magicScale: 1.6 }),
-    },
     meteor_strike: {
       name: "メテオストライク",
       type: "active",
@@ -246,6 +254,56 @@
       cooldown: 6,
       desc: "隕石召喚（基礎{value}+魔法威力×2.0）",
       effect: (lv) => ({ baseDamage: 80 + lv * 40, magicScale: 2.0 }),
+    },
+
+    // ===================================
+    // 魔法使い（回復/聖術）
+    // ===================================
+    cleric_blessing: {
+      name: "祝福",
+      type: "passive",
+      job: "mage",
+      maxLevel: 5,
+      desc: "回復力+{value}",
+      effect: (lv) => ({ healPowerBonus: lv * 12 }),
+    },
+    holy_aura: {
+      name: "聖なるオーラ",
+      type: "passive",
+      job: "mage",
+      maxLevel: 5,
+      desc: "防御力+{value}",
+      effect: (lv) => ({ defenseBonus: lv * 6 }),
+    },
+    cleric_heal: {
+      name: "ヒール",
+      type: "active",
+      accuracy: 100,
+      job: "mage",
+      maxLevel: 3,
+      cooldown: 4,
+      desc: "HP回復（{value}+回復力×0.6）",
+      effect: (lv) => ({ healAmount: 60 + lv * 40, healScale: 0.6 }),
+    },
+    greater_heal: {
+      name: "グレーターヒール",
+      type: "active",
+      accuracy: 100,
+      job: "mage",
+      maxLevel: 3,
+      cooldown: 6,
+      desc: "大回復（{value}+回復力×0.8）",
+      effect: (lv) => ({ healAmount: 100 + lv * 60, healScale: 0.8 }),
+    },
+    holy_smite: {
+      name: "聖なる一撃",
+      type: "active",
+      accuracy: 100,
+      job: "mage",
+      maxLevel: 3,
+      cooldown: 4,
+      desc: "光の魔法（基礎{value}+魔法威力×1.3）",
+      effect: (lv) => ({ baseDamage: 45 + lv * 22, magicScale: 1.3 }),
     },
 
     // ===================================
@@ -298,54 +356,14 @@
       effect: (lv) => ({ damageMultiplier: 2.2 + lv * 0.6 }),
     },
 
-    // ===================================
-    // 僧侶 (cleric)
-    // ===================================
-    cleric_blessing: {
-      name: "祝福",
+    // ---- 固有ギミック ----
+    archer_preemptive_shot: {
+      name: "先制射撃",
       type: "passive",
-      job: "cleric",
-      maxLevel: 5,
-      desc: "魔法攻撃力+{value}",
-      effect: (lv) => ({ magicBonus: lv * 6 }),
-    },
-    holy_aura: {
-      name: "聖なるオーラ",
-      type: "passive",
-      job: "cleric",
-      maxLevel: 5,
-      desc: "防御力+{value}",
-      effect: (lv) => ({ defenseBonus: lv * 6 }),
-    },
-    cleric_heal: {
-      name: "ヒール",
-      type: "active",
-      accuracy: 100,
-      job: "cleric",
+      job: "archer",
       maxLevel: 3,
-      cooldown: 4,
-      desc: "HP回復（{value}+回復力×0.6）",
-      effect: (lv) => ({ healAmount: 60 + lv * 40, healScale: 0.6 }),
-    },
-    greater_heal: {
-      name: "グレーターヒール",
-      type: "active",
-      accuracy: 100,
-      job: "cleric",
-      maxLevel: 3,
-      cooldown: 6,
-      desc: "大回復（{value}+回復力×0.8）",
-      effect: (lv) => ({ healAmount: 100 + lv * 60, healScale: 0.8 }),
-    },
-    holy_smite: {
-      name: "聖なる一撃",
-      type: "active",
-      accuracy: 100,
-      job: "cleric",
-      maxLevel: 3,
-      cooldown: 4,
-      desc: "光の魔法（基礎{value}+魔法威力×1.3）",
-      effect: (lv) => ({ baseDamage: 45 + lv * 22, magicScale: 1.3 }),
+      desc: "戦闘開始時、確率で先制攻撃（Lvで確率/威力UP）",
+      effect: (lv) => ({ accuracyBonus: lv * 2 }),
     },
 
     // ===================================
@@ -354,49 +372,33 @@
     axe_mastery: {
       name: "斧術マスタリー",
       type: "passive",
-      job: "axeman",
+      // 斧使い削除：戦士へ統合
+      job: "warrior",
       maxLevel: 5,
       desc: "物理攻撃力+{value}",
       effect: (lv) => ({ attackBonus: lv * 6 }),
-    },
-    axe_might: {
-      name: "斧の剛力",
-      type: "passive",
-      job: "axeman",
-      maxLevel: 5,
-      desc: "クリティカル率+{value}%",
-      effect: (lv) => ({ critBonus: lv * 2 }),
     },
     cleave: {
       name: "たたき割り",
       type: "active",
       accuracy: 100,
-      job: "axeman",
+      job: "warrior",
       maxLevel: 3,
       cooldown: 3,
       desc: "強烈な一撃（ダメージ{value}倍）",
       effect: (lv) => ({ damageMultiplier: 1.6 + lv * 0.45 }),
     },
-    whirlwind: {
-      name: "旋風斬り",
-      type: "active",
-      accuracy: 100,
-      job: "axeman",
-      maxLevel: 3,
-      cooldown: 5,
-      desc: "回転斬り（ダメージ{value}倍、防御無視30%）",
-      effect: (lv) => ({ damageMultiplier: 1.8 + lv * 0.5, ignoreDef: 0.3 }),
-    },
     crushing_blow: {
       name: "粉砕打撃",
       type: "active",
       accuracy: 100,
-      job: "axeman",
+      job: "warrior",
       maxLevel: 3,
       cooldown: 6,
       desc: "渾身の一撃（ダメージ{value}倍）",
       effect: (lv) => ({ damageMultiplier: 2.3 + lv * 0.7 }),
     },
+
 
     // ===================================
     // 格闘家 (monk)
@@ -448,153 +450,25 @@
       effect: (lv) => ({ damageMultiplier: 1.5 + lv * 0.4, healPercent: 0.25 }),
     },
 
-// ===================================
-// 職業特色スキル（固有ギミック）
-// ===================================
-
-// 剣士：構え（回避/クリティカルで溜まり、物理ダメージ増）
-swordsman_stance_mastery: {
-  name: "構えの極意",
-  type: "passive",
-  job: "swordsman",
-  maxLevel: 3,
-  desc: "回避/クリティカルで構えが溜まり、構え1につき物理ダメージ+6%。構え上限+{value}",
-  effect: (lv) => ({ stanceMaxBonus: lv }), // 上限 3+lv
-},
-swordsman_iai: {
-  name: "居合い",
-  type: "active",
-  accuracy: 115,
-  job: "swordsman",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "構えを全消費して斬撃（基本{value}倍 + 構えで大幅強化）",
-  effect: (lv) => ({ damageMultiplier: 1.1 + lv * 0.25 }),
-},
-
-// 戦士：反撃強化
-warrior_counter_mastery: {
-  name: "反撃の心得",
-  type: "passive",
-  job: "warrior",
-  maxLevel: 5,
-  desc: "反撃率が上がり、反撃ダメージも上がる",
-  effect: (lv) => ({
-    counterChanceBonus: lv * 6,
-    counterDamageBonus: lv * 10,
-  }),
-},
-
-// 盗賊：ジャスト回避
-thief_just_dodge: {
-  name: "ジャスト回避",
-  type: "passive",
-  job: "thief",
-  maxLevel: 3,
-  desc: "回避成功時、次の攻撃が確定クリティカル",
-  effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
-},
-
-// 魔法使い：魔印→起爆
-mage_arcane_mark: {
-  name: "魔印付与",
-  type: "passive",
-  job: "mage",
-  maxLevel: 3,
-  desc: "魔法攻撃命中時、確率で魔印を刻む（最大{value}）",
-  effect: (lv) => ({ markMaxBonus: lv }),
-},
-mage_detonate: {
-  name: "起爆",
-  type: "active",
-  accuracy: 110,
-  job: "mage",
-  maxLevel: 3,
-  cooldown: 5,
-  desc: "魔印を消費して大ダメージ（魔印が多いほど強い）",
-  effect: (lv) => ({ baseDamage: 10 + lv * 8, magicScale: 0.9 + lv * 0.2 }),
-},
-
-// 弓使い：先制射撃
-archer_preemptive_shot: {
-  name: "先制射撃",
-  type: "passive",
-  job: "archer",
-  maxLevel: 3,
-  desc: "戦闘開始時、確率で先制攻撃（Lvで確率/威力UP）",
-  effect: (lv) => ({ accuracyBonus: lv * 2 }),
-},
-
-// 僧侶：回復→聖力、回復力参照攻撃
-cleric_holy_conversion: {
-  name: "聖力転換",
-  type: "passive",
-  job: "cleric",
-  maxLevel: 3,
-  desc: "回復した量の一部を聖力として蓄積（上限+{value}）",
-  effect: (lv) => ({ holyMaxBonus: lv * 60 }),
-},
-cleric_judgement: {
-  name: "裁きの光",
-  type: "active",
-  accuracy: 110,
-  job: "cleric",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "回復力参照の攻撃。聖力があると上乗せ（基本{value}）",
-  effect: (lv) => ({ baseDamage: 8 + lv * 6, healScale: 1.15 + lv * 0.2 }),
-},
-cleric_holy_burst: {
-  name: "聖印爆裂",
-  type: "active",
-  accuracy: 105,
-  job: "cleric",
-  maxLevel: 3,
-  cooldown: 6,
-  desc: "回復力参照の攻撃。聖力を解放して大ダメージ（基本{value}）",
-  effect: (lv) => ({ baseDamage: 12 + lv * 8, healScale: 1.3 + lv * 0.25 }),
-},
-
-// 斧使い：破壊衝動
-axeman_rampage: {
-  name: "破壊衝動",
-  type: "passive",
-  job: "axeman",
-  maxLevel: 3,
-  desc: "攻撃命中で破壊衝動が溜まり、物理ダメージ+（最大5）",
-  effect: (lv) => ({ attackBonus: lv * 2 }),
-},
-axeman_overhead: {
-  name: "大振り",
-  type: "active",
-  accuracy: 90,
-  job: "axeman",
-  maxLevel: 3,
-  cooldown: 5,
-  desc: "破壊衝動を全消費して大ダメージ（基本{value}倍）",
-  effect: (lv) => ({ damageMultiplier: 1.4 + lv * 0.35, ignoreDef: 0.35 }),
-},
-
-// 格闘家：気
-monk_ki_mastery: {
-  name: "気功",
-  type: "passive",
-  job: "monk",
-  maxLevel: 3,
-  desc: "攻撃命中で気が溜まる。気上限+{value}",
-  effect: (lv) => ({ qiMaxBonus: lv * 2 }),
-},
-monk_ki_blast: {
-  name: "気弾",
-  type: "active",
-  accuracy: 110,
-  job: "monk",
-  maxLevel: 3,
-  cooldown: 4,
-  desc: "気を消費して遠距離攻撃（気が多いほど強い）",
-  effect: (lv) => ({ baseDamage: 6 + lv * 6, magicScale: 0.4 + lv * 0.15 }),
-},
-
+    // ---- 固有ギミック ----
+    monk_ki_mastery: {
+      name: "気功",
+      type: "passive",
+      job: "monk",
+      maxLevel: 3,
+      desc: "攻撃命中で気が溜まる。気上限+{value}",
+      effect: (lv) => ({ qiMaxBonus: lv * 2 }),
+    },
+    monk_ki_blast: {
+      name: "気弾",
+      type: "active",
+      accuracy: 110,
+      job: "monk",
+      maxLevel: 3,
+      cooldown: 4,
+      desc: "気を消費して遠距離攻撃（気が多いほど強い）",
+      effect: (lv) => ({ baseDamage: 6 + lv * 6, magicScale: 0.4 + lv * 0.15 }),
+    },
   };
 
   window.skills = skills;

@@ -11,13 +11,15 @@
       name: "剣士",
       desc: "力が高い",
       // 得意武器（装備時に補正がかかる）
-      favoredType: "sword",
+      // 斧使い統合：剣＋斧を得意にする
+      favoredType: ["sword", "axe"],
       bonuses: { strength: 3, vitality: 1, intelligence: 0, agility: 1, dexterity: 1 },
     },
     warrior: {
       name: "戦士",
       desc: "体力・HPが高い",
-      favoredType: "shield",
+      // 斧使い統合：盾＋斧を得意にする
+      favoredType: ["shield", "axe"],
       bonuses: { strength: 1, vitality: 4, intelligence: -1, agility: 0, dexterity: 0 },
     },
     thief: {
@@ -28,9 +30,10 @@
     },
     mage: {
       name: "魔法使い",
-      desc: "力・体力が低いが賢さが高い",
+      desc: "賢さが高く、攻撃魔法と回復魔法の両方を扱う",
       favoredType: "staff",
-      bonuses: { strength: -2, vitality: -1, intelligence: 5, agility: 0, dexterity: 0 },
+      // 僧侶要素を統合（回復運用を想定して体力/器用さを少し補強）
+      bonuses: { strength: -2, vitality: 0, intelligence: 5, agility: 0, dexterity: 1 },
     },
     archer: {
       name: "弓使い",
@@ -43,18 +46,6 @@
       desc: "素早く回復も得意",
       favoredType: "gloves",
       bonuses: { strength: 1, vitality: 1, intelligence: 1, agility: 3, dexterity: 0 },
-    },
-    cleric: {
-      name: "僧侶",
-      desc: "回復が得意",
-      favoredType: "staff",
-      bonuses: { strength: -1, vitality: 2, intelligence: 3, agility: 0, dexterity: 1 },
-    },
-    axeman: {
-      name: "斧使い",
-      desc: "一撃が重い",
-      favoredType: "axe",
-      bonuses: { strength: 4, vitality: 1, intelligence: -1, agility: 0, dexterity: 0 },
     },
 
     // -----------------
@@ -126,42 +117,8 @@
       bonuses: { strength: 2, vitality: 2, intelligence: 1, agility: 5, dexterity: 0 },
       traits: {"evasionBonus": 8, "attackMult": 1.08, "healMult": 1.15},
     },
-    bishop: {
-      name: "大司祭",
-      desc: "癒やしの極み（上級職）",
-      tier: "advanced",
-      skillGroup: "cleric",
-      baseJob: "cleric",
-      favoredType: "staff",
-      unlock: { type: "heal", target: 100, text: "僧侶で回復魔法を100回使う" },
-      bonuses: { strength: -1, vitality: 3, intelligence: 6, agility: 0, dexterity: 2 },
-      traits: {"healMult": 1.3, "cooldownMult": 0.85, "maxHpMult": 1.05},
-    },
-    destroyer: {
-      name: "破壊者",
-      desc: "粉砕の一撃（上級職）",
-      tier: "advanced",
-      skillGroup: "axeman",
-      baseJob: "axeman",
-      favoredType: "axe",
-      unlock: { type: "skillUse", target: 60, text: "斧使いで戦闘スキルを60回使う" },
-      bonuses: { strength: 7, vitality: 2, intelligence: -1, agility: 0, dexterity: 0 },
-      traits: {"attackMult": 1.2, "accuracyBonus": -5, "critDamageMul": 2.2, "favoredMultiplier": 1.25},
-    },
-
-    duelist: {
-      name: "決闘士",
-      desc: "命中と回避に秀でる（上級職）",
-      tier: "advanced",
-      skillGroup: "swordsman",
-      baseJob: "swordsman",
-      favoredType: "sword",
-      unlock: { type: "attackHit", target: 250, text: "剣士で攻撃を250回命中させる" },
-      bonuses: { strength: 4, vitality: 1, intelligence: 0, agility: 4, dexterity: 4 },
-      traits: {"accuracyBonus": 10, "evasionBonus": 10, "favoredMultiplier": 1.25, "cooldownReduction": 1},
-    },
     warlord: {
-      name: "将軍",
+      name: "騎士",
       desc: "攻撃と統率の才（上級職）",
       tier: "advanced",
       skillGroup: "warrior",
@@ -215,27 +172,17 @@
       bonuses: { strength: 6, vitality: 1, intelligence: 0, agility: 3, dexterity: 0 },
       traits: {"attackMult": 1.18, "critRateBonus": 6, "defenseMult": 0.95, "favoredMultiplier": 1.25},
     },
-    templar: {
-      name: "聖戦士",
-      desc: "守りと回復の両立（上級職）",
-      tier: "advanced",
-      skillGroup: "cleric",
-      baseJob: "cleric",
-      favoredType: "staff",
-      unlock: { type: "defend", target: 80, text: "僧侶で戦闘中に防御を80回行う" },
-      bonuses: { strength: 1, vitality: 5, intelligence: 3, agility: 0, dexterity: 1 },
-      traits: {"defenseMult": 1.1, "healMult": 1.15, "guardDamageMult": 0.6, "favoredMultiplier": 1.25},
-    },
     warfiend: {
-      name: "戦鬼",
+      name: "狂戦士",
       desc: "一撃必殺を狙う（上級職）",
       tier: "advanced",
-      skillGroup: "axeman",
-      baseJob: "axeman",
-      favoredType: "axe",
-      unlock: { type: "crit", target: 40, text: "斧使いでクリティカルを40回出す" },
-      bonuses: { strength: 8, vitality: 1, intelligence: -2, agility: 1, dexterity: 0 },
-      traits: {"attackMult": 1.25, "defenseMult": 0.9, "critRateBonus": 3, "favoredMultiplier": 1.3},
+      // 斧使い削除に伴い剣士へ統合
+      skillGroup: "swordsman",
+      baseJob: "swordsman",
+      favoredType: ["sword", "axe"],
+      unlock: { type: "crit", target: 40, text: "剣士でクリティカルを40回出す" },
+      bonuses: { strength: 7, vitality: 1, intelligence: -2, agility: 1, dexterity: 0 },
+      traits: {"attackMult": 1.22, "defenseMult": 0.9, "critRateBonus": 3, "favoredMultiplier": 1.3},
     },
 
 
@@ -243,7 +190,7 @@
 
   // 上級職の共通解放条件：レベル
   //（今後拡張しやすいよう、個別に unlock.minLevel を上書き可能）
-  const ADVANCED_JOB_MIN_LEVEL = 50;
+  const ADVANCED_JOB_MIN_LEVEL = 30;
   for (const k of Object.keys(jobs)) {
     const jd = jobs[k];
     if (!jd || jd.tier !== "advanced" || !jd.unlock) continue;

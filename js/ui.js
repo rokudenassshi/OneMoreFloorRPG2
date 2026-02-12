@@ -27,6 +27,36 @@
     document.getElementById("playerHp").textContent =
       `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
 
+    // 職業リソース（気 / 構え）
+    const gaugesEl = document.getElementById("playerGauges");
+    if (gaugesEl) {
+      const bs = (p && p.battleState) || {};
+      const parts = [];
+
+      // 気（格闘家）
+      const qi = Math.max(0, Math.floor(Number(bs.qi) || 0));
+      const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 0;
+      if (p.job === "monk" || qi > 0) {
+        parts.push(`気：${qi}${qiMax > 0 ? `/${qiMax}` : ""}`);
+      }
+
+      // 構え（剣士）
+      const stance = Math.max(0, Math.floor(Number(bs.stance) || 0));
+      const stanceMax =
+        typeof getMaxStance === "function" ? Math.floor(getMaxStance()) : 0;
+      if (p.job === "swordsman" || stance > 0) {
+        parts.push(`構え：${stance}${stanceMax > 0 ? `/${stanceMax}` : ""}`);
+      }
+
+      if (parts.length > 0) {
+        gaugesEl.textContent = parts.join("  ");
+        gaugesEl.style.display = "block";
+      } else {
+        gaugesEl.textContent = "";
+        gaugesEl.style.display = "none";
+      }
+    }
+
     // 経験値バー
     const expRate = Math.min(1, Math.max(0, p.exp / getExpNeeded()));
     document.getElementById("expBarFill").style.width = expRate * 100 + "%";

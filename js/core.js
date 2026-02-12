@@ -268,7 +268,6 @@
     gameData.gameState = payload.gameState || "EXPLORE";
     gameData.player = payload.player || gameData.player;
     gameData.enemy = payload.enemy || null;
-    // 互換補正は行わず、保存された値をそのまま復元する
     gameData.battleFloor = payload.battleFloor != null ? payload.battleFloor : null;
     gameData.pendingFloorAfterWin =
       payload.pendingFloorAfterWin != null ? payload.pendingFloorAfterWin : null;
@@ -501,6 +500,7 @@
     if (!item) return false;
     if (!favoredType) return false;
     if (item.category === "accessory") return false;
+    if (Array.isArray(favoredType)) return favoredType.includes(item.type);
     return item.type === favoredType;
   }
 
@@ -704,7 +704,7 @@ function onPlayerEvade() {
   }
   // 剣士：回避で構えが溜まる
   if (gameData.player?.job === "swordsman") {
-    const lv = Number(gameData.player?.skills?.swordsman_stance_mastery || 0);
+    const lv = Number(gameData.player?.skills?.swordsman_kensei || 0);
     if (lv > 0) gainStance(1);
   }
 }
@@ -712,7 +712,7 @@ function onPlayerEvade() {
 function onPlayerHit({ kind, isCrit } = {}) {
   // 剣士：クリティカルで構え
   if (gameData.player?.job === "swordsman") {
-    const lv = Number(gameData.player?.skills?.swordsman_stance_mastery || 0);
+    const lv = Number(gameData.player?.skills?.swordsman_kensei || 0);
     if (lv > 0 && isCrit) gainStance(1);
   }
   // 格闘家：当たるたび気が溜まる
@@ -720,11 +720,7 @@ function onPlayerHit({ kind, isCrit } = {}) {
     const lv = Number(gameData.player?.skills?.monk_ki_mastery || 0);
     if (lv > 0) gainQi(1);
   }
-  // 斧使い：当たるたび破壊衝動が溜まる
-  if (gameData.player?.job === "axeman") {
-    const lv = Number(gameData.player?.skills?.axeman_rampage || 0);
-    if (lv > 0) gainAxeStack(1);
-  }
+  // ※破壊衝動系スキルは削除
 }
 
 function addArcaneMarkOnEnemy(enemy) {
@@ -814,9 +810,12 @@ function getCombatStats() {
     );
 
     // パッシブスキルボーナス
+    // ※「剣星」はアクティブだが、構え上限だけは常時反映したいので特例で通す
     for (let skillKey in gameData.player.skills) {
       const skillDef = skills[skillKey];
-      if (!skillDef || skillDef.type !== "passive") continue;
+      if (!skillDef) continue;
+      const treatAsPassive = skillDef.type === "passive" || skillKey === "swordsman_kensei";
+      if (!treatAsPassive) continue;
 
       const level = gameData.player.skills[skillKey];
       const effect = skillDef.effect(level);
@@ -1855,23 +1854,7 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         gameData.player.hp + heal,
       );
       log(`${heal}HP回復した！`);
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-    } else if (typeof effect.healAmount === "number") {
+} else if (typeof effect.healAmount === "number") {
       // 回復スキル（自分対象のため命中判定なし）
       addJobProgress("heal", 1);
       const jt = jobs?.[gameData.player?.job]?.traits || {};
@@ -1888,23 +1871,7 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         gameData.player.hp + heal,
       );
       log(`${heal}HP回復した！`);
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-    } else if (effect.baseDamage) {
+} else if (effect.baseDamage) {
       // 魔法攻撃
       addJobProgress("magic", 1);
 
@@ -1914,27 +1881,6 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       } else {
         
 let base = effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
-
-// 僧侶：回復力参照攻撃 ＋ 聖力上乗せ
-if (skillKey === "cleric_judgement" || skillKey === "cleric_holy_burst") {
-  base = effect.baseDamage + combat.healPower * (effect.healScale || 1.2);
-  const take = consumeHoly(Math.round(Math.max(0, base) * 0.25));
-  if (take > 0) {
-    base += take;
-    log(`✨ 聖力${take}を解放！`);
-  }
-}
-
-// 魔法使い：起爆（魔印を消費して追加ダメージ）
-if (skillKey === "mage_detonate") {
-  const stacks = consumeArcaneMark(enemy);
-  if (stacks > 0) {
-    base += combat.magicPower * (0.6 + lv * 0.15) * stacks;
-    log(`💥 魔印${stacks}を起爆！`);
-  } else {
-    log("💥 魔印がない…");
-  }
-}
 
 let damage = base * skillMul;
         damage = Math.round(damage * (0.9 + Math.random() * 0.2));
@@ -1989,26 +1935,12 @@ if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
   damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
 }
 
-// 斧使い：破壊衝動（スタックに応じて物理ダメージ+）
-if (gameData.player?.job === "axeman" && (bsS.axe || 0) > 0) {
-  damage = damage * (1 + Math.min(0.3, (bsS.axe || 0) * 0.06));
-}
-
-// 剣士：居合い（構えを全消費して威力上昇）
-if (skillKey === "swordsman_iai") {
+// 剣士：剣星（構えを全消費して威力上昇）
+if (skillKey === "swordsman_kensei") {
   const s = consumeAllStance();
   if (s > 0) {
     damage = damage * (1 + s * 0.25 + lv * 0.1);
     log(`⚔ 構え${s}を消費！`);
-  }
-}
-
-// 斧使い：大振り（破壊衝動を全消費して威力上昇）
-if (skillKey === "axeman_overhead") {
-  const s = consumeAllAxeStack();
-  if (s > 0) {
-    damage = damage * (1 + s * 0.3 + lv * 0.08);
-    log(`🪓 破壊衝動${s}を解放！`);
   }
 }
 
@@ -2081,26 +2013,12 @@ if (gameData.player?.job === "swordsman" && (bsS.stance || 0) > 0) {
   damage = damage * (1 + Math.min(0.6, (bsS.stance || 0) * 0.06));
 }
 
-// 斧使い：破壊衝動（スタックに応じて物理ダメージ+）
-if (gameData.player?.job === "axeman" && (bsS.axe || 0) > 0) {
-  damage = damage * (1 + Math.min(0.3, (bsS.axe || 0) * 0.06));
-}
-
-// 剣士：居合い（構えを全消費して威力上昇）
-if (skillKey === "swordsman_iai") {
+// 剣士：剣星（構えを全消費して威力上昇）
+if (skillKey === "swordsman_kensei") {
   const s = consumeAllStance();
   if (s > 0) {
     damage = damage * (1 + s * 0.25 + lv * 0.1);
     log(`⚔ 構え${s}を消費！`);
-  }
-}
-
-// 斧使い：大振り（破壊衝動を全消費して威力上昇）
-if (skillKey === "axeman_overhead") {
-  const s = consumeAllAxeStack();
-  if (s > 0) {
-    damage = damage * (1 + s * 0.3 + lv * 0.08);
-    log(`🪓 破壊衝動${s}を解放！`);
   }
 }
 
@@ -2133,23 +2051,7 @@ if (skillKey === "axeman_overhead") {
               gameData.player.hp + heal,
             );
             log(`${heal}HP回復した！`);
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-      // 僧侶：回復→聖力
-      if (gameData.player?.job === "cleric") {
-        const lv = Number(gameData.player?.skills?.cleric_holy_conversion || 0);
-        if (lv > 0) {
-          const add = Math.round(heal * (0.15 + lv * 0.07));
-          gainHoly(add, combat);
-        }
-      }
-          }
+}
 
           // 装飾品：吸血
           const lsPct = Number(getAccessoryBonus("lifeSteal") || 0);
