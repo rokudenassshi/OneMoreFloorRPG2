@@ -628,6 +628,7 @@ function resetPlayerBattleStateForBattle() {
   bs.barrier = 0; // 回復のあふれで得るバリア
   bs.deathAvoidUsed = false; // 「一度だけ死亡回避」使用済み
   bs.pursuitTriggeredThisAction = false; // 追撃のループ防止（1アクション1回）
+  bs.firstHitPursuitUsed = false; // 初撃追撃の消費（戦闘中1回）
   return bs;
 }
 
@@ -700,7 +701,7 @@ function tryDeathAvoidOnce() {
   return true;
 }
 
-function applyPlayerDamage(incoming) {
+function applyPlayerDamage(incoming, opts) {
   let dmg = Math.max(1, Math.round(Number(incoming) || 0));
   if (!Number.isFinite(dmg) || dmg <= 0) return { total: 0, barrierUsed: 0, hpDamage: 0 };
 
@@ -716,6 +717,19 @@ function applyPlayerDamage(incoming) {
 
   // 被弾トリガー（バリア吸収でもカウント）
   onPlayerDamaged(dmg);
+
+  // 装飾品：被弾短縮（敵からの被弾時、確率でスキルCT-1）
+  const src = opts && typeof opts === "object" ? String(opts.source || "") : "";
+  if (src === "enemy") {
+    const pct = Number(getAccessoryBonus("hitCdMinusChance") || 0);
+    if (Number.isFinite(pct) && pct > 0 && (gameData.player.skillCooldown || 0) > 0) {
+      if (Math.random() * 100 < Math.min(30, pct)) {
+        gameData.player.skillCooldown = Math.max(0, Math.round(gameData.player.skillCooldown) - 1);
+        log("⏱ 被弾でCTが短縮した！");
+      }
+    }
+  }
+
 
   if (gameData.player.hp <= 0) {
     // 1回だけ死亡回避
@@ -1063,6 +1077,25 @@ function getCombatStats() {
         const mul = 1 + Math.min(200, desperPct) / 100;
         combat.attack *= mul;
         combat.magicPower *= mul;
+      }
+    }
+
+
+    // 狂戦士：怒りスタックが攻撃/会心に影響（戦闘中のみ）
+    if (gameData.player?.job === "warfiend") {
+      const rageSkillLv = Math.floor(Number(gameData.player?.skills?.warfiend_rage || 0));
+      if (rageSkillLv > 0) {
+        const bs = ensurePlayerBattleState();
+        const stacks = clamp(Math.floor(Number(bs.rageStacks || 0)), 0, 10);
+
+        if (stacks > 0) {
+          // 攻撃：スタック×2% + スキルLv×1%（最大+35%）
+          const atkMul = 1 + Math.min(0.35, stacks * 0.02 + rageSkillLv * 0.01);
+          combat.attack *= atkMul;
+
+          // 会心：スタック×(1+0.5*Lv)%
+          combat.critRate += Math.round(stacks * (1 + 0.5 * rageSkillLv));
+        }
       }
     }
     // 端数が出ないように丸める
@@ -1599,6 +1632,15 @@ function startBattle(battleFloor) {
 
     // 戦闘開始：職固有リソースを初期化
     resetPlayerBattleStateForBattle();
+    // 装飾品：初撃会心（戦闘の最初の命中を確定会心にする）
+    {
+      const v = Number(getAccessoryBonus("firstHitCrit") || 0);
+      if (Number.isFinite(v) && v > 0) {
+        setNextCrit(1);
+        log("✨ 初撃会心の気配…");
+      }
+    }
+
 
     // 弓使い：先制射撃（戦闘開始時に追加攻撃）
     if (gameData.player?.job === "archer") {
@@ -1980,10 +2022,19 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     const bs = ensurePlayerBattleState();
     if (bs.pursuitTriggeredThisAction) return;
 
+    const firstV = Number(getAccessoryBonus("firstHitPursuit") || 0);
+    const hasFirst = Number.isFinite(firstV) && firstV > 0 && !bs.firstHitPursuitUsed;
+
     const pct = Number(getAccessoryBonus("pursuitChance") || 0);
-    if (!Number.isFinite(pct) || pct <= 0) return;
-    const chance = Math.min(0.35, Math.max(0, pct) / 100);
-    if (Math.random() >= chance) return;
+
+    // 初撃追撃が有効な場合：最初の追撃は確定
+    if (hasFirst) {
+      bs.firstHitPursuitUsed = true;
+    } else {
+      if (!Number.isFinite(pct) || pct <= 0) return;
+      const chance = Math.min(0.35, Math.max(0, pct) / 100);
+      if (Math.random() >= chance) return;
+    }
 
     bs.pursuitTriggeredThisAction = true;
 
@@ -2006,7 +2057,7 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         ? 1 + Math.min(200, execPct) / 100
         : 1;
 
-    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.4 * critMul * execMul);
+    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.4 * (1 + Math.min(80, Math.max(0, Number(getAccessoryBonus("pursuitDamagePct") || 0))) / 100) * critMul * execMul);
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     damage = applyEnemyIncomingReduction(enemy, damage);
     damage = applyEnemyVulnerableTaken(enemy, damage);
@@ -2941,14 +2992,17 @@ if (skillKey === "blademaster_iai") {
     if (enemy.hp <= 0) return;
     if (gameData.player.hp <= 0) return;
 
-    const chance = Number(getAccessoryBonus("counterChance") || 0);
+    const bsC = ensurePlayerBattleState();
+    const accChance = Number(getAccessoryBonus("counterChance") || 0);
+    const passiveChance = Number(bsC.counterChanceBonus || 0);
+    const chance = (Number.isFinite(accChance) ? accChance : 0) +
+      (Number.isFinite(passiveChance) ? passiveChance : 0);
     if (!Number.isFinite(chance) || chance <= 0) return;
     const roll = Math.random() * 100;
     if (roll >= Math.min(45, chance)) return;
 
     const combat = getCombatStats();
     const dmgPct = Number(getAccessoryBonus("counterDamage") || 0);
-    const bsC = ensurePlayerBattleState();
     const passivePct = Number(bsC.counterDamageBonus || 0);
     const mul =
       1 +
@@ -2992,7 +3046,7 @@ if (skillKey === "blademaster_iai") {
 
     damage = applyPlayerIncomingReduction(damage);
 
-    const r = applyPlayerDamage(damage);
+    const r = applyPlayerDamage(damage, { source: "enemy" });
     log(`◀ ${enemy.displayName}の攻撃！ ${r.total}ダメージ${r.barrierUsed ? `（🛡-${r.barrierUsed}）` : ""}`);
 
     applyOnHitStatuses(null);
@@ -3050,7 +3104,7 @@ if (skillKey === "blademaster_iai") {
 
       damage = applyPlayerGuardReduction(damage);
       damage = applyPlayerIncomingReduction(damage);
-      const r = applyPlayerDamage(damage);
+      const r = applyPlayerDamage(damage, { source: "enemy" });
       total += r.total;
 
       if (gameData.player.hp <= 0) break;
@@ -3294,6 +3348,11 @@ if (skillKey === "blademaster_iai") {
       return 1;
     }
 
+    if (type === "firstHitPursuit" || type === "firstHitCrit") {
+      // 初撃系はトリガー（値は固定）
+      return 1;
+    }
+
     // 索敵は 1=1% のパラメータ。上げすぎると二つ名が出すぎるので控えめ＆上限
     if (type === "search") {
       const v = Math.round(base * (1 + (raw - 1) * 0.55));
@@ -3331,10 +3390,13 @@ if (skillKey === "blademaster_iai") {
     // 追加：装飾品の新軸効果
     if (type === "cooldownCheatChance") v = clamp(v, 0, 25);
     if (type === "pursuitChance") v = clamp(v, 0, 35);
+    if (type === "pursuitDamagePct") v = clamp(v, 0, 80);
+    if (type === "hitCdMinusChance") v = clamp(v, 0, 30);
     if (type === "overhealBarrierCap") v = clamp(v, 0, 60);
 
     if (type === "lifeSteal") v = clamp(v, 0, 25);
     if (type === "regen") v = clamp(v, 0, 12);
+    if (type === "critRate") v = clamp(v, 0, 40);
     if (type === "critDamage") v = clamp(v, 0, 200);
 
     if (type === "multiStrikeChance") v = clamp(v, 0, 60);
@@ -3364,6 +3426,79 @@ if (skillKey === "blademaster_iai") {
     if (typeof e.value === "number" && Number.isFinite(e.value)) {
       e.value = scaleAccessoryEffectValue(e.type, e.value, floor, rarity);
     }
+    return e;
+  }
+
+  /**
+   * 装飾品（アクセ）用：下限(min)〜上限(max)から値を抽選する。
+   * - フロアが高いほど上限寄りが出やすい
+   * - レア度が高いほど、わずかに上限寄りが出やすい
+   * 後方互換（valueベースのスケール）は行わない。
+   * @param {{type:string,min:number,max:number,minFloor?:number}} effect
+   * @param {number} floor
+   * @param {string} rarity
+   * @returns {number}
+   */
+  function rollAccessoryEffectValueByRange(effect, floor, rarity) {
+    const min = Number(effect?.min);
+    const max = Number(effect?.max);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return 0;
+
+    const f = clamp(Math.floor(Number(floor) || 1), 1, 500);
+    const start = (() => {
+      const mf = Number(effect?.minFloor);
+      return Number.isFinite(mf) && mf > 0 ? clamp(Math.floor(mf), 1, 500) : 1;
+    })();
+    const denom = Math.max(1, 500 - start);
+    let p = clamp((f - start) / denom, 0, 1);
+
+    // レア度補正：進行度pを少しだけ押し上げる（最大+0.12程度）
+    const rMul = ACCESSORY_RARITY_MULT[rarity] || 1.0;
+    p = clamp(p + (rMul - 1) * 0.2, 0, 1);
+
+    // 低層は低めが出やすく、高層は上限寄りが出やすい乱数へ偏らせる
+    // exp>1 で低め寄り、exp<1 で高め寄り
+    const exp = 2.8 - 2.2 * p; // 2.8 → 0.6
+    const t = Math.pow(Math.random(), exp);
+
+    const raw = min + (max - min) * t;
+    let v = Math.round(raw);
+
+    // タイプ別の安全上限（暴れ防止）。min/max だけで足りるが、念のため clmap を残す。
+    if (effect.type === "cooldownReduction") v = clamp(v, 1, 3);
+    if (effect.type === "deathAvoidOnce") v = 1;
+    if (effect.type === "firstHitPursuit" || effect.type === "firstHitCrit") v = 1;
+
+    if (effect.type === "evasion") v = clamp(v, 0, 10);
+    if (effect.type === "counterChance") v = clamp(v, 0, 45);
+    if (effect.type === "multiStrikeChance") v = clamp(v, 0, 60);
+
+    if (effect.type === "cooldownCheatChance") v = clamp(v, 0, 25);
+    if (effect.type === "pursuitChance") v = clamp(v, 0, 35);
+    if (effect.type === "pursuitDamagePct") v = clamp(v, 0, 80);
+    if (effect.type === "hitCdMinusChance") v = clamp(v, 0, 30);
+    if (effect.type === "overhealBarrierCap") v = clamp(v, 0, 60);
+
+    if (effect.type === "critRate") v = clamp(v, 0, 40);
+    if (effect.type === "critDamage") v = clamp(v, 0, 200);
+    if (effect.type === "dropRate") v = clamp(v, 0, 150);
+    if (effect.type === "search") v = clamp(v, 1, 12);
+
+    // min/max の範囲は厳守
+    v = clamp(v, Math.min(min, max), Math.max(min, max));
+    return v;
+  }
+
+  /**
+   * 装飾品（アクセ）用：min/max レンジから抽選した value を付与して返す。
+   * @param {any} effect
+   * @param {number} floor
+   * @param {string} rarity
+   * @returns {any}
+   */
+  function makeAccessoryEffectByRange(effect, floor, rarity) {
+    const e = { ...effect };
+    e.value = rollAccessoryEffectValueByRange(e, floor, rarity);
     return e;
   }
 
@@ -3587,6 +3722,18 @@ if (skillKey === "blademaster_iai") {
   // アクセサリー効果の重み（強力な効果は出現率を下げる）
   function getAccessoryEffectWeight(effectType) {
     switch (effectType) {
+      case "firstHitCrit":
+        return 0.06;
+      case "firstHitPursuit":
+        return 0.10;
+      case "pursuitDamagePct":
+        return 0.25;
+      case "hitCdMinusChance":
+        return 0.35;
+      case "critDamage":
+        return 0.45;
+      case "critRate":
+        return 0.50;
       case "deathAvoidOnce":
         return 0.08;
       case "cooldownCheatChance":
@@ -3850,12 +3997,9 @@ if (skillKey === "blademaster_iai") {
       // 装飾品の効果は常に1つ（多効果は廃止）
       const numEffects = 1;
       for (let i = 0; i < numEffects; i++) {
-        const src = Array.isArray(window.accessoryOptionEffects)
+        const poolRaw = Array.isArray(window.accessoryOptionEffects)
           ? window.accessoryOptionEffects
-          : Array.isArray(window.accessoryEffects)
-            ? window.accessoryEffects
-            : (typeof accessoryEffects !== "undefined" ? accessoryEffects : []);
-        const poolRaw = Array.isArray(src) ? src : [];
+          : [];
         if (!poolRaw.length) continue;
 
         // minFloor を持つ効果は、到達階層以降でのみ候補に入れる
@@ -3869,7 +4013,7 @@ if (skillKey === "blademaster_iai") {
         const effect =
           pickWeighted(pool, (e) => getAccessoryEffectWeight(e.type)) ||
           pool[Math.floor(Math.random() * pool.length)];
-        item.effects.push(makeScaledAccessoryEffect(effect, floor, rarity));
+        item.effects.push(makeAccessoryEffectByRange(effect, floor, rarity));
       }
 
       // 生成時の参照（将来の再計算やデバッグ用。UIには出さない）
@@ -3975,6 +4119,12 @@ if (skillKey === "blademaster_iai") {
         pursuitChance: "追撃",
         deathAvoidOnce: "致死耐え",
         overhealBarrierCap: "余剰回復盾",
+        hitCdMinusChance: "被弾短縮",
+        pursuitDamagePct: "追撃威力",
+        firstHitPursuit: "初撃追撃",
+        critRate: "会心率",
+        critDamage: "会心威力",
+        firstHitCrit: "初撃会心",
         evasion: "回避",
         counterChance: "反撃",
         multiStrikeChance: "連撃",

@@ -325,19 +325,41 @@
   //   - "noArmor"   : 防具を装備していない時
   //   - "twoHanded" : 両手武器を装備している時
   const accessoryOptionEffects = [
-    { name: "スキル威力UP", type: "skillPower", value: 10 },
-    { name: "クールタイム軽減", type: "cooldownReduction", value: 1 },
+    // 装飾品は「下限〜上限」のレンジで値を持つ。
+    // フロアが高いほど上限寄りが出やすい（core.js の rollAccessoryEffectValueByRange）。
+    { name: "スキル威力", type: "skillPower", min: 6, max: 28 },
+    { name: "CT短縮", type: "cooldownReduction", min: 1, max: 3 },
 
-    { name: "武器未装備時、回避率UP", type: "evasion", value: 10, cond: "unarmed" },
-    { name: "武器未装備時、反撃率UP", type: "counterChance", value: 12, cond: "unarmed" },
+    // -------------------
+    // 追加：装飾品で「別軸の強化」を作る
+    // - cooldownCheatChance : スキル使用後、確率でクールタイムを0にする
+    // - pursuitChance       : 攻撃/スキルが当たった後、確率で追撃する（1アクションにつき最大1回）
+    // - deathAvoidOnce      : 戦闘中に1度だけ死亡を回避する
+    // - overhealBarrierCap  : 回復のあふれをバリアに変換（最大HP%まで）
+    // -------------------
+    { name: "CT踏倒し", type: "cooldownCheatChance", min: 6, max: 22, minFloor: 80 },
+    { name: "追撃", type: "pursuitChance", min: 10, max: 30, minFloor: 50 },
+    { name: "致死耐え", type: "deathAvoidOnce", min: 1, max: 1, minFloor: 120 },
+    { name: "余剰回復盾", type: "overhealBarrierCap", min: 15, max: 60, minFloor: 30 },
 
-    { name: "防具未装備時、連続攻撃率UP", type: "multiStrikeChance", value: 14, cond: "noArmor" },
-    { name: "防具未装備時、回避率UP", type: "evasion", value: 10, cond: "noArmor" },
+    // 追加：装飾品（戦闘テンポ/会心/追撃の拡張）
+    { name: "被弾短縮", type: "hitCdMinusChance", min: 8, max: 30, minFloor: 60 },
+    { name: "追撃強化", type: "pursuitDamagePct", min: 25, max: 80, minFloor: 90 },
+    { name: "初撃追撃", type: "firstHitPursuit", min: 1, max: 1, minFloor: 110 },
+    { name: "会心率", type: "critRate", min: 8, max: 35, minFloor: 40 },
+    { name: "会心威力", type: "critDamage", min: 25, max: 120, minFloor: 50 },
+    { name: "初撃会心", type: "firstHitCrit", min: 1, max: 1, minFloor: 120 },
 
-    { name: "両手武器装備時、攻撃力UP", type: "attackBonus", value: 20, cond: "twoHanded" },
+    { name: "素手回避", type: "evasion", min: 4, max: 10, cond: "unarmed" },
+    { name: "素手反撃", type: "counterChance", min: 10, max: 45, cond: "unarmed" },
 
-    { name: "索敵UP", type: "search", value: 1 },
-    { name: "ドロップ率UP", type: "dropRate", value: 10 },
+    { name: "無防具連撃", type: "multiStrikeChance", min: 10, max: 60, cond: "noArmor" },
+    { name: "無防具回避", type: "evasion", min: 4, max: 10, cond: "noArmor" },
+
+    { name: "両手攻撃", type: "attackBonus", min: 20, max: 80, cond: "twoHanded" },
+
+    { name: "索敵", type: "search", min: 1, max: 12 },
+    { name: "ドロ率", type: "dropRate", min: 5, max: 40 },
   ];
 
   window.equipTypes = equipTypes;
@@ -345,8 +367,5 @@
   // 参照先を分離して公開
   window.equipmentOptionEffects = equipmentOptionEffects;
   window.accessoryOptionEffects = accessoryOptionEffects;
-
-  // 互換（旧名）：accessoryEffects はアクセ用テーブルを指す
-  window.accessoryEffects = accessoryOptionEffects;
 })();
 

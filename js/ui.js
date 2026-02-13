@@ -55,8 +55,12 @@
 
     document.getElementById("playerLevel").textContent = p.level;
     document.getElementById("floor").textContent = gameData.floor;
+    const barrier =
+      typeof window.getPlayerBarrier === "function" ? window.getPlayerBarrier() : 0;
+    const barrierText =
+      Number(barrier) > 0 ? ` 🛡${Math.round(barrier)}` : "";
     document.getElementById("playerHp").textContent =
-      `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
+      `${Math.round(p.hp)}/${Math.round(p.maxHp)}${barrierText}`;
 
     // 職業リソース（気 / 構え）
     const gaugesEl = document.getElementById("playerGauges");
@@ -399,11 +403,11 @@
     const cond = eff.cond || eff.condition;
     const condPrefix =
       cond === "unarmed"
-        ? "武器未装備時 "
+        ? "素手 "
         : cond === "noArmor"
-          ? "防具未装備時 "
+          ? "無防具 "
           : cond === "twoHanded"
-            ? "両手武器装備時 "
+            ? "両手 "
             : "";
 
     switch (eff.type) {
@@ -437,8 +441,29 @@
       case "cooldownReduction":
         // 正値は短縮として扱う
         return hasV
-          ? `${condPrefix}クールタイム-${Math.abs(v)}ターン`
-          : `${condPrefix}クールタイム短縮`;
+          ? `${condPrefix}CT-${Math.abs(v)}`
+          : `${condPrefix}CT短縮`;
+
+      case "cooldownCheatChance":
+        return hasV
+          ? `${condPrefix}CT踏倒${sign}${v}%`
+          : `${condPrefix}CT踏倒`;
+      case "hitCdMinusChance":
+        return hasV ? `${condPrefix}被弾でCT-1 ${v}%` : `${condPrefix}被弾短縮`;
+      case "pursuitChance":
+        return hasV ? `${condPrefix}追撃${sign}${v}%` : `${condPrefix}追撃`;
+      case "pursuitDamagePct":
+        return hasV ? `${condPrefix}追撃威力${sign}${v}%` : `${condPrefix}追撃威力`;
+      case "firstHitPursuit":
+        return `${condPrefix}初撃追撃`;
+      case "deathAvoidOnce":
+        return `${condPrefix}致死耐え(戦1)`;
+      case "firstHitCrit":
+        return `${condPrefix}初撃会心`;
+      case "overhealBarrierCap":
+        return hasV
+          ? `${condPrefix}余剰回復盾(上限${v}%)`
+          : `${condPrefix}余剰回復盾`;
 
       case "magicPower":
         return hasV
@@ -467,12 +492,12 @@
 
       case "multiStrikeChance":
         return hasV
-          ? `${condPrefix}連続攻撃率${sign}${v}%`
-          : `${condPrefix}連続攻撃率`;
+          ? `${condPrefix}連撃率${sign}${v}%`
+          : `${condPrefix}連撃率`;
       case "multiStrikeDamage":
         return hasV
-          ? `${condPrefix}連続攻撃威力${sign}${v}%`
-          : `${condPrefix}連続攻撃威力`;
+          ? `${condPrefix}連撃威力${sign}${v}%`
+          : `${condPrefix}連撃威力`;
       case "counterChance":
         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
       case "counterDamage":
@@ -1417,6 +1442,10 @@
       addBonus("dropRate");
       addBonus("skillPower");
       addBonus("cooldownReduction");
+      addBonus("cooldownCheatChance");
+      addBonus("pursuitChance");
+      addBonus("deathAvoidOnce");
+      addBonus("overhealBarrierCap");
 
       addBonus("healReceived");
       addBonus("damageReduction");
@@ -1651,7 +1680,7 @@
       );
       if (lv > 0) {
         prevBuild[sk] = lv;
-        refund += lv;
+        refund += lv * getSkillPointCost(def);
       }
       // 旧グループのスキルは外す
       if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
@@ -1680,11 +1709,12 @@
         if (lv <= 0) continue;
         if (def.maxLevel !== Infinity)
           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
-        lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0)));
+        const cost = getSkillPointCost(def);
+        lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0) / cost));
         if (lv <= 0) break;
         if (!p.skills || typeof p.skills !== "object") p.skills = {};
         p.skills[sk] = lv;
-        p.skillPoints -= lv;
+        p.skillPoints -= lv * cost;
       }
       p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)));
     }
@@ -1774,6 +1804,48 @@
     document.getElementById("statusScreen").style.display = "block";
   }
 
+
+  function getSkillPointCost(skillDef) {
+    const c = Number(skillDef?.requiredPoints);
+    if (!Number.isFinite(c) || c <= 0) return 1;
+    return Math.max(1, Math.floor(c));
+  }
+
+  function findExclusiveConflict(skillKey, skillDef, playerSkills) {
+    const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+    // 明示的な衝突指定
+    if (Array.isArray(skillDef?.exclusiveWith)) {
+      for (const k of skillDef.exclusiveWith) {
+        if (!k) continue;
+        if (Number(ps[k] || 0) > 0) return String(k);
+      }
+    }
+    // グループ衝突
+    const group = skillDef?.exclusiveGroup;
+    if (group) {
+      for (const k in skills) {
+        if (k === skillKey) continue;
+        const def = skills[k];
+        if (!def) continue;
+        if (def.exclusiveGroup === group && Number(ps[k] || 0) > 0) return String(k);
+      }
+    }
+    return null;
+  }
+
+  function isSkillPrereqMet(skillDef, playerSkills) {
+    const reqs = skillDef?.requires;
+    if (!Array.isArray(reqs) || reqs.length === 0) return true;
+    const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+    return reqs.every((r) => {
+      if (!r) return true;
+      const k = String(r.key || "");
+      if (!k) return true;
+      const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
+      return Math.floor(Number(ps[k] || 0)) >= needLv;
+    });
+  }
+
   function updateSkillUI() {
     const p = gameData.player;
     const currentJob = p.job;
@@ -1859,8 +1931,16 @@
       const level = p.skills[key] || 0;
       const maxLv =
         skill.maxLevel === Infinity ? Infinity : Number(skill.maxLevel);
+      const cost = getSkillPointCost(skill);
+      const prereqOk = isSkillPrereqMet(skill, p.skills);
+      const conflictKey =
+        level <= 0 ? findExclusiveConflict(key, skill, p.skills) : null;
+
       const canLevelUp =
-        (maxLv === Infinity || level < maxLv) && p.skillPoints > 0;
+        (maxLv === Infinity || level < maxLv) &&
+        p.skillPoints >= cost &&
+        prereqOk &&
+        !conflictKey;
       const canLevelDown = level > 0;
 
       // 命中率表示（攻撃系スキルのみ）
@@ -1894,6 +1974,30 @@
             <div class="skill-desc">${formatSkillDesc(skill, level)}</div>
             ${skill.type === "active" ? `<div style="font-size: 11px; color: #aaa;">CT: ${skill.cooldown}ターン</div>` : ""}
             ${accLine}
+            ${
+              cost !== 1
+                ? `<div style="font-size: 11px; color: #aaa;">必要SP: ${cost}</div>`
+                : ""
+            }
+            ${
+              (skill.exclusiveGroup ||
+                (Array.isArray(skill.exclusiveWith) && skill.exclusiveWith.length > 0)) &&
+              level <= 0
+                ? `<div style="font-size: 11px; color: #aaa;">分岐（同時取得不可）</div>`
+                : ""
+            }
+            ${
+              !prereqOk && level <= 0
+                ? `<div style="font-size: 11px; color: #f88;">🔒 前提スキル未達</div>`
+                : ""
+            }
+            ${
+              conflictKey && level <= 0
+                ? `<div style="font-size: 11px; color: #f88;">🔒 取得中：${
+                    skills[conflictKey]?.name || conflictKey
+                  }</div>`
+                : ""
+            }
           </div>
           <div class="skill-actions">
             <div class="skill-level">Lv.${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
@@ -1927,18 +2031,42 @@
   }
 
   function levelUpSkill(key) {
-    if (gameData.player.skillPoints <= 0) return;
+    const p = gameData.player;
+    if (!p) return;
 
     const skill = skills[key];
-    const currentLevel = gameData.player.skills[key] || 0;
+    if (!skill) return;
+
+    const cost = getSkillPointCost(skill);
+    if (Math.floor(Number(p.skillPoints || 0)) < cost) return;
+
+    const currentLevel = Math.floor(Number((p.skills && p.skills[key]) || 0));
     if (skill.maxLevel !== Infinity && currentLevel >= skill.maxLevel) return;
 
-    gameData.player.skills[key] = currentLevel + 1;
-    gameData.player.skillPoints--;
+    // 分岐・前提チェック（未習得→習得の瞬間だけ）
+    if (currentLevel <= 0) {
+      const conflictKey = findExclusiveConflict(key, skill, p.skills);
+      if (conflictKey) {
+        log(
+          `❌ ${skill.name}は「${skills[conflictKey]?.name || conflictKey}」と同時に取得できません`,
+        );
+        return;
+      }
+      if (!isSkillPrereqMet(skill, p.skills)) {
+        log(`🔒 前提スキルが足りません`);
+        return;
+      }
+    }
 
-    log(`${skill.name}のレベルが上がった！`);
+    if (!p.skills || typeof p.skills !== "object") p.skills = {};
+    p.skills[key] = currentLevel + 1;
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);
+
+    log(`${skill.name}のレベルが上がった！（ポイント-${cost}）`);
     updateSkillUI();
+    updateStatusUI();
     getCombatStats();
+    updateSkillButtons();
   }
 
   // いつでもスキルレベルを下げられる（ポイント返却）
@@ -1965,10 +2093,14 @@
       p.skills[key] = nextLevel;
     }
 
-    // ポイント返却
-    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + 1);
+    // ポイント返却（スキルごとに必要SPが違う）
+    const cost = getSkillPointCost(skill);
+    p.skillPoints = Math.max(
+      0,
+      Math.floor(Number(p.skillPoints || 0)) + cost,
+    );
 
-    log(`${skill?.name || key}のレベルを下げた（ポイント+1）`);
+    log(`${skill?.name || key}のレベルを下げた（ポイント+${cost}）`);
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
@@ -2051,7 +2183,9 @@
     let refund = 0;
     if (p.skills && typeof p.skills === "object") {
       for (const sk of Object.keys(p.skills)) {
-        refund += Math.max(0, Math.floor(Number(p.skills[sk] || 0)));
+        const def = skills[sk];
+        const lv = Math.max(0, Math.floor(Number(p.skills[sk] || 0)));
+        refund += lv * getSkillPointCost(def);
       }
     }
 
