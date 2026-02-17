@@ -278,25 +278,6 @@ button:active {
   background: #555;
 }
 
-/* アイテム(消耗品/貴重品) サブタブ */
-.item-sub-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.item-sub-tab {
-  flex: 1;
-  padding: 8px;
-  font-size: 13px;
-  background: #444;
-  border-radius: 6px;
-}
-
-.item-sub-tab.is-active {
-  background: #555;
-}
-
 .inventory-footer {
   margin-top: 16px;
 }

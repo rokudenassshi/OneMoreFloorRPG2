@@ -373,28 +373,6 @@
   }
 
   // -------------------
-  // UI - アイテム（消耗品/貴重品）サブタブ
-  // -------------------
-  function setItemSubTab(tab) {
-    const ev = window.event;
-    document
-      .querySelectorAll(".item-sub-tab")
-      .forEach((t) => t.classList.remove("is-active"));
-    if (ev && ev.target) ev.target.classList.add("is-active");
-
-    const con = document.getElementById("consumablesSubTab");
-    const val = document.getElementById("valuablesSubTab");
-
-    if (tab === "valuables") {
-      if (con) con.style.display = "none";
-      if (val) val.style.display = "block";
-    } else {
-      if (con) con.style.display = "block";
-      if (val) val.style.display = "none";
-    }
-
-    updateBagUI();
-  }
   function fmtSigned(n) {
     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
     return n > 0 ? `+${n}` : `${n}`;
@@ -665,14 +643,10 @@
   function updateBagUI() {
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
-    const consumablesList =
-      document.getElementById("consumablesList") ||
-      document.getElementById("itemsList");
     const valuablesList = document.getElementById("valuablesList");
 
     weaponsList.innerHTML = "";
     accessoriesList.innerHTML = "";
-    if (consumablesList) consumablesList.innerHTML = "";
     if (valuablesList) valuablesList.innerHTML = "";
 
     // 装備品
@@ -750,28 +724,6 @@
         weaponsList.innerHTML += card;
       }
     });
-
-    // アイテム（消耗品）
-    if (consumablesList) {
-      const items = Array.isArray(gameData.player.items)
-        ? gameData.player.items
-        : [];
-      if (items.length === 0) {
-        consumablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">消耗品を持っていません</div>`;
-      } else {
-        items.forEach((item) => {
-          const heal = Number(item.heal || 0);
-          const desc =
-            Number.isFinite(heal) && heal > 0 ? `HP ${heal}回復` : "";
-          consumablesList.innerHTML += `
-            <div class="item-card" onclick="useItem('${item.name}')">
-              <div class="item-name">${item.name} x${item.count}</div>
-              <div class="item-stats">${desc}</div>
-            </div>
-          `;
-        });
-      }
-    }
 
     // アイテム（貴重品）
     if (valuablesList) {
@@ -2260,7 +2212,6 @@
   window.confirmTeleport = confirmTeleport;
   window.setBagTab = setBagTab;
   window.setEquipmentSubTab = setEquipmentSubTab;
-  window.setItemSubTab = setItemSubTab;
   window.updateBagUI = updateBagUI;
   window.toggleEquip = toggleEquip;
   window.toggleItemLock = toggleItemLock;
