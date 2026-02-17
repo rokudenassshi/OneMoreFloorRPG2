@@ -1888,64 +1888,6 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         log(`🛡 バリア+${r.barrierGained}`);
       }
     }
-
-
-    // 連続攻撃：一定確率でもう一撃（ダメージは控えめ）
-    const msChance = Number(getAccessoryBonus("multiStrikeChance") || 0);
-    if (Number.isFinite(msChance) && msChance > 0 && enemy.hp > 0) {
-      const roll = Math.random() * 100;
-      if (roll < Math.min(60, msChance)) {
-        const bonus = Number(getAccessoryBonus("multiStrikeDamage") || 0);
-        const rate =
-          0.6 * (1 + (Number.isFinite(bonus) ? Math.min(150, bonus) : 0) / 100);
-        const extraCrit = Math.random() * 100 < combat.critRate;
-        const extraCritMul = extraCrit
-          ? baseCritMul *
-            (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
-          : 1;
-        const exec2Mul =
-          Number.isFinite(execPct) &&
-          execPct > 0 &&
-          enemy.maxHp > 0 &&
-          enemy.hp / enemy.maxHp <= 0.5
-            ? 1 + Math.min(200, execPct) / 100
-            : 1;
-        let d2 = Math.max(
-          1,
-          (combat.attack - enemy.defense * 0.5) *
-            extraCritMul *
-            exec2Mul *
-            rate,
-        );
-        d2 = Math.round(d2 * (0.9 + Math.random() * 0.2));
-        d2 = applyEnemyIncomingReduction(enemy, d2);
-        d2 = applyEnemyVulnerableTaken(enemy, d2);
-        enemy.hp -= d2;
-        recordPlayerDamage(d2);
-        log(`⚔ 連続攻撃！ ${d2}ダメージ${extraCrit ? " クリティカル！" : ""}`);
-
-        // 特殊接頭語（onHit）
-        applyPlayerOnHitSpecialEffects(enemy);
-          onPlayerHit({ kind: "physical", isCrit: extraCrit });
-
-        // 吸血（追撃分）
-        const ls2 = Number(getLifeStealPercent() || 0);
-        if (Number.isFinite(ls2) && ls2 > 0) {
-          const baseHeal = Math.max(1, Math.round(d2 * (ls2 / 100)));
-          const r = applyPlayerHeal(baseHeal);
-          if (r.healed > 0 && r.barrierGained > 0) {
-            log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
-          } else if (r.healed > 0) {
-            log(`🩸 吸血で${r.healed}回復`);
-          } else if (r.barrierGained > 0) {
-            log(`🛡 バリア+${r.barrierGained}`);
-          }
-        }
-
-
-      }
-    }
-
     // 装飾品：追撃トリガー
     tryAccessoryPursuit(enemy, combat);
     checkBattleEnd();
@@ -2032,7 +1974,8 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       bs.firstHitPursuitUsed = true;
     } else {
       if (!Number.isFinite(pct) || pct <= 0) return;
-      const chance = Math.min(0.35, Math.max(0, pct) / 100);
+      // 追撃/連続攻撃を統一：最大確率は旧「連続攻撃」に合わせて60%まで
+      const chance = Math.min(0.6, Math.max(0, pct) / 100);
       if (Math.random() >= chance) return;
     }
 
@@ -2047,7 +1990,8 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
       : 1;
 
-    // 追撃は控えめ（約40%）
+    // 追撃/連続攻撃を統合：基礎倍率は中間の50%に寄せる
+    const baseRate = 0.5;
     const execPct = Number(getAccessoryBonus("executeDamage") || 0);
     const execMul =
       Number.isFinite(execPct) &&
@@ -2057,7 +2001,15 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         ? 1 + Math.min(200, execPct) / 100
         : 1;
 
-    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.4 * (1 + Math.min(80, Math.max(0, Number(getAccessoryBonus("pursuitDamagePct") || 0))) / 100) * critMul * execMul);
+    const dmgPct = Math.min(150, Math.max(0, Number(getAccessoryBonus("pursuitDamagePct") || 0)));
+    let damage = Math.max(
+      1,
+      (combat.attack - enemy.defense * 0.5) *
+        baseRate *
+        (1 + dmgPct / 100) *
+        critMul *
+        execMul,
+    );
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     damage = applyEnemyIncomingReduction(enemy, damage);
     damage = applyEnemyVulnerableTaken(enemy, damage);
@@ -2144,6 +2096,10 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
       gainStance(Math.floor(effect.gainStance));
     }
 
+if (effect && typeof effect.nextCritTurns === "number" && effect.nextCritTurns > 0) {
+  setNextCrit(Math.floor(effect.nextCritTurns));
+}
+
     addJobProgress("skillUse", 1);
 
     // このアクション内の追撃は1回まで
@@ -2153,6 +2109,96 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
 
     const combat = getCombatStats();
     const enemy = gameData.enemy;
+
+const applyEnemyDebuffsFromSkillEffect = (eff) => {
+  if (!enemy || !eff) return;
+
+  /** @type {{type:string, turns?:number, rate?:number}[]} */
+  const list = [];
+  if (Array.isArray(eff.enemyDebuffs)) {
+    for (const d of eff.enemyDebuffs) {
+      if (d && typeof d.type === "string") list.push(d);
+    }
+  }
+
+  const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  const pushTurns = (type, turns) => {
+    const t = toNum(turns);
+    if (t && t > 0) list.push({ type, turns: t });
+  };
+  const pushRateTurns = (type, turns, rate) => {
+    const t = toNum(turns);
+    const r = toNum(rate);
+    if (t && t > 0) list.push({ type, turns: t, rate: r != null ? r : undefined });
+  };
+
+  pushTurns("stun", eff.enemyStunTurns);
+  pushTurns("silence", eff.enemySilenceTurns);
+  pushRateTurns("vulnerable", eff.enemyVulnerableTurns, eff.enemyVulnerableRate);
+  pushRateTurns("slow", eff.enemySlowTurns, eff.enemySlowRate);
+  pushRateTurns("accuracyDown", eff.enemyAccuracyDownTurns, eff.enemyAccuracyDownRate);
+
+  if (list.length === 0) return;
+
+  const st = ensureEnemyStatus(enemy) || {};
+  const name = enemy.displayName || enemy.name || "敵";
+
+  const applyTurnsOnly = (key, turns, msg) => {
+    const t = Math.max(1, Math.min(5, Math.floor(Number(turns || 0))));
+    const before = Number(st[key] || 0);
+    st[key] = Math.max(before, t);
+    if (st[key] > before) log(msg);
+  };
+
+  const applyRateAndTurns = (turnKey, rateKey, turns, rate, msg) => {
+    const t = Math.max(1, Math.min(5, Math.floor(Number(turns || 0))));
+    const beforeT = Number(st[turnKey] || 0);
+    st[turnKey] = Math.max(beforeT, t);
+
+    const r = clamp(Number(rate || 0), 0, 0.9);
+    const beforeR = Number(st[rateKey] || 0);
+    st[rateKey] = Math.max(beforeR, r);
+
+    if (st[turnKey] > beforeT || st[rateKey] > beforeR) log(msg);
+  };
+
+  for (const d of list) {
+    const type = d && typeof d.type === "string" ? d.type : "";
+    if (type === "stun") {
+      applyTurnsOnly("stunTurns", d.turns, `⚡ ${name}はしびれた！`);
+    } else if (type === "silence") {
+      applyTurnsOnly("silenceTurns", d.turns, `🔇 ${name}は封印された！`);
+    } else if (type === "vulnerable") {
+      applyRateAndTurns(
+        "vulnerableTurns",
+        "vulnerableRate",
+        d.turns,
+        d.rate,
+        `💥 ${name}の体勢が崩れた！`,
+      );
+    } else if (type === "slow") {
+      applyRateAndTurns(
+        "slowTurns",
+        "slowRate",
+        d.turns,
+        d.rate,
+        `🐢 ${name}の動きが鈍った！`,
+      );
+    } else if (type === "accuracyDown") {
+      applyRateAndTurns(
+        "accuracyDownTurns",
+        "accuracyDownRate",
+        d.turns,
+        d.rate,
+        `🎯 ${name}の命中が下がった！`,
+      );
+    }
+  }
+};
+
 
     // -------------------
     // スキル命中判定
@@ -2259,6 +2305,7 @@ let damage = base * skillMul;
     // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
     onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
 
+        applyEnemyDebuffsFromSkillEffect(effect);
         // 暗殺者：スキル追撃（命中してダメージを与えた後）
         trySkillFollowUp(enemy, combat);
 
@@ -2346,6 +2393,22 @@ if (skillKey === "blademaster_iai") {
             }`,
           );
 
+
+applyEnemyDebuffsFromSkillEffect(effect);
+
+// 回復効果（合計与ダメの%回復）
+if (effect.healPercent) {
+  const baseHeal = Math.max(1, Math.round(total * effect.healPercent));
+  const r = applyPlayerHeal(baseHeal);
+  if (r.healed > 0 && r.barrierGained > 0) {
+    log(`${r.healed}HP回復した！（🛡+${r.barrierGained}）`);
+  } else if (r.healed > 0) {
+    log(`${r.healed}HP回復した！`);
+  } else if (r.barrierGained > 0) {
+    log(`🛡 バリア+${r.barrierGained}`);
+  }
+}
+
           // 暗殺者：スキル追撃（命中してダメージを与えた後）
           trySkillFollowUp(enemy, combat);
 
@@ -2431,6 +2494,7 @@ if (skillKey === "blademaster_iai") {
     // isCrit は分岐によっては未定義になりうるため、typeof で安全に参照する
     onPlayerHit({ kind: "physical", isCrit: typeof isCrit !== "undefined" ? isCrit : false });
 
+          applyEnemyDebuffsFromSkillEffect(effect);
           // 暗殺者：スキル追撃（命中してダメージを与えた後）
           trySkillFollowUp(enemy, combat);
 
@@ -3297,8 +3361,6 @@ if (skillKey === "blademaster_iai") {
   // 装飾品効果：フロア/レア度でスケール
   // -------------------
   const ACCESSORY_RARITY_MULT = {
-    common: 1.0,
-    uncommon: 1.08,
     rare: 1.2,
     epic: 1.38,
     legendary: 1.6,
@@ -3369,7 +3431,7 @@ if (skillKey === "blademaster_iai") {
       "defenseBonus",
       "magicPower",
       "healPower",
-      "multiStrikeChance",
+      "pursuitChance",
       "counterChance",
       "evadeHeal",
     ]);
@@ -3389,8 +3451,8 @@ if (skillKey === "blademaster_iai") {
 
     // 追加：装飾品の新軸効果
     if (type === "cooldownCheatChance") v = clamp(v, 0, 25);
-    if (type === "pursuitChance") v = clamp(v, 0, 35);
-    if (type === "pursuitDamagePct") v = clamp(v, 0, 80);
+    if (type === "pursuitChance") v = clamp(v, 0, 60);
+    if (type === "pursuitDamagePct") v = clamp(v, 0, 150);
     if (type === "hitCdMinusChance") v = clamp(v, 0, 30);
     if (type === "overhealBarrierCap") v = clamp(v, 0, 60);
 
@@ -3399,8 +3461,6 @@ if (skillKey === "blademaster_iai") {
     if (type === "critRate") v = clamp(v, 0, 40);
     if (type === "critDamage") v = clamp(v, 0, 200);
 
-    if (type === "multiStrikeChance") v = clamp(v, 0, 60);
-    if (type === "multiStrikeDamage") v = clamp(v, 0, 150);
     if (type === "counterChance") v = clamp(v, 0, 45);
     if (type === "counterDamage") v = clamp(v, 0, 200);
     if (type === "desperationDamage") v = clamp(v, 0, 200);
@@ -3471,11 +3531,10 @@ if (skillKey === "blademaster_iai") {
 
     if (effect.type === "evasion") v = clamp(v, 0, 10);
     if (effect.type === "counterChance") v = clamp(v, 0, 45);
-    if (effect.type === "multiStrikeChance") v = clamp(v, 0, 60);
 
     if (effect.type === "cooldownCheatChance") v = clamp(v, 0, 25);
-    if (effect.type === "pursuitChance") v = clamp(v, 0, 35);
-    if (effect.type === "pursuitDamagePct") v = clamp(v, 0, 80);
+    if (effect.type === "pursuitChance") v = clamp(v, 0, 60);
+    if (effect.type === "pursuitDamagePct") v = clamp(v, 0, 150);
     if (effect.type === "hitCdMinusChance") v = clamp(v, 0, 30);
     if (effect.type === "overhealBarrierCap") v = clamp(v, 0, 60);
 
@@ -3550,8 +3609,8 @@ if (skillKey === "blademaster_iai") {
             critRate: 1.35,
             critDamage: 1.35,
             accuracy: 1.2,
-            multiStrikeChance: 1.15,
-            multiStrikeDamage: 1.15,
+            pursuitChance: 1.15,
+            pursuitDamagePct: 1.15,
             executeDamage: 1.15,
             desperationDamage: 1.15,
             lifeSteal: 1.1,
@@ -3588,8 +3647,8 @@ if (skillKey === "blademaster_iai") {
             accuracy: 0.8,
             magicPower: 0.95,
             healPower: 0.95,
-            multiStrikeChance: 0.9,
-            multiStrikeDamage: 0.9,
+            pursuitChance: 0.9,
+            pursuitDamagePct: 0.9,
             executeDamage: 0.9,
             desperationDamage: 0.9,
             lifeSteal: 0.9,
@@ -3629,8 +3688,8 @@ if (skillKey === "blademaster_iai") {
         critRate: 1.35,
         critDamage: 1.15,
         evasion: 1.25,
-        multiStrikeChance: 1.25,
-        multiStrikeDamage: 1.15,
+        pursuitChance: 1.25,
+        pursuitDamagePct: 1.15,
         attackBonus: 0.85,
         damageReduction: 0.75,
         maxHpBonus: 0.85,
@@ -3678,7 +3737,7 @@ if (skillKey === "blademaster_iai") {
       // -------- 防具 --------
       heavy_armor: { defenseBonus: 1.35, damageReduction: 1.25, maxHpBonus: 1.15, evasion: 0.65 },
       armor: { defenseBonus: 1.15, damageReduction: 1.1, evasion: 0.85 },
-      light_armor: { evasion: 1.35, defenseBonus: 0.9, damageReduction: 0.85, multiStrikeChance: 1.1 },
+      light_armor: { evasion: 1.35, defenseBonus: 0.9, damageReduction: 0.85, pursuitChance: 1.1 },
       shield: { defenseBonus: 1.25, damageReduction: 1.15, counterChance: 1.35, counterDamage: 1.2, evasion: 0.9 },
       buckler: { evasion: 1.35, counterChance: 1.15, defenseBonus: 0.9, damageReduction: 0.85 },
       tower_shield: {
@@ -3692,15 +3751,15 @@ if (skillKey === "blademaster_iai") {
       helmet: { defenseBonus: 1.15, maxHpBonus: 1.1, ailmentResist: 1.15 },
       circlet: { accuracy: 1.45, critRate: 1.15, magicPower: 1.15, defenseBonus: 0.85 },
       boots: { evasion: 1.45, evadeHeal: 1.15, defenseBonus: 0.85 },
-      // 篭手：手数と反撃が乗りやすい（拳・連撃イメージ）
+      // 篭手：手数と反撃が乗りやすい（拳・追撃イメージ）
       gloves: {
         accuracy: 1.35,
         critRate: 1.15,
         attackBonus: 1.05,
         defenseBonus: 0.8,
-        // ここから要望反映：連続攻撃/反撃系のオプションが付きやすい
-        multiStrikeChance: 1.9,
-        multiStrikeDamage: 1.6,
+        // ここから要望反映：追撃/反撃系のオプションが付きやすい
+        pursuitChance: 1.9,
+        pursuitDamagePct: 1.6,
         counterChance: 1.8,
         counterDamage: 1.5,
       },
@@ -3708,7 +3767,7 @@ if (skillKey === "blademaster_iai") {
       robe: { magicPower: 1.35, healPower: 1.2, healReceived: 1.15, defenseBonus: 0.9, evasion: 1.05, ailmentResist: 1.1 },
       // マント：魔法攻撃/回復寄り（回避特化は廃止）
       cloak: { magicPower: 1.35, healPower: 1.35, healReceived: 1.1, defenseBonus: 0.85 },
-      mantle: { evasion: 1.45, accuracy: 1.15, defenseBonus: 0.85, multiStrikeChance: 1.1 },
+      mantle: { evasion: 1.45, accuracy: 1.15, defenseBonus: 0.85, pursuitChance: 1.1 },
     };
 
     const base = catBase[effectType] ?? 1.0;
@@ -4127,7 +4186,6 @@ if (skillKey === "blademaster_iai") {
         firstHitCrit: "初撃会心",
         evasion: "回避",
         counterChance: "反撃",
-        multiStrikeChance: "連撃",
         attackBonus: "攻撃",
         search: "索敵",
         dropRate: "ドロ率",
@@ -4145,12 +4203,10 @@ if (skillKey === "blademaster_iai") {
     return item;
   }
 
-  function getRarity(floor) {
+  function getRarity(_floor) {
     const rand = Math.random() * 100;
-    const bonus = floor * 2;
 
-    if (rand < 50 - bonus) return "common";
-    if (rand < 75 - bonus / 2) return "uncommon";
+    // 低レアは廃止し、rare に統合
     if (rand < 90) return "rare";
     if (rand < 97) return "epic";
     return "legendary";

@@ -77,6 +77,17 @@
       describe: (r) => `ドロップ率+${pct(r.dropRate)}`,
     },
     {
+      name: "探求者の",
+      rarity: "rare",
+      weight: 7,
+      effects: [
+        { type: "bonusPct", key: "search", min: 6, max: 12 },
+        { type: "bonusPct", key: "dropRate", min: 8, max: 18 },
+      ],
+      describe: (r) =>
+        `索敵+${Math.round(Number(r.search) || 0)} / ドロップ率+${pct(r.dropRate)}`,
+    },
+    {
       name: "不死なる",
       rarity: "epic",
       weight: 5,
@@ -93,10 +104,78 @@
       effects: [{ type: "bonusPct", key: "cooldownReduction", min: 1, max: 1 }],
       describe: (r) => `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)}`,
     },
+    {
+      name: "先制の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "firstHitCrit", min: 1, max: 1 },
+        { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
+      ],
+      describe: (r) => `初撃会心（戦闘で1回） / クリダメ+${pct(r.critDamage)}`,
+    },
+
+    // -------------------
+    // 追加：吸血/火力/耐久の組み合わせ
+    // -------------------
+    {
+      name: "不死鳥の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "lifeSteal", min: 6, max: 12 },
+        { type: "bonusPct", key: "regen", min: 2, max: 5 },
+      ],
+      describe: (r) => `吸血+${pct(r.lifeSteal)} / 再生${pct(r.regen)}`,
+    },
+    {
+      name: "剛力の",
+      rarity: "rare",
+      weight: 8,
+      effects: [
+        { type: "statPct", stat: "attack", min: 6, max: 12 },
+        { type: "statPct", stat: "maxHp", min: 6, max: 12 },
+      ],
+      describe: (r) => `攻撃力+${pct(r.attackPct)} / 最大HP+${pct(r.maxHpPct)}`,
+    },
   ];
 
   // 武器向け（攻撃的/手数/状態異常付与）
   const SPECIAL_PREFIXES_WEAPON = [
+    // -------------------
+    // 追加：吸血×火力
+    // -------------------
+    {
+      name: "渇血の",
+      rarity: "rare",
+      weight: 9,
+      effects: [
+        { type: "bonusPct", key: "lifeSteal", min: 4, max: 10 },
+        { type: "statPct", stat: "attack", min: 6, max: 12 },
+      ],
+      describe: (r) => `吸血+${pct(r.lifeSteal)} / 攻撃力+${pct(r.attackPct)}`,
+    },
+    {
+      name: "血宴の",
+      rarity: "epic",
+      weight: 6,
+      effects: [
+        { type: "bonusPct", key: "lifeSteal", min: 8, max: 14 },
+        { type: "bonusPct", key: "pursuitChance", min: 10, max: 22 },
+      ],
+      describe: (r) => `吸血+${pct(r.lifeSteal)} / 追撃率+${pct(r.pursuitChance)}`,
+    },
+    {
+      name: "屠りの",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "lifeSteal", min: 6, max: 12 },
+        { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
+      ],
+      describe: (r) => `吸血+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
+    },
+
     {
       name: "処刑人の",
       rarity: "rare",
@@ -113,11 +192,12 @@
       rarity: "rare",
       weight: 9,
       effects: [
-        { type: "bonusPct", key: "multiStrikeChance", min: 6, max: 14 },
-        { type: "bonusPct", key: "multiStrikeDamage", min: 12, max: 28 },
+        // 連続攻撃/追撃を統一（名称は「追撃」）
+        { type: "bonusPct", key: "pursuitChance", min: 6, max: 14 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 12, max: 28 },
       ],
       describe: (r) =>
-        `連続攻撃+${pct(r.multiStrikeChance)} / 連続威力+${pct(r.multiStrikeDamage)}`,
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)}`,
     },
     {
       name: "襲撃の",
@@ -152,6 +232,43 @@
       ],
       describe: (r) =>
         `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)}`,
+    },
+
+    {
+      name: "術式の",
+      rarity: "epic",
+      weight: 6,
+      effects: [{ type: "bonusPct", key: "skillPower", min: 15, max: 35 }],
+      describe: (r) => `スキル威力+${pct(r.skillPower)}`,
+    },
+    {
+      name: "雷鳴の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        {
+          type: "onHit",
+          effect: "stun",
+          chanceMin: 6,
+          chanceMax: 12,
+          turnsMin: 1,
+          turnsMax: 2,
+        },
+      ],
+      describe: (r) =>
+        `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T）`,
+    },
+
+    {
+      name: "連鎖の",
+      rarity: "epic",
+      weight: 6,
+      effects: [
+        // 追撃/連続攻撃を統一：2つの確率を合算して「追撃率」として扱う
+        { type: "bonusPct", key: "pursuitChance", min: 18, max: 38 },
+      ],
+      describe: (r) =>
+        `追撃率+${pct(r.pursuitChance)}`,
     },
 
     {
@@ -198,10 +315,35 @@
       describe: (r) =>
         `クリティカル率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)}`,
     },
+    {
+      name: "災禍の",
+      rarity: "legendary",
+      weight: 1,
+      effects: [
+        { type: "bonusPct", key: "pursuitChance", min: 18, max: 30 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 40, max: 80 },
+        { type: "bonusPct", key: "critDamage", min: 40, max: 90 },
+      ],
+      describe: (r) =>
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / クリダメ+${pct(r.critDamage)}`,
+    },
   ];
 
   // 防具向け（耐久/軽減/反撃/耐性）
   const SPECIAL_PREFIXES_ARMOR = [
+    // -------------------
+    // 追加：耐久×安定
+    // -------------------
+    {
+      name: "堅守の",
+      rarity: "rare",
+      weight: 9,
+      effects: [
+        { type: "statPct", stat: "defense", min: 8, max: 14 },
+        { type: "statPct", stat: "maxHp", min: 6, max: 12 },
+      ],
+      describe: (r) => `防御力+${pct(r.defensePct)} / 最大HP+${pct(r.maxHpPct)}`,
+    },
     {
       name: "鉄壁の",
       rarity: "rare",
@@ -225,6 +367,17 @@
         `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)}`,
     },
     {
+      name: "聖域の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "healReceived", min: 12, max: 25 },
+        { type: "bonusPct", key: "overhealBarrierCap", min: 20, max: 45 },
+      ],
+      describe: (r) =>
+        `回復量+${pct(r.healReceived)} / 余剰回復盾+${pct(r.overhealBarrierCap)}`,
+    },
+    {
       name: "反撃の",
       rarity: "rare",
       weight: 9,
@@ -236,6 +389,17 @@
         `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)}`,
     },
     {
+      name: "反射の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "counterChance", min: 8, max: 16 },
+        { type: "bonusPct", key: "counterDamage", min: 25, max: 60 },
+      ],
+      describe: (r) =>
+        `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)}`,
+    },
+        {
       name: "浄化の",
       rarity: "rare",
       weight: 8,
@@ -245,6 +409,27 @@
       ],
       describe: (r) =>
         `状態異常耐性+${pct(r.ailmentResist)} / 状態異常短縮+${pct(r.ailmentDurationDown)}`,
+    },
+    {
+      name: "強靭の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "statPct", stat: "maxHp", min: 10, max: 18 },
+        { type: "bonusPct", key: "regen", min: 3, max: 7 },
+      ],
+      describe: (r) => `最大HP+${pct(r.maxHpPct)} / 再生${pct(r.regen)}`,
+    },
+    {
+      name: "反骨の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "hitCdMinusChance", min: 10, max: 25 },
+        { type: "bonusPct", key: "damageReduction", min: 6, max: 12 },
+      ],
+      describe: (r) =>
+        `被弾でCT-1+${pct(r.hitCdMinusChance)} / 被ダメ軽減+${pct(r.damageReduction)}`,
     },
     {
       name: "不動の",
@@ -257,6 +442,14 @@
       ],
       describe: (r) =>
         `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)}`,
+    },
+
+    {
+      name: "生還者の",
+      rarity: "legendary",
+      weight: 2,
+      effects: [{ type: "bonusPct", key: "deathAvoidOnce", min: 1, max: 1 }],
+      describe: () => `戦闘中1回だけ死亡回避`,
     },
   ];
 
@@ -291,7 +484,12 @@
 
     if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
 
-    const allowed = getAllowedPrefixRaritiesByItemRarity(itemRarity);
+    // 武器は「武器レア度に関係なく」接頭語テーブル全体から抽選できる
+    // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）
+    const allowed =
+      category === "weapon"
+        ? new Set(["rare", "epic", "legendary"])
+        : getAllowedPrefixRaritiesByItemRarity(itemRarity);
 
     const poolBase = [
       ...SPECIAL_PREFIXES_COMMON,

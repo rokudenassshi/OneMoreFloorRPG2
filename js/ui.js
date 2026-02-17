@@ -502,13 +502,6 @@
         return hasV
           ? `${condPrefix}攻撃時HP回復${sign}${v}`
           : `${condPrefix}攻撃時HP回復`;
-
-      case "multiStrikeChance":
-        return hasV ? `${condPrefix}連撃率${sign}${v}%` : `${condPrefix}連撃率`;
-      case "multiStrikeDamage":
-        return hasV
-          ? `${condPrefix}連撃威力${sign}${v}%`
-          : `${condPrefix}連撃威力`;
       case "counterChance":
         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
       case "counterDamage":
@@ -1455,6 +1448,7 @@
       addBonus("cooldownReduction");
       addBonus("cooldownCheatChance");
       addBonus("pursuitChance");
+      addBonus("pursuitDamagePct");
       addBonus("deathAvoidOnce");
       addBonus("overhealBarrierCap");
 
@@ -1466,8 +1460,6 @@
       addBonus("regen");
       addBonus("hitHeal");
 
-      addBonus("multiStrikeChance");
-      addBonus("multiStrikeDamage");
       addBonus("counterChance");
       addBonus("counterDamage");
 

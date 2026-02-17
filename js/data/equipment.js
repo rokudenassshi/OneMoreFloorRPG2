@@ -308,8 +308,9 @@
     { name: "クリダメUP", type: "critDamage", value: 20 },
     { name: "吸血", type: "lifeSteal", value: 6 },
     { name: "再生", type: "regen", value: 2 },
-    { name: "連続攻撃", type: "multiStrikeChance", value: 6 },
-    { name: "連続攻撃威力UP", type: "multiStrikeDamage", value: 20 },
+    // 連続攻撃/追撃を統一（名称は「追撃」）
+    { name: "追撃", type: "pursuitChance", value: 6 },
+    { name: "追撃強化", type: "pursuitDamagePct", value: 20 },
     { name: "反撃率UP", type: "counterChance", value: 6 },
     { name: "反撃威力UP", type: "counterDamage", value: 25 },
     { name: "背水強化", type: "desperationDamage", value: 20 },
@@ -353,7 +354,7 @@
     { name: "素手回避", type: "evasion", min: 4, max: 10, cond: "unarmed" },
     { name: "素手反撃", type: "counterChance", min: 10, max: 45, cond: "unarmed" },
 
-    { name: "無防具連撃", type: "multiStrikeChance", min: 10, max: 60, cond: "noArmor" },
+    { name: "無防具追撃", type: "pursuitChance", min: 10, max: 60, cond: "noArmor" },
     { name: "無防具回避", type: "evasion", min: 4, max: 10, cond: "noArmor" },
 
     { name: "両手攻撃", type: "attackBonus", min: 20, max: 80, cond: "twoHanded" },

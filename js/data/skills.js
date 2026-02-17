@@ -75,7 +75,7 @@
       job: "swordsman",
       maxLevel: 3,
       cooldown: 4,
-      desc: "2回連続攻撃（各{value}倍）",
+      desc: "2回攻撃（各{value}倍）",
       effect: (lv) => ({ hits: 2, damageMultiplier: 0.76 + lv * 0.15 }),
     },
     counter_stance: {
@@ -232,7 +232,7 @@
       job: "thief",
       maxLevel: 3,
       cooldown: 3,
-      desc: "3回連続攻撃（各{value}倍）",
+      desc: "3回攻撃（各{value}倍）",
       effect: (lv) => ({ hits: 3, damageMultiplier: 0.4 + lv * 0.15 }),
     },
     steal_life: {
@@ -477,7 +477,7 @@
       job: "monk",
       maxLevel: 3,
       cooldown: 4,
-      desc: "4回連続攻撃（各{value}倍）",
+      desc: "4回攻撃（各{value}倍）",
       effect: (lv) => ({ hits: 4, damageMultiplier: 0.34 + lv * 0.12 }),
     },
     chi_strike: {
@@ -524,6 +524,20 @@
       desc: "回避+{value}。回避時、追加で構えが溜まる（最大+1）",
       effect: (lv) => ({ evasionBonus: lv * 3 }),
     },
+
+    blademaster_kensei_overdrive: {
+      name: "剣勢拡張",
+      type: "passive",
+      job: "blademaster",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "攻撃力+{value}、構え上限+1（Lv3）/+2（Lv5）",
+      effect: (lv) => ({
+        attackBonus: lv * 6,
+        stanceMaxBonus: lv >= 5 ? 2 : lv >= 3 ? 1 : 0,
+      }),
+    },
+
     blademaster_parry: {
       name: "受け流し",
       type: "active",
@@ -551,6 +565,18 @@
       maxLevel: 5,
       desc: "反撃率+{value}%",
       effect: (lv) => ({ counterChanceBonus: lv * 2 }),
+    },
+    guardian_shield_master: {
+      name: "重盾の極意",
+      type: "passive",
+      job: "guardian",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "防御力+{value}、反撃威力も上がる",
+      effect: (lv) => ({
+        defenseBonus: lv * 6,
+        counterDamageBonus: lv * 8,
+      }),
     },
     guardian_shield_bash: {
       name: "シールドバッシュ",
@@ -603,6 +629,15 @@
       desc: "会心率+{value}",
       effect: (lv) => ({ critBonus: lv * 2 }),
     },
+    assassin_target_observe: {
+      name: "標的観察",
+      type: "passive",
+      job: "assassin",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "命中+{value}、会心率も上がる",
+      effect: (lv) => ({ accuracyBonus: lv * 3, critBonus: lv * 1 }),
+    },
     assassin_backstab: {
       name: "背撃",
       type: "active",
@@ -653,6 +688,15 @@
       desc: "魔法攻撃力+{value}",
       effect: (lv) => ({ magicBonus: lv * 10 }),
     },
+    archmage_precision_cast: {
+      name: "精密詠唱",
+      type: "passive",
+      job: "archmage",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "命中+{value}、魔法攻撃力も上がる",
+      effect: (lv) => ({ accuracyBonus: lv * 3, magicBonus: lv * 6 }),
+    },
     archmage_arcane_bolt: {
       name: "秘術の矢",
       type: "active",
@@ -699,6 +743,15 @@
       desc: "命中+{value}",
       effect: (lv) => ({ accuracyBonus: lv * 3 }),
     },
+    sniper_weakpoint_analysis: {
+      name: "弱点解析",
+      type: "passive",
+      job: "sniper",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "会心率+{value}、命中も上がる",
+      effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
+    },
     sniper_piercing_shot: {
       name: "貫通射ち",
       type: "active",
@@ -743,6 +796,15 @@
       desc: "回避+{value}",
       effect: (lv) => ({ evasionBonus: lv * 3 }),
     },
+    fistmaster_qi_cycle: {
+      name: "闘気循環",
+      type: "passive",
+      job: "fistmaster",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "回避+{value}、回復力も上がる",
+      effect: (lv) => ({ evasionBonus: lv * 2, healPowerBonus: lv * 6 }),
+    },
     fistmaster_healing_fist: {
       name: "癒しの拳",
       type: "active",
@@ -785,6 +847,15 @@
       desc: "物理攻撃力+{value}",
       effect: (lv) => ({ attackBonus: lv * 10 }),
     },
+    warlord_dominance: {
+      name: "覇気",
+      type: "passive",
+      job: "warlord",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "攻撃+{value}、防御+{value}",
+      effect: (lv) => ({ attackBonus: lv * 6, defenseBonus: lv * 6 }),
+    },
     warlord_charge: {
       name: "突撃",
       type: "active",
@@ -824,6 +895,15 @@
       maxLevel: 5,
       desc: "回避+{value}",
       effect: (lv) => ({ evasionBonus: lv * 3 }),
+    },
+    trickster_gambit: {
+      name: "一か八か",
+      type: "passive",
+      job: "trickster",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "索敵+{value}（回避/会心も少し上がる）",
+      effect: (lv) => ({ searchBonus: lv * 5, evasionBonus: lv * 1, critBonus: lv * 1 }),
     },
     trickster_poison_dart: {
       name: "奇毒の矢",
@@ -868,6 +948,15 @@
       desc: "回復力+{value}",
       effect: (lv) => ({ healPowerBonus: lv * 6 }),
     },
+    sage_scripture: {
+      name: "聖典解読",
+      type: "passive",
+      job: "sage",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "回復力+{value}（魔法攻撃力も上がる）",
+      effect: (lv) => ({ healPowerBonus: lv * 8, magicBonus: lv * 4 }),
+    },
     sage_prayer: {
       name: "大祈祷",
       type: "active",
@@ -909,6 +998,15 @@
       maxLevel: 5,
       desc: "索敵+{value}",
       effect: (lv) => ({ searchBonus: lv * 2 }),
+    },
+    ranger_wild_instinct: {
+      name: "野生の勘",
+      type: "passive",
+      job: "ranger",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "索敵+{value}（回避も上がる）",
+      effect: (lv) => ({ searchBonus: lv * 6, evasionBonus: lv * 2 }),
     },
     ranger_double_shot: {
       name: "連射",
@@ -960,6 +1058,15 @@
       desc: "物理攻撃力+{value}",
       effect: (lv) => ({ attackBonus: lv * 8 }),
     },
+    asura_chain: {
+      name: "修羅の連環",
+      type: "passive",
+      job: "asura",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "攻撃力+{value}（命中も上がる）",
+      effect: (lv) => ({ attackBonus: lv * 6, accuracyBonus: lv * 2 }),
+    },
     asura_rush: {
       name: "修羅連撃",
       type: "active",
@@ -1009,6 +1116,18 @@
       requiredPoints: 3,
       desc: "攻撃時HP吸収+{value}%（最大25%）",
       effect: (lv) => ({ lifeStealPctBonus: Math.min(25, lv * 5) }),
+    },
+    warfiend_blood_scent: {
+      name: "血煙",
+      type: "passive",
+      job: "warfiend",
+      maxLevel: 5,
+      requiredPoints: 3,
+      desc: "攻撃力+{value}（吸血+2%/Lv・最大10%）",
+      effect: (lv) => ({
+        attackBonus: lv * 10,
+        lifeStealPctBonus: Math.min(10, lv * 2),
+      }),
     },
     warfiend_cleave: {
       name: "鬼斬り",
@@ -1076,9 +1195,41 @@
       job: "blademaster",
       maxLevel: 3,
       requiredPoints: 4,
+      exclusiveGroup: "blademaster_ultimate",
       cooldown: 6,
       desc: "疾風の三連撃（{value}倍×3）",
       effect: (lv) => ({ hits: 3, damageMultiplier: 0.65 + lv * 0.08 }),
+    },
+
+    blademaster_heaven_cut: {
+      name: "天断",
+      type: "active",
+      accuracy: 95,
+      job: "blademaster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "blademaster_ultimate",
+      cooldown: 9,
+      desc: "一刀両断（{value}倍、貫通）",
+      effect: (lv) => ({ damageMultiplier: 2.2 + lv * 0.28, ignoreDef: 0.75 }),
+    },
+
+    blademaster_snow_moon_flower: {
+      name: "雪月花",
+      type: "active",
+      accuracy: 105,
+      job: "blademaster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "blademaster_ultimate",
+      cooldown: 7,
+      desc: "構えを整えつつ二連（{value}倍×2、構え+2、1T防御）",
+      effect: (lv) => ({
+        hits: 2,
+        damageMultiplier: 0.78 + lv * 0.06,
+        gainStance: 2,
+        defendTurns: 1,
+      }),
     },
 
     // --- 守護者 (guardian)
@@ -1105,16 +1256,55 @@
         counterDamageBonus: lv * 10,
       }),
     },
+
     guardian_bastion: {
       name: "城塞",
       type: "active",
-      accuracy: 110,
+      accuracy: 100,
       job: "guardian",
       maxLevel: 3,
-      requiredPoints: 6,
+      requiredPoints: 7,
+      exclusiveGroup: "guardian_ultimate",
+      cooldown: 10,
+      desc: "要塞化（3T防御、最大HPの{value}%回復）",
+      effect: (lv) => {
+        const rate = 0.16 + lv * 0.05;
+        return { defendTurns: 3, healRate: rate, value: Math.round(rate * 100) };
+      },
+    },
+
+
+    guardian_earthshatter: {
+      name: "大地砕き",
+      type: "active",
+      accuracy: 95,
+      job: "guardian",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "guardian_ultimate",
+      cooldown: 9,
+      desc: "粉砕の一撃（{value}倍、貫通）",
+      effect: (lv) => ({ damageMultiplier: 2.1 + lv * 0.26, ignoreDef: 0.78 }),
+    },
+
+
+    guardian_counter_fortress: {
+      name: "反攻陣",
+      type: "active",
+      accuracy: 100,
+      job: "guardian",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "guardian_ultimate",
       cooldown: 8,
-      desc: "防御しつつ殴る（{value}倍、2T防御）",
-      effect: (lv) => ({ damageMultiplier: 1.69 + lv * 0.22, defendTurns: 2 }),
+      desc: "二連撃（{value}倍×2、命中低下2T、1T防御）",
+      effect: (lv) => ({
+        hits: 2,
+        damageMultiplier: 0.78 + lv * 0.06,
+        defendTurns: 1,
+        enemyAccuracyDownTurns: 2,
+        enemyAccuracyDownRate: 0.25 + lv * 0.05,
+      }),
     },
 
     // --- 暗殺者 (assassin)
@@ -1141,16 +1331,59 @@
         skillFollowUpChance: Math.min(0.3, lv * 0.03),
       }),
     },
+
     assassin_neck_cut: {
       name: "首狩り",
       type: "active",
-      accuracy: 115,
+      accuracy: 95,
       job: "assassin",
       maxLevel: 3,
-      requiredPoints: 6,
-      cooldown: 7,
-      desc: "急所を狙う一撃（{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 2.11 + lv * 0.25 }),
+      requiredPoints: 7,
+      exclusiveGroup: "assassin_ultimate",
+      cooldown: 9,
+      desc: "急所断ち（{value}倍、体勢崩し2T）",
+      effect: (lv) => ({
+        damageMultiplier: 2.05 + lv * 0.26,
+        ignoreDef: 0.6,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.25 + lv * 0.05,
+      }),
+    },
+
+
+    assassin_silent_blades: {
+      name: "無音連刃",
+      type: "active",
+      accuracy: 100,
+      job: "assassin",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "assassin_ultimate",
+      cooldown: 8,
+      desc: "五連撃（{value}倍×5、封印2T）",
+      effect: (lv) => ({
+        hits: 5,
+        damageMultiplier: 0.42 + lv * 0.04,
+        enemySilenceTurns: 2,
+      }),
+    },
+
+
+    assassin_execution: {
+      name: "断頭",
+      type: "active",
+      accuracy: 90,
+      job: "assassin",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "assassin_ultimate",
+      cooldown: 10,
+      desc: "処刑（{value}倍、1Tスタン）",
+      effect: (lv) => ({
+        damageMultiplier: 2.35 + lv * 0.3,
+        ignoreDef: 0.65,
+        enemyStunTurns: 1,
+      }),
     },
 
     // --- 大魔導士 (archmage)
@@ -1174,16 +1407,56 @@
       desc: "防御力+{value}（最大HP+18/Lv）",
       effect: (lv) => ({ defenseBonus: lv * 8, maxHpBonus: lv * 18 }),
     },
+
     archmage_arcane_storm: {
       name: "秘術嵐",
       type: "active",
       accuracy: 100,
       job: "archmage",
       maxLevel: 3,
-      requiredPoints: 6,
-      cooldown: 6,
-      desc: "秘術の奔流（基礎{value}+魔法威力×1.8）",
-      effect: (lv) => ({ baseDamage: 60 + lv * 35, magicScale: 1.8 }),
+      requiredPoints: 7,
+      exclusiveGroup: "archmage_ultimate",
+      cooldown: 7,
+      desc: "術式暴風（基礎{value}+魔法威力×1.4、脆弱+鈍足2T）",
+      effect: (lv) => ({
+        baseDamage: 70 + lv * 45,
+        magicScale: 1.4,
+        enemyDebuffs: [
+          { type: "vulnerable", turns: 2, rate: 0.22 + lv * 0.05 },
+          { type: "slow", turns: 2, rate: 0.22 + lv * 0.05 },
+        ],
+      }),
+    },
+
+    archmage_void_ban: {
+      name: "禁呪・虚無",
+      type: "active",
+      accuracy: 95,
+      job: "archmage",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "archmage_ultimate",
+      cooldown: 10,
+      desc: "極大魔法（基礎{value}+魔法威力×2.0）",
+      effect: (lv) => ({ baseDamage: 120 + lv * 70, magicScale: 2.0 }),
+    },
+
+
+    archmage_thunder_roar: {
+      name: "雷鳴",
+      type: "active",
+      accuracy: 100,
+      job: "archmage",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "archmage_ultimate",
+      cooldown: 8,
+      desc: "麻痺雷撃（基礎{value}+魔法威力×1.6、1Tスタン）",
+      effect: (lv) => ({
+        baseDamage: 85 + lv * 55,
+        magicScale: 1.6,
+        enemyStunTurns: 1,
+      }),
     },
 
     // --- 狙撃手 (sniper)
@@ -1207,16 +1480,56 @@
       desc: "攻撃力+{value}（回避は少し下がる）",
       effect: (lv) => ({ attackBonus: lv * 10, evasionBonus: -lv * 1 }),
     },
+
     sniper_deadeye: {
       name: "必中弾",
       type: "active",
-      accuracy: 160,
+      accuracy: 120,
       job: "sniper",
       maxLevel: 3,
-      requiredPoints: 6,
-      cooldown: 6,
-      desc: "必殺の狙撃（{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 1.96 + lv * 0.22 }),
+      requiredPoints: 7,
+      exclusiveGroup: "sniper_ultimate",
+      cooldown: 7,
+      desc: "拘束射撃（{value}倍、鈍足3T）",
+      effect: (lv) => ({
+        damageMultiplier: 1.9 + lv * 0.22,
+        ignoreDef: 0.55,
+        enemySlowTurns: 3,
+        enemySlowRate: 0.35 + lv * 0.05,
+      }),
+    },
+
+
+    sniper_execution_shot: {
+      name: "処刑弾",
+      type: "active",
+      accuracy: 85,
+      job: "sniper",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "sniper_ultimate",
+      cooldown: 10,
+      desc: "狙撃処刑（{value}倍、貫通）",
+      effect: (lv) => ({ damageMultiplier: 2.7 + lv * 0.33, ignoreDef: 0.75 }),
+    },
+
+
+    sniper_bullet_storm: {
+      name: "弾幕",
+      type: "active",
+      accuracy: 105,
+      job: "sniper",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "sniper_ultimate",
+      cooldown: 8,
+      desc: "六連射（{value}倍×6、体勢崩し2T）",
+      effect: (lv) => ({
+        hits: 6,
+        damageMultiplier: 0.42 + lv * 0.04,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.18 + lv * 0.04,
+      }),
     },
 
     // --- 拳聖 (fistmaster)
@@ -1240,16 +1553,58 @@
       desc: "最大HP+{value}（防御+4/Lv）",
       effect: (lv) => ({ maxHpBonus: lv * 25, defenseBonus: lv * 4 }),
     },
+
     fistmaster_break: {
       name: "崩拳",
+      type: "active",
+      accuracy: 105,
+      job: "fistmaster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "fistmaster_ultimate",
+      cooldown: 8,
+      desc: "四連打（{value}倍×4、1Tスタン）",
+      effect: (lv) => ({
+        hits: 4,
+        damageMultiplier: 0.58 + lv * 0.07,
+        enemyStunTurns: 1,
+      }),
+    },
+
+
+    fistmaster_mountain_crush: {
+      name: "山砕き",
+      type: "active",
+      accuracy: 95,
+      job: "fistmaster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "fistmaster_ultimate",
+      cooldown: 9,
+      desc: "渾身の一撃（{value}倍、与ダメの25%回復、貫通）",
+      effect: (lv) => ({
+        damageMultiplier: 2.05 + lv * 0.28,
+        healPercent: 0.25,
+        ignoreDef: 0.6,
+      }),
+    },
+
+
+    fistmaster_fist_dance: {
+      name: "拳舞",
       type: "active",
       accuracy: 110,
       job: "fistmaster",
       maxLevel: 3,
-      requiredPoints: 5,
-      cooldown: 6,
-      desc: "4連打（{value}倍×4）",
-      effect: (lv) => ({ hits: 4, damageMultiplier: 0.49 + lv * 0.06 }),
+      requiredPoints: 7,
+      exclusiveGroup: "fistmaster_ultimate",
+      cooldown: 7,
+      desc: "八連撃（{value}倍×8、与ダメの12%回復）",
+      effect: (lv) => ({
+        hits: 8,
+        damageMultiplier: 0.28 + lv * 0.02,
+        healPercent: 0.12,
+      }),
     },
 
     // --- 覇王 (warlord)
@@ -1273,16 +1628,56 @@
       desc: "防御力+{value}（反撃率+2%/Lv）",
       effect: (lv) => ({ defenseBonus: lv * 9, counterChanceBonus: lv * 2 }),
     },
+
     warlord_impale: {
-      name: "串刺し",
+      name: "貫穿槍",
       type: "active",
-      accuracy: 110,
+      accuracy: 95,
       job: "warlord",
       maxLevel: 3,
-      requiredPoints: 6,
-      cooldown: 6,
-      desc: "貫く一撃（{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 1.94 + lv * 0.24 }),
+      requiredPoints: 7,
+      exclusiveGroup: "warlord_ultimate",
+      cooldown: 8,
+      desc: "貫く一撃（{value}倍、体勢崩し2T）",
+      effect: (lv) => ({
+        damageMultiplier: 2.05 + lv * 0.24,
+        ignoreDef: 0.65,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.22 + lv * 0.05,
+      }),
+    },
+
+
+    warlord_royal_cleave: {
+      name: "王の一閃",
+      type: "active",
+      accuracy: 90,
+      job: "warlord",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "warlord_ultimate",
+      cooldown: 10,
+      desc: "決戦の一撃（{value}倍、貫通）",
+      effect: (lv) => ({ damageMultiplier: 2.75 + lv * 0.32, ignoreDef: 0.75 }),
+    },
+
+
+    warlord_phalanx_charge: {
+      name: "方陣突撃",
+      type: "active",
+      accuracy: 100,
+      job: "warlord",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "warlord_ultimate",
+      cooldown: 7,
+      desc: "三連突き（{value}倍×3、与ダメの15%回復、1T防御）",
+      effect: (lv) => ({
+        hits: 3,
+        damageMultiplier: 0.72 + lv * 0.06,
+        healPercent: 0.15,
+        defendTurns: 1,
+      }),
     },
 
     // --- 奇術師 (trickster)
@@ -1313,12 +1708,49 @@
       job: "trickster",
       maxLevel: 3,
       requiredPoints: 5,
+      exclusiveGroup: "trickster_ultimate",
       cooldown: 6,
       desc: "2連撃（{value}倍×2、与ダメの15%回復）",
       effect: (lv) => ({
         hits: 2,
         damageMultiplier: 0.83 + lv * 0.1,
         healPercent: 0.15,
+      }),
+    },
+
+    trickster_grand_heist: {
+      name: "大強奪",
+      type: "active",
+      accuracy: 95,
+      job: "trickster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "trickster_ultimate",
+      cooldown: 9,
+      desc: "一攫千金の一撃（{value}倍、封印2T）",
+      effect: (lv) => ({
+        damageMultiplier: 2.05 + lv * 0.27,
+        ignoreDef: 0.6,
+        enemySilenceTurns: 2,
+      }),
+    },
+
+
+    trickster_shadow_dance: {
+      name: "影舞",
+      type: "active",
+      accuracy: 110,
+      job: "trickster",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "trickster_ultimate",
+      cooldown: 7,
+      desc: "五連撃（{value}倍×5、命中低下2T）",
+      effect: (lv) => ({
+        hits: 5,
+        damageMultiplier: 0.45 + lv * 0.04,
+        enemyAccuracyDownTurns: 2,
+        enemyAccuracyDownRate: 0.3 + lv * 0.05,
       }),
     },
 
@@ -1343,6 +1775,7 @@
       desc: "魔法威力+{value}（会心+1%/Lv）",
       effect: (lv) => ({ magicBonus: lv * 10, critBonus: lv * 1 }),
     },
+
     sage_sanctuary: {
       name: "聖域",
       type: "active",
@@ -1350,9 +1783,51 @@
       job: "sage",
       maxLevel: 3,
       requiredPoints: 7,
+      exclusiveGroup: "sage_ultimate",
+      cooldown: 9,
+      desc: "守護の大回復（最大HPの{value}%回復、2T防御）",
+      effect: (lv) => {
+        const rate = 0.18 + lv * 0.05;
+        return { healRate: rate, defendTurns: 2, value: Math.round(rate * 100) };
+      },
+    },
+
+
+    sage_holy_judgement: {
+      name: "聖裁",
+      type: "active",
+      accuracy: 100,
+      job: "sage",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "sage_ultimate",
       cooldown: 8,
-      desc: "大回復（最大HPの{value}%回復）",
-      effect: (lv) => ({ healRate: 0.22 + lv * 0.06 }),
+      desc: "聖光の裁き（基礎{value}+魔法威力×1.6、体勢崩し2T）",
+      effect: (lv) => ({
+        baseDamage: 70 + lv * 45,
+        magicScale: 1.6,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.25 + lv * 0.05,
+      }),
+    },
+
+
+    sage_miracle_prayer: {
+      name: "奇跡の祈り",
+      type: "active",
+      accuracy: 100,
+      job: "sage",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "sage_ultimate",
+      cooldown: 10,
+      desc: "大回復（{value}回復）＋神託（次の2回必ず会心）",
+      effect: (lv) => ({
+        healAmount: 120 + lv * 80,
+        healScale: 1.2,
+        nextCritTurns: 2,
+        value: 120 + lv * 80,
+      }),
     },
 
     // --- レンジャー (ranger)
@@ -1383,9 +1858,41 @@
       job: "ranger",
       maxLevel: 3,
       requiredPoints: 6,
+      exclusiveGroup: "ranger_ultimate",
       cooldown: 7,
       desc: "4連射（{value}倍×4）",
       effect: (lv) => ({ hits: 4, damageMultiplier: 0.53 + lv * 0.06 }),
+    },
+
+    ranger_shadow_shot: {
+      name: "影矢",
+      type: "active",
+      accuracy: 110,
+      job: "ranger",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "ranger_ultimate",
+      cooldown: 7,
+      desc: "闇の三連射（{value}倍×3、命中低下2T）",
+      effect: (lv) => ({
+        hits: 3,
+        damageMultiplier: 0.62 + lv * 0.05,
+        enemyAccuracyDownTurns: 2,
+        enemyAccuracyDownRate: 0.25 + lv * 0.05,
+      }),
+    },
+
+    ranger_sting_heal: {
+      name: "止血の一矢",
+      type: "active",
+      accuracy: 115,
+      job: "ranger",
+      maxLevel: 3,
+      requiredPoints: 6,
+      exclusiveGroup: "ranger_ultimate",
+      cooldown: 8,
+      desc: "狙撃しつつ回復（{value}倍、与ダメの18%回復）",
+      effect: (lv) => ({ damageMultiplier: 2.0 + lv * 0.2, healPercent: 0.18 }),
     },
 
     // --- 修羅 (asura)
@@ -1416,9 +1923,40 @@
       job: "asura",
       maxLevel: 3,
       requiredPoints: 8,
+      exclusiveGroup: "asura_ultimate",
       cooldown: 9,
       desc: "7連撃（{value}倍×7）",
       effect: (lv) => ({ hits: 7, damageMultiplier: 0.35 + lv * 0.04 }),
+    },
+
+    asura_ten_dance: {
+      name: "十連舞",
+      type: "active",
+      accuracy: 105,
+      job: "asura",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "asura_ultimate",
+      cooldown: 7,
+      desc: "十連撃（{value}倍×10、与ダメの12〜18%回復）",
+      effect: (lv) => ({
+        hits: 10,
+        damageMultiplier: 0.26 + lv * 0.02,
+        healPercent: 0.12 + lv * 0.02,
+      }),
+    },
+
+    asura_demon_break: {
+      name: "羅刹砕",
+      type: "active",
+      accuracy: 110,
+      job: "asura",
+      maxLevel: 3,
+      requiredPoints: 8,
+      exclusiveGroup: "asura_ultimate",
+      cooldown: 8,
+      desc: "破壊の一撃（{value}倍）",
+      effect: (lv) => ({ damageMultiplier: 2.2 + lv * 0.2, ignoreDef: 0.45 }),
     },
 
     // --- 狂戦士 (warfiend)
@@ -1453,6 +1991,7 @@
       job: "warfiend",
       maxLevel: 3,
       requiredPoints: 7,
+      exclusiveGroup: "warfiend_ultimate",
       cooldown: 7,
       desc: "3連撃（{value}倍×3、与ダメの20%回復）",
       effect: (lv) => ({
@@ -1461,6 +2000,37 @@
         healPercent: 0.2,
       }),
     },
+    warfiend_blood_moon: {
+      name: "血月",
+      type: "active",
+      accuracy: 105,
+      job: "warfiend",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "warfiend_ultimate",
+      cooldown: 8,
+      desc: "吸い上げる一撃（{value}倍、与ダメの30%回復）",
+      effect: (lv) => ({ damageMultiplier: 2.1 + lv * 0.22, healPercent: 0.3 }),
+    },
+
+    warfiend_frenzy_rend: {
+      name: "裂狂",
+      type: "active",
+      accuracy: 105,
+      job: "warfiend",
+      maxLevel: 3,
+      requiredPoints: 7,
+      exclusiveGroup: "warfiend_ultimate",
+      cooldown: 7,
+      desc: "五連撃（{value}倍×5、体勢崩し2T）",
+      effect: (lv) => ({
+        hits: 5,
+        damageMultiplier: 0.42 + lv * 0.04,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.22 + lv * 0.05,
+      }),
+    },
+
   };
 
   window.skills = skills;
