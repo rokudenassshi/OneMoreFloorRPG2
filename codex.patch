@@ -1,143 +1,112 @@
-diff --git a/js/ui.js b/js/ui.js
-index 1f56b9dd6cc4664533477d7f1abd73d25985c16a..3f24cda2e5860c609ef5197371bcb61aca00dd7f 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -777,50 +777,86 @@
-   function discardEquipment(ev, idx) {
-     if (ev) {
-       ev.stopPropagation();
-       ev.preventDefault();
-     }
-     const item = gameData.player.inventory[idx];
-     if (!item) return;
+diff --git a/game_new.html b/game_new.html
+index ccf1e3dd9d080026a9a6588fe058502c9f3ce9cb..13ed412c9735ac2d5aceb2805637e34ce7d144e1 100644
+--- a/game_new.html
++++ b/game_new.html
+@@ -105,50 +105,53 @@
  
-     if (item.locked) {
-       log("🔒 ロック中のため捨てられない");
-       return;
-     }
-     if (isEquipped(item)) {
-       log("装備中のため捨てられない");
-       return;
-     }
+       <div class="inventory-footer">
+         <button class="scroll-top-button" onclick="closeBag()">戻る</button>
+       </div>
+     </div>
  
-     gameData.player.inventory.splice(idx, 1);
-     log("🗑 捨てた");
-     getCombatStats();
-     updateBagUI();
-     updateUI();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
+     <!-- ステータス画面 -->
+     <div id="statusScreen" style="display:none;">
+       <div class="screen-header">
+         <h3>ステータス</h3>
+         <button class="back-button" onclick="closeStatus()">戻る</button>
+       </div>
  
-+  function discardAllUnprotectedEquipment() {
-+    const player = gameData && gameData.player;
-+    const inv = player && Array.isArray(player.inventory) ? player.inventory : null;
-+    if (!inv || inv.length === 0) {
-+      log("捨てられる装備がない");
-+      return;
-+    }
-+
-+    const discardIndexes = [];
-+    inv.forEach((item, idx) => {
-+      if (!item || item.locked || isEquipped(item)) return;
-+      discardIndexes.push(idx);
-+    });
-+
-+    const discardCount = discardIndexes.length;
-+    if (discardCount === 0) {
-+      log("🔒 ロック中/装備中以外の装備がない");
-+      return;
-+    }
-+
-+    const ok = window.confirm(
-+      `ロック中/装備中以外の装備を${discardCount}件まとめて捨てます。よろしいですか？`,
-+    );
-+    if (!ok) return;
-+
-+    for (let i = discardIndexes.length - 1; i >= 0; i--) {
-+      inv.splice(discardIndexes[i], 1);
-+    }
-+
-+    log(`🗑 ${discardCount}件の装備を捨てた`);
-+    getCombatStats();
-+    updateBagUI();
-+    updateUI();
-+    if (typeof requestAutosave === "function") requestAutosave();
-+  }
-+
-   // 装備ルール:
-   // - 武器/防具: 装備1 / 装備2 の2枠
-   // - 装飾品: accessory 1枠
-   // - hands===2 は両手装備（もう片方は装備不可）
-   let pendingEquipIndex = null;
+       <div class="status-tabs">
+         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
+         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
+         <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
+       </div>
  
-   function isTwoHandLocked() {
-     const eq = gameData.player.equipment;
-     if (eq.slot1 && eq.slot1.hands === 2) return 1;
-     if (eq.slot2 && eq.slot2.hands === 2) return 2;
-     return 0;
-   }
+       <div id="tabStatus">
+         <div class="status-section">
+           <div class="job-display">
+             <span>職業：<strong id="currentJob">剣士</strong></span>
+             <button class="small-btn" onclick="openJobSelector()">変更</button>
+           </div>
++          <div class="equipped-skill">
++            装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
++          </div>
+         </div>
  
-   function openEquipSlotPicker(idx) {
-     const item = gameData.player.inventory[idx];
-     if (!item) return;
+         <div class="status-section">
+           <h4>基本ステータス</h4>
+           <div class="stat-grid">
+             <div class="stat-item">
+               <span class="stat-name">⚔️ 力</span>
+               <span class="stat-value" id="statStr">5</span>
+             </div>
+             <div class="stat-item">
+               <span class="stat-name">❤️ 体力</span>
+               <span class="stat-value" id="statVit">5</span>
+             </div>
+             <div class="stat-item">
+               <span class="stat-name">🧙 賢さ</span>
+               <span class="stat-value" id="statInt">5</span>
+             </div>
+             <div class="stat-item">
+               <span class="stat-name">⚡ 素早さ</span>
+               <span class="stat-value" id="statAgi">5</span>
+             </div>
+             <div class="stat-item">
+               <span class="stat-name">🎯 器用さ</span>
+               <span class="stat-value" id="statDex">5</span>
+             </div>
+@@ -159,53 +162,50 @@
+           </div>
+         </div>
  
-     pendingEquipIndex = idx;
+         <div class="status-section">
+           <h4>装備中</h4>
+           <div class="equipped-slots">
+             <div class="equip-slot" id="equipSlot1">装備1: 空</div>
+             <div class="equip-slot" id="equipSlot2">装備2: 空</div>
+             <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
+           </div>
+           <div class="equip-note" id="equipNoteOffhand">
+             ※装備2に装備した片手武器の攻撃力は60%として計算されます。
+           </div>
+         </div>
  
-     const modal = document.getElementById("equipSlotModal");
-     const label = document.getElementById("equipSlotModalItem");
-     const btn1 = document.getElementById("equipSlotBtn1");
-     const btn2 = document.getElementById("equipSlotBtn2");
+         <div class="status-section">
+           <h4>計算後ステータス</h4>
+           <div class="calc-stats" id="calcStats"></div>
+         </div>
  
-     if (label) {
-@@ -2194,50 +2230,51 @@
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
+         <div class="status-section">
+           <h4>スキル</h4>
+           <div class="skill-points-display">
+             スキルポイント: <strong id="skillPoints">0</strong>
+           </div>
+-          <div class="equipped-skill">
+-            装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
+-          </div>
+           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
+         </div>
+       </div>
  
-   // -------------------
-   // グローバル公開
-   // -------------------
-   window.updateUI = updateUI;
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
+       <div id="tabAchievements" style="display:none;">
+         <div class="status-section">
+           <h4>実績</h4>
+           <div id="achievementsContent" class="achievements-list"></div>
+         </div>
+       </div>
  
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-+  window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
+       <div id="tabRecords" style="display:none;">
+         <div class="status-section">
+           <h4>記録</h4>
+           <div class="record-list">
+             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
+             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
+           </div>
+         </div>
+       </div>
+     </div>
  
-   // =====================
-   // Save Data Import / Export (参考実装に準拠)
-   // =====================
-   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
-   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
-   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
-   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
-   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
-   const SAVE_EXPORT_ITERATIONS = 100000;
- 
-   function buildSaveDataSnapshot() {
-     const now = new Date();
-     const storage = {};
-     try {
-       for (let i = 0; i < localStorage.length; i++) {
-         const k = localStorage.key(i);
-         if (!k) continue;
-         storage[k] = localStorage.getItem(k);
-       }
-     } catch (e) {}
+     <!-- スキル画面 -->
+     <div id="skillScreen" style="display:none;">
+       <div class="screen-header">

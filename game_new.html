@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
   <title>OneMoreFloorRPG - Enhanced</title>
   <link rel="stylesheet" href="style_new.css">
 </head>
+
 <body>
   <div class="game">
     <div class="status">
       <div class="header-row">
         <div>Lv：<span id="playerLevel"></span></div>
-        <div class="floor-info">階層：<span id="floor"></span> <button id="teleportBtn" type="button" onclick="openTeleportModal()">転移</button></div>
+        <div class="floor-info">階層：<span id="floor"></span> <button id="teleportBtn" type="button"
+            onclick="openTeleportModal()">転移</button></div>
       </div>
       <div class="exp-bar">
         <div class="exp-bar-fill" id="expBarFill"></div>
@@ -42,7 +46,7 @@
         <button onclick="openStatus()">ステータス</button>
         <button onclick="openOptions()">オプション</button>
       </div>
-</div>
+    </div>
 
     <!-- 戦闘ボタン -->
     <div id="battleButtons" style="display:none;">
@@ -85,7 +89,8 @@
         </div>
 
         <div class="bag-actions">
-          <button type="button" class="small-btn danger-btn" onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
+          <button type="button" class="small-btn danger-btn"
+            onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
         </div>
         <div id="weaponsSubTab">
           <div id="weaponsList"></div>
@@ -127,55 +132,8 @@
             <span>職業：<strong id="currentJob">剣士</strong></span>
             <button class="small-btn" onclick="openJobSelector()">変更</button>
           </div>
-        </div>
 
-        <div class="status-section">
-          <h4>基本ステータス</h4>
-          <div class="stat-grid">
-            <div class="stat-item">
-              <span class="stat-name">⚔️ 力</span>
-              <span class="stat-value" id="statStr">5</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-name">❤️ 体力</span>
-              <span class="stat-value" id="statVit">5</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-name">🧙 賢さ</span>
-              <span class="stat-value" id="statInt">5</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-name">⚡ 素早さ</span>
-              <span class="stat-value" id="statAgi">5</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-name">🎯 器用さ</span>
-              <span class="stat-value" id="statDex">5</span>
-            </div>
-          </div>
-          <div class="stat-points-display">
-            ステータスポイント: <strong id="statPoints">0</strong>
-            <button class="small-btn" onclick="openStatAllocation()">振り分け</button>
-          </div>
         </div>
-
-        <div class="status-section">
-          <h4>装備中</h4>
-          <div class="equipped-slots">
-            <div class="equip-slot" id="equipSlot1">装備1: 空</div>
-            <div class="equip-slot" id="equipSlot2">装備2: 空</div>
-            <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
-          </div>
-          <div class="equip-note" id="equipNoteOffhand">
-            ※装備2に装備した片手武器の攻撃力は60%として計算されます。
-          </div>
-        </div>
-
-        <div class="status-section">
-          <h4>計算後ステータス</h4>
-          <div class="calc-stats" id="calcStats"></div>
-        </div>
-
         <div class="status-section">
           <h4>スキル</h4>
           <div class="skill-points-display">
@@ -187,6 +145,54 @@
           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
         </div>
       </div>
+      <div class="status-section">
+        <h4>基本ステータス</h4>
+        <div class="stat-grid">
+          <div class="stat-item">
+            <span class="stat-name">⚔️ 力</span>
+            <span class="stat-value" id="statStr">5</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">❤️ 体力</span>
+            <span class="stat-value" id="statVit">5</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">🧙 賢さ</span>
+            <span class="stat-value" id="statInt">5</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">⚡ 素早さ</span>
+            <span class="stat-value" id="statAgi">5</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">🎯 器用さ</span>
+            <span class="stat-value" id="statDex">5</span>
+          </div>
+        </div>
+        <div class="stat-points-display">
+          ステータスポイント: <strong id="statPoints">0</strong>
+          <button class="small-btn" onclick="openStatAllocation()">振り分け</button>
+        </div>
+      </div>
+
+      <div class="status-section">
+        <h4>装備中</h4>
+        <div class="equipped-slots">
+          <div class="equip-slot" id="equipSlot1">装備1: 空</div>
+          <div class="equip-slot" id="equipSlot2">装備2: 空</div>
+          <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
+        </div>
+        <div class="equip-note" id="equipNoteOffhand">
+          ※装備2に装備した片手武器の攻撃力は60%として計算されます。
+        </div>
+      </div>
+
+      <div class="status-section">
+        <h4>計算後ステータス</h4>
+        <div class="calc-stats" id="calcStats"></div>
+      </div>
+
+
 
       <div id="tabAchievements" style="display:none;">
         <div class="status-section">
@@ -234,37 +240,33 @@
       </div>
 
       <div class="status-section">
-          <h4>セーブデータ</h4>
-          <div class="options-row">
-            <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
-            <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
-          </div>
-          <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none" onchange="handleSaveDataImport(event)">
-          <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+        <h4>セーブデータ</h4>
+        <div class="options-row">
+          <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
+          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
         </div>
-        <div class="status-section">
-          <h4>設定</h4>
-          <label class="option-check">
-            <input type="checkbox" id="optAutosave" onchange="toggleAutosave(this.checked)">
-            オートセーブを有効にする
-          </label>
-        </div>
+        <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
+          onchange="handleSaveDataImport(event)">
+        <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+      </div>
+      <div class="status-section">
+        <h4>設定</h4>
+        <label class="option-check">
+          <input type="checkbox" id="optAutosave" onchange="toggleAutosave(this.checked)">
+          オートセーブを有効にする
+        </label>
+      </div>
 
-        <div class="status-section">
-          <h4>シリアルコード</h4>
-          <div class="options-row serial-row">
-            <input
-              id="serialCodeInput"
-              class="serial-input"
-              type="text"
-              autocomplete="off"
-              placeholder="シリアルコードを入力"
-              onkeydown="handleSerialCodeKeydown(event)"
-            >
-            <button id="serialCodeSubmitBtn" class="small-btn" type="button" onclick="handleSerialCodeSubmit()">確認</button>
-          </div>
-          <div class="status-note">※大文字/小文字は区別しません</div>
+      <div class="status-section">
+        <h4>シリアルコード</h4>
+        <div class="options-row serial-row">
+          <input id="serialCodeInput" class="serial-input" type="text" autocomplete="off" placeholder="シリアルコードを入力"
+            onkeydown="handleSerialCodeKeydown(event)">
+          <button id="serialCodeSubmitBtn" class="small-btn" type="button"
+            onclick="handleSerialCodeSubmit()">確認</button>
         </div>
+        <div class="status-note">※大文字/小文字は区別しません</div>
+      </div>
     </div>
 
     <!-- 転移モーダル -->
@@ -389,4 +391,5 @@
     })();
   </script>
 </body>
+
 </html>
