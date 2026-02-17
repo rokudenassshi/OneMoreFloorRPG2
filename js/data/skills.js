@@ -91,7 +91,6 @@
 
     // ---- 固有ギミック ----
 
-
     swordsman_kensei: {
       name: "剣星",
       type: "active",
@@ -145,9 +144,8 @@
       effect: (lv) => ({ hits: 2, damageMultiplier: 0.88 + lv * 0.12 }),
     },
 
-
-// ===================================
-// 戦士 (warrior)
+    // ===================================
+    // 戦士 (warrior)
     // ===================================
     iron_skin: {
       name: "鉄壁の肌",
@@ -443,7 +441,6 @@
       effect: (lv) => ({ damageMultiplier: 1.48 + lv * 0.7 }),
     },
 
-
     // ===================================
     // 格闘家 (monk)
     // ===================================
@@ -518,7 +515,6 @@
     // 上級職スキル（個別：上位職は下位職スキルを使用不可）
     // ===================================
 
-    
     blademaster_flowing_guard: {
       name: "流転の構え",
       type: "passive",
@@ -539,7 +535,7 @@
       effect: (lv) => ({ defendTurns: 1, gainStance: 1 + Math.floor(lv / 3) }),
     },
 
-// ---- 守護者 (guardian) ----
+    // ---- 守護者 (guardian) ----
     guardian_iron_wall: {
       name: "鉄壁",
       type: "passive",
@@ -584,9 +580,11 @@
       requiredPoints: 4,
       cooldown: 7,
       desc: "守りを固めつつ反撃（{value}倍、与ダメの20%回復）",
-      effect: (lv) => ({ damageMultiplier: 1.83 + lv * 0.18, healPercent: 0.2 }),
+      effect: (lv) => ({
+        damageMultiplier: 1.83 + lv * 0.18,
+        healPercent: 0.2,
+      }),
     },
-
 
     // ---- 暗殺者 (assassin) ----
     assassin_shadow_step: {
@@ -636,8 +634,6 @@
       effect: (lv) => ({ evasionBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
-
-    
     assassin_shadow_follow: {
       name: "影の追撃",
       type: "passive",
@@ -648,7 +644,7 @@
       effect: (lv) => ({ skillFollowUpChance: Math.min(0.3, lv * 0.06) }),
     },
 
-// ---- 大魔導士 (archmage) ----
+    // ---- 大魔導士 (archmage) ----
     archmage_mana_overflow: {
       name: "魔力奔流",
       type: "passive",
@@ -665,7 +661,10 @@
       maxLevel: 3,
       cooldown: 4,
       desc: "魔力弾で攻撃（威力+{value}）",
-      effect: (lv) => ({ baseDamage: 18 + lv * 10, magicScale: 1.1 + lv * 0.15 }),
+      effect: (lv) => ({
+        baseDamage: 18 + lv * 10,
+        magicScale: 1.1 + lv * 0.15,
+      }),
     },
     archmage_meteor: {
       name: "メテオ",
@@ -676,7 +675,10 @@
       requiredPoints: 5,
       cooldown: 8,
       desc: "超高火力の攻撃魔法（威力+{value}）",
-      effect: (lv) => ({ baseDamage: 45 + lv * 25, magicScale: 1.3 + lv * 0.2 }),
+      effect: (lv) => ({
+        baseDamage: 45 + lv * 25,
+        magicScale: 1.3 + lv * 0.2,
+      }),
     },
     archmage_spellweave: {
       name: "詠唱加速",
@@ -687,7 +689,6 @@
       desc: "魔法攻撃力+{value}（Lvで増加。回復力も上がる）",
       effect: (lv) => ({ magicBonus: lv * 6, healPowerBonus: lv * 4 }),
     },
-
 
     // ---- 狙撃手 (sniper) ----
     sniper_steady_aim: {
@@ -726,9 +727,12 @@
       maxLevel: 5,
       requiredPoints: 3,
       desc: "攻撃力+{value}、命中+{value}。代わりに回避が下がる",
-      effect: (lv) => ({ attackBonus: lv * 8, accuracyBonus: lv * 3, evasionBonus: -lv * 2 }),
+      effect: (lv) => ({
+        attackBonus: lv * 8,
+        accuracyBonus: lv * 3,
+        evasionBonus: -lv * 2,
+      }),
     },
-
 
     // ---- 拳聖 (fistmaster) ----
     fistmaster_flow: {
@@ -772,7 +776,6 @@
       effect: (lv) => ({ healAmount: 70 + lv * 45, healScale: 0.8 }),
     },
 
-
     // ---- 騎士 (warlord) ----
     warlord_command: {
       name: "号令",
@@ -813,7 +816,6 @@
       effect: (lv) => ({ damageMultiplier: 1.74 + lv * 0.22, ignoreDef: 0.6 }),
     },
 
-
     // ---- 奇術師 (trickster) ----
     trickster_feint: {
       name: "フェイント",
@@ -842,7 +844,10 @@
       requiredPoints: 4,
       cooldown: 6,
       desc: "奪い取りながら攻撃（{value}倍、与ダメの35%回復）",
-      effect: (lv) => ({ damageMultiplier: 1.67 + lv * 0.18, healPercent: 0.35 }),
+      effect: (lv) => ({
+        damageMultiplier: 1.67 + lv * 0.18,
+        healPercent: 0.35,
+      }),
     },
     trickster_lucky_find: {
       name: "戦場の目利き",
@@ -853,7 +858,6 @@
       desc: "索敵+{value}（Lvで増加。会心率も上がる）",
       effect: (lv) => ({ searchBonus: lv * 2, critBonus: lv * 1 }),
     },
-
 
     // ---- 賢者 (sage) ----
     sage_blessing: {
@@ -896,7 +900,6 @@
       desc: "攻撃と回復を両立（威力+{value}）",
       effect: (lv) => ({ baseDamage: 16 + lv * 8, magicScale: 0.9 + lv * 0.1 }),
     },
-
 
     // ---- レンジャー (ranger) ----
     ranger_trail: {
@@ -948,7 +951,6 @@
       effect: (lv) => ({ hits: 3, damageMultiplier: 0.65 + lv * 0.08 }),
     },
 
-
     // ---- 阿修羅 (asura) ----
     asura_fury: {
       name: "修羅の怒り",
@@ -989,7 +991,6 @@
       effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
-
     // ---- 戦鬼 (warfiend) ----
     warfiend_rage: {
       name: "怒髪天",
@@ -1028,7 +1029,11 @@
       requiredPoints: 5,
       cooldown: 6,
       desc: "2連撃（{value}倍×2、与ダメの25%回復）",
-      effect: (lv) => ({ hits: 2, damageMultiplier: 0.81 + lv * 0.12, healPercent: 0.25 }),
+      effect: (lv) => ({
+        hits: 2,
+        damageMultiplier: 0.81 + lv * 0.12,
+        healPercent: 0.25,
+      }),
     },
     warfiend_savage_strength: {
       name: "凶力",
@@ -1036,7 +1041,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "物理攻撃力+{value}（Lvで増加。防御力も少し上がる）",
+      desc: "物理攻撃力+{value}（Lvで増加。防御力+2/Lv）",
       effect: (lv) => ({ attackBonus: lv * 12, defenseBonus: lv * 2 }),
     },
     // ===================================
@@ -1095,7 +1100,10 @@
       requiredPoints: 3,
       exclusiveGroup: "guardian_style",
       desc: "反撃強化（反撃率+{value}%、反撃威力も上がる）",
-      effect: (lv) => ({ counterChanceBonus: lv * 3, counterDamageBonus: lv * 10 }),
+      effect: (lv) => ({
+        counterChanceBonus: lv * 3,
+        counterDamageBonus: lv * 10,
+      }),
     },
     guardian_bastion: {
       name: "城塞",
@@ -1128,7 +1136,10 @@
       requiredPoints: 3,
       exclusiveGroup: "assassin_style",
       desc: "回避率+{value}%（スキル追撃率も少し上がる）",
-      effect: (lv) => ({ evasionBonus: lv * 4, skillFollowUpChance: Math.min(0.3, lv * 0.03) }),
+      effect: (lv) => ({
+        evasionBonus: lv * 4,
+        skillFollowUpChance: Math.min(0.3, lv * 0.03),
+      }),
     },
     assassin_neck_cut: {
       name: "首狩り",
@@ -1304,7 +1315,11 @@
       requiredPoints: 5,
       cooldown: 6,
       desc: "2連撃（{value}倍×2、与ダメの15%回復）",
-      effect: (lv) => ({ hits: 2, damageMultiplier: 0.83 + lv * 0.1, healPercent: 0.15 }),
+      effect: (lv) => ({
+        hits: 2,
+        damageMultiplier: 0.83 + lv * 0.1,
+        healPercent: 0.15,
+      }),
     },
 
     // --- 賢者 (sage)
@@ -1425,7 +1440,11 @@
       requiredPoints: 3,
       exclusiveGroup: "warfiend_style",
       desc: "攻撃力+{value}（防御は少し下がる）",
-      effect: (lv) => ({ attackBonus: lv * 14, critBonus: lv * 1.5, defenseBonus: -lv * 3 }),
+      effect: (lv) => ({
+        attackBonus: lv * 14,
+        critBonus: lv * 1.5,
+        defenseBonus: -lv * 3,
+      }),
     },
     warfiend_rampage_plus: {
       name: "暴虐",
@@ -1436,11 +1455,12 @@
       requiredPoints: 7,
       cooldown: 7,
       desc: "3連撃（{value}倍×3、与ダメの20%回復）",
-      effect: (lv) => ({ hits: 3, damageMultiplier: 0.6 + lv * 0.07, healPercent: 0.2 }),
+      effect: (lv) => ({
+        hits: 3,
+        damageMultiplier: 0.6 + lv * 0.07,
+        healPercent: 0.2,
+      }),
     },
-
-
-
   };
 
   window.skills = skills;
