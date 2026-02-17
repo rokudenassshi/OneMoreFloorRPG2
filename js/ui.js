@@ -18,7 +18,11 @@
     const keys = normalizeFavoredTypes(favoredType);
     if (keys.length === 0) return "なし";
     const names = keys
-      .map((k) => (equipTypes && equipTypes[k] && equipTypes[k].name ? equipTypes[k].name : k))
+      .map((k) =>
+        equipTypes && equipTypes[k] && equipTypes[k].name
+          ? equipTypes[k].name
+          : k,
+      )
       .filter((v) => !!v);
     return names.length > 0 ? names.join(" / ") : "なし";
   }
@@ -56,9 +60,10 @@
     document.getElementById("playerLevel").textContent = p.level;
     document.getElementById("floor").textContent = gameData.floor;
     const barrier =
-      typeof window.getPlayerBarrier === "function" ? window.getPlayerBarrier() : 0;
-    const barrierText =
-      Number(barrier) > 0 ? ` 🛡${Math.round(barrier)}` : "";
+      typeof window.getPlayerBarrier === "function"
+        ? window.getPlayerBarrier()
+        : 0;
+    const barrierText = Number(barrier) > 0 ? ` 🛡${Math.round(barrier)}` : "";
     document.getElementById("playerHp").textContent =
       `${Math.round(p.hp)}/${Math.round(p.maxHp)}${barrierText}`;
 
@@ -73,7 +78,12 @@
       // 気（格闘家）：戦闘中のみ表示（0 と 最大 は非表示）
       const qi = Math.max(0, Math.floor(Number(bs.qi) || 0));
       const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 0;
-      if (inBattle && p.job === "monk" && qi > 0 && (qiMax <= 0 || qi < qiMax)) {
+      if (
+        inBattle &&
+        p.job === "monk" &&
+        qi > 0 &&
+        (qiMax <= 0 || qi < qiMax)
+      ) {
         parts.push(`気：${qi}${qiMax > 0 ? `/${qiMax}` : ""}`);
       }
 
@@ -81,7 +91,12 @@
       const stance = Math.max(0, Math.floor(Number(bs.stance) || 0));
       const stanceMax =
         typeof getMaxStance === "function" ? Math.floor(getMaxStance()) : 0;
-      if (inBattle && p.job === "blademaster" && stance > 0 && (stanceMax <= 0 || stance < stanceMax)) {
+      if (
+        inBattle &&
+        p.job === "blademaster" &&
+        stance > 0 &&
+        (stanceMax <= 0 || stance < stanceMax)
+      ) {
         parts.push(`構え：${stance}${stanceMax > 0 ? `/${stanceMax}` : ""}`);
       }
 
@@ -440,20 +455,18 @@
 
       case "cooldownReduction":
         // 正値は短縮として扱う
-        return hasV
-          ? `${condPrefix}CT-${Math.abs(v)}`
-          : `${condPrefix}CT短縮`;
+        return hasV ? `${condPrefix}CT-${Math.abs(v)}` : `${condPrefix}CT短縮`;
 
       case "cooldownCheatChance":
-        return hasV
-          ? `${condPrefix}CT踏倒${sign}${v}%`
-          : `${condPrefix}CT踏倒`;
+        return hasV ? `${condPrefix}CT踏倒${sign}${v}%` : `${condPrefix}CT踏倒`;
       case "hitCdMinusChance":
         return hasV ? `${condPrefix}被弾でCT-1 ${v}%` : `${condPrefix}被弾短縮`;
       case "pursuitChance":
         return hasV ? `${condPrefix}追撃${sign}${v}%` : `${condPrefix}追撃`;
       case "pursuitDamagePct":
-        return hasV ? `${condPrefix}追撃威力${sign}${v}%` : `${condPrefix}追撃威力`;
+        return hasV
+          ? `${condPrefix}追撃威力${sign}${v}%`
+          : `${condPrefix}追撃威力`;
       case "firstHitPursuit":
         return `${condPrefix}初撃追撃`;
       case "deathAvoidOnce":
@@ -491,9 +504,7 @@
           : `${condPrefix}攻撃時HP回復`;
 
       case "multiStrikeChance":
-        return hasV
-          ? `${condPrefix}連撃率${sign}${v}%`
-          : `${condPrefix}連撃率`;
+        return hasV ? `${condPrefix}連撃率${sign}${v}%` : `${condPrefix}連撃率`;
       case "multiStrikeDamage":
         return hasV
           ? `${condPrefix}連撃威力${sign}${v}%`
@@ -1804,7 +1815,6 @@
     document.getElementById("statusScreen").style.display = "block";
   }
 
-
   function getSkillPointCost(skillDef) {
     const c = Number(skillDef?.requiredPoints);
     if (!Number.isFinite(c) || c <= 0) return 1;
@@ -1812,7 +1822,8 @@
   }
 
   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
-    const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+    const ps =
+      playerSkills && typeof playerSkills === "object" ? playerSkills : {};
     // 明示的な衝突指定
     if (Array.isArray(skillDef?.exclusiveWith)) {
       for (const k of skillDef.exclusiveWith) {
@@ -1827,16 +1838,41 @@
         if (k === skillKey) continue;
         const def = skills[k];
         if (!def) continue;
-        if (def.exclusiveGroup === group && Number(ps[k] || 0) > 0) return String(k);
+        if (def.exclusiveGroup === group && Number(ps[k] || 0) > 0)
+          return String(k);
       }
     }
     return null;
   }
+  function getExclusiveSkillNames(skillKey, skillDef) {
+    const names = [];
+    const seen = new Set();
+    const addName = (k) => {
+      if (!k || k === skillKey || seen.has(k)) return;
+      seen.add(k);
+      names.push(skills[k]?.name || String(k));
+    };
 
+    if (Array.isArray(skillDef?.exclusiveWith)) {
+      for (const k of skillDef.exclusiveWith) addName(String(k));
+    }
+
+    const group = skillDef?.exclusiveGroup;
+    if (group) {
+      for (const k in skills) {
+        const def = skills[k];
+        if (!def || def.exclusiveGroup !== group) continue;
+        addName(String(k));
+      }
+    }
+
+    return names;
+  }
   function isSkillPrereqMet(skillDef, playerSkills) {
     const reqs = skillDef?.requires;
     if (!Array.isArray(reqs) || reqs.length === 0) return true;
-    const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+    const ps =
+      playerSkills && typeof playerSkills === "object" ? playerSkills : {};
     return reqs.every((r) => {
       if (!r) return true;
       const k = String(r.key || "");
@@ -1960,6 +1996,11 @@
         : 100;
       const accDelta = accPct - 100;
       const accDeltaSign = accDelta > 0 ? "+" : "";
+      const exclusiveNames = getExclusiveSkillNames(key, skill);
+      const exclusiveLine =
+        exclusiveNames.length > 0
+          ? `<div style="font-size: 11px; color: #aaa;">${exclusiveNames.join(" / ")}と同時取得不可</div>`
+          : "";
       // 表示ルール：命中が100%（等倍）の場合は表示しない。100未満/超過のみ表示。
       // 表記は「命中率+20%」「命中率-30%」のように差分表示。
       const accLine =
@@ -1981,9 +2022,10 @@
             }
             ${
               (skill.exclusiveGroup ||
-                (Array.isArray(skill.exclusiveWith) && skill.exclusiveWith.length > 0)) &&
+                (Array.isArray(skill.exclusiveWith) &&
+                  skill.exclusiveWith.length > 0)) &&
               level <= 0
-                ? `<div style="font-size: 11px; color: #aaa;">分岐（同時取得不可）</div>`
+                ? exclusiveLine
                 : ""
             }
             ${
@@ -2095,10 +2137,7 @@
 
     // ポイント返却（スキルごとに必要SPが違う）
     const cost = getSkillPointCost(skill);
-    p.skillPoints = Math.max(
-      0,
-      Math.floor(Number(p.skillPoints || 0)) + cost,
-    );
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + cost);
 
     log(`${skill?.name || key}のレベルを下げた（ポイント+${cost}）`);
     updateSkillUI();

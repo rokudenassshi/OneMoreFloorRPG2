@@ -1,0 +1,156 @@
+diff --git a/js/ui.js b/js/ui.js
+index 73254c7dfb4fdd4bb0e149ec89f05d38d0be55f0..f6225049021dd83e9c015ba77158b2a931cb7884 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1811,50 +1811,71 @@
+     return Math.max(1, Math.floor(c));
+   }
+ 
+   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
+     const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     // 明示的な衝突指定
+     if (Array.isArray(skillDef?.exclusiveWith)) {
+       for (const k of skillDef.exclusiveWith) {
+         if (!k) continue;
+         if (Number(ps[k] || 0) > 0) return String(k);
+       }
+     }
+     // グループ衝突
+     const group = skillDef?.exclusiveGroup;
+     if (group) {
+       for (const k in skills) {
+         if (k === skillKey) continue;
+         const def = skills[k];
+         if (!def) continue;
+         if (def.exclusiveGroup === group && Number(ps[k] || 0) > 0) return String(k);
+       }
+     }
+     return null;
+   }
+ 
++  function getExclusiveDisplayName(skillKey, skillDef) {
++    if (Array.isArray(skillDef?.exclusiveWith)) {
++      for (const k of skillDef.exclusiveWith) {
++        if (!k || String(k) === skillKey) continue;
++        return skills[k]?.name || String(k);
++      }
++    }
++
++    const group = skillDef?.exclusiveGroup;
++    if (group) {
++      for (const k in skills) {
++        if (k === skillKey) continue;
++        const def = skills[k];
++        if (!def || def.exclusiveGroup !== group) continue;
++        return skills[k]?.name || String(k);
++      }
++    }
++
++    return null;
++  }
++
+   function isSkillPrereqMet(skillDef, playerSkills) {
+     const reqs = skillDef?.requires;
+     if (!Array.isArray(reqs) || reqs.length === 0) return true;
+     const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     return reqs.every((r) => {
+       if (!r) return true;
+       const k = String(r.key || "");
+       if (!k) return true;
+       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
+       return Math.floor(Number(ps[k] || 0)) >= needLv;
+     });
+   }
+ 
+   function updateSkillUI() {
+     const p = gameData.player;
+     const currentJob = p.job;
+     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
+     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
+ 
+     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
+ 
+     const commonList = document.getElementById("commonSkillsList");
+     const passiveList = document.getElementById("passiveSkillsList");
+     const activeList = document.getElementById("activeSkillsList");
+ 
+@@ -1938,74 +1959,78 @@
+ 
+       const canLevelUp =
+         (maxLv === Infinity || level < maxLv) &&
+         p.skillPoints >= cost &&
+         prereqOk &&
+         !conflictKey;
+       const canLevelDown = level > 0;
+ 
+       // 命中率表示（攻撃系スキルのみ）
+       const shownLvForAcc = level > 0 ? level : 1;
+       let previewEff = {};
+       try {
+         if (typeof skill.effect === "function")
+           previewEff = skill.effect(shownLvForAcc) || {};
+       } catch (e) {
+         previewEff = {};
+       }
+       const isOffensiveSkill =
+         typeof previewEff.baseDamage === "number" ||
+         typeof previewEff.damageMultiplier === "number";
+       const accPct = Number.isFinite(Number(skill.accuracy))
+         ? Math.round(Number(skill.accuracy))
+         : 100;
+       const accDelta = accPct - 100;
+       const accDeltaSign = accDelta > 0 ? "+" : "";
++      const exclusiveName = getExclusiveDisplayName(key, skill);
++      const exclusiveLine = exclusiveName
++        ? `<div style="font-size: 11px; color: #aaa;">${exclusiveName}と同時取得不可</div>`
++        : "";
+       // 表示ルール：命中が100%（等倍）の場合は表示しない。100未満/超過のみ表示。
+       // 表記は「命中率+20%」「命中率-30%」のように差分表示。
+       const accLine =
+         skill.type === "active" && isOffensiveSkill && accDelta !== 0
+           ? `<div style="font-size: 11px; color: #aaa;">命中率${accDeltaSign}${accDelta}%</div>`
+           : "";
+ 
+       const html = `
+         <div class="skill-item">
+           <div class="skill-info">
+             <div class="skill-name">${skill.name}${isCommon ? " <span style='font-size:12px; color:#aaa;'>(共通)</span>" : ""}</div>
+             <div class="skill-desc">${formatSkillDesc(skill, level)}</div>
+             ${skill.type === "active" ? `<div style="font-size: 11px; color: #aaa;">CT: ${skill.cooldown}ターン</div>` : ""}
+             ${accLine}
+             ${
+               cost !== 1
+                 ? `<div style="font-size: 11px; color: #aaa;">必要SP: ${cost}</div>`
+                 : ""
+             }
+             ${
+               (skill.exclusiveGroup ||
+                 (Array.isArray(skill.exclusiveWith) && skill.exclusiveWith.length > 0)) &&
+               level <= 0
+-                ? `<div style="font-size: 11px; color: #aaa;">分岐（同時取得不可）</div>`
++                ? exclusiveLine
+                 : ""
+             }
+             ${
+               !prereqOk && level <= 0
+                 ? `<div style="font-size: 11px; color: #f88;">🔒 前提スキル未達</div>`
+                 : ""
+             }
+             ${
+               conflictKey && level <= 0
+                 ? `<div style="font-size: 11px; color: #f88;">🔒 取得中：${
+                     skills[conflictKey]?.name || conflictKey
+                   }</div>`
+                 : ""
+             }
+           </div>
+           <div class="skill-actions">
+             <div class="skill-level">Lv.${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
+             ${
+               skill.type === "active" && level > 0
+                 ? `
+               <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
+               <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
+             `
+                 : ""
+             }
