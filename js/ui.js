@@ -1877,21 +1877,31 @@
     passiveList.innerHTML = "";
     activeList.innerHTML = "";
 
-    // スキル説明文の {value} を実際の数値で埋める
+    // スキル説明文の {xxx} を実際の数値で埋める
     // （未習得なら Lv1 相当をプレビュー表示）
+    // 例: "命中+{accuracyBonus}%（会心+{critBonus}%）"
     const formatSkillDesc = (skill, level) => {
       const raw = String(skill?.desc || "");
-      if (!raw.includes("{value}")) return raw;
+      if (!raw.includes("{")) return raw;
 
       const shownLv = level > 0 ? level : 1;
       let eff = {};
       try {
         if (typeof skill.effect === "function")
           eff = skill.effect(shownLv) || {};
-      } catch (e) {
+      } catch (_e) {
         eff = {};
       }
 
+      const formatNumber = (v) => {
+        if (!Number.isFinite(v)) return "";
+        const rounded = Math.round(v * 100) / 100;
+        if (Math.abs(rounded - Math.round(rounded)) < 1e-9)
+          return String(Math.round(rounded));
+        return String(rounded);
+      };
+
+      // {value} は従来互換：効果オブジェクト内の代表値を拾う
       const priorityKeys = [
         "damageMultiplier",
         "attackBonus",
@@ -1908,34 +1918,43 @@
         "value",
       ];
 
-      let value = null;
+      let fallbackValue = null;
       for (const k of priorityKeys) {
         const v = eff?.[k];
         if (Number.isFinite(v)) {
-          value = v;
+          fallbackValue = v;
           break;
         }
       }
-      if (value === null && eff && typeof eff === "object") {
+      if (fallbackValue === null && eff && typeof eff === "object") {
         for (const k of Object.keys(eff)) {
           const v = eff[k];
           if (Number.isFinite(v)) {
-            value = v;
+            fallbackValue = v;
             break;
           }
         }
       }
 
-      const formatNumber = (v) => {
-        if (!Number.isFinite(v)) return "";
-        const rounded = Math.round(v * 100) / 100;
-        if (Math.abs(rounded - Math.round(rounded)) < 1e-9)
-          return String(Math.round(rounded));
-        return String(rounded);
+      const maybePercent = (v) => {
+        // 説明文に % が含まれていて、値が 0.x の場合は 100倍して表示（例: healRate, chance 系）
+        if (!raw.includes("%")) return v;
+        if (!Number.isFinite(v)) return v;
+        if (v > 0 && v < 1) return v * 100;
+        return v;
       };
 
-      const rep = formatNumber(value);
-      return raw.replaceAll("{value}", rep || "-");
+      return raw.replace(/\{([a-zA-Z0-9_]+)\}/g, (_m, key) => {
+        let v = null;
+        if (key === "value") {
+          v = fallbackValue;
+        } else {
+          v = eff?.[key];
+        }
+        if (!Number.isFinite(v)) return "-";
+        const rep = formatNumber(maybePercent(v));
+        return rep || "-";
+      });
     };
 
     for (let key in skills) {

@@ -129,7 +129,7 @@
       job: "blademaster",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "命中+{value}%（Lvで増加。会心率も上がる）",
+      desc: "命中+{accuracyBonus}%（Lvで増加。会心率+{critBonus}%）",
       effect: (lv) => ({ accuracyBonus: lv * 4, critBonus: lv * 2 }),
     },
     blademaster_tsubame: {
@@ -189,7 +189,7 @@
       type: "passive",
       job: "warrior",
       maxLevel: 5,
-      desc: "反撃率が上がり、反撃ダメージも上がる",
+      desc: "反撃率+{counterChanceBonus}%、反撃威力+{counterDamageBonus}%",
       effect: (lv) => ({
         counterChanceBonus: lv * 6,
         counterDamageBonus: lv * 10,
@@ -555,7 +555,7 @@
       job: "blademaster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}（最大HPも上がる。代わりに回避が少し下がる）",
+      desc: "攻撃力+{attackBonus}（最大HP+{maxHpBonus}、回避{evasionBonus}）",
       effect: (lv) => ({
         attackBonus: lv * 10,
         maxHpBonus: lv * 22,
@@ -602,7 +602,7 @@
       job: "guardian",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "防御力+{value}、反撃威力も上がる",
+      desc: "防御力+{defenseBonus}、反撃威力+{counterDamageBonus}%",
       effect: (lv) => ({
         defenseBonus: lv * 6,
         counterDamageBonus: lv * 8,
@@ -624,7 +624,7 @@
       job: "guardian",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "最大HP+{value}（Lvで増加。防御力も上がる）",
+      desc: "最大HP+{maxHpBonus}（Lvで増加。防御力+{defenseBonus}）",
       effect: (lv) => ({ maxHpBonus: lv * 25, defenseBonus: lv * 6 }),
     },
     guardian_bulwark: {
@@ -648,7 +648,7 @@
       job: "guardian",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "反撃率+{value}%（反撃威力も上がる）",
+      desc: "反撃率+{counterChanceBonus}%（反撃威力+{counterDamageBonus}%）",
       effect: (lv) => ({
         counterChanceBonus: lv * 2,
         counterDamageBonus: lv * 10,
@@ -664,10 +664,14 @@
       requiredPoints: 5,
       cooldown: 8,
       desc: "防御を固めながら回復（HP{value}%回復、防御状態2ターン）",
-      effect: (lv) => ({
-        healRate: 0.12 + lv * 0.06,
-        defendTurns: 2,
-      }),
+      effect: (lv) => {
+        const rate = 0.12 + lv * 0.06;
+        return {
+          healRate: rate,
+          defendTurns: 2,
+          value: Math.round(rate * 100),
+        };
+      },
     },
 
     // ---- 暗殺者 (assassin) ----
@@ -693,7 +697,7 @@
       job: "assassin",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "命中+{value}、会心率も上がる",
+      desc: "命中+{accuracyBonus}%、会心率+{critBonus}%",
       effect: (lv) => ({ accuracyBonus: lv * 3, critBonus: lv * 1 }),
     },
     assassin_backstab: {
@@ -723,7 +727,7 @@
       job: "assassin",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回避+{value}%（Lvで増加。命中も上がる）",
+      desc: "回避+{evasionBonus}%（Lvで増加。命中+{accuracyBonus}%）",
       effect: (lv) => ({ evasionBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
@@ -734,7 +738,13 @@
       maxLevel: 5,
       requiredPoints: 4,
       desc: "スキル使用時、{value}%で追撃が発生する（最大30%）",
-      effect: (lv) => ({ skillFollowUpChance: Math.min(0.3, lv * 0.06) }),
+      effect: (lv) => {
+        const ch = Math.min(0.3, lv * 0.06);
+        return {
+          skillFollowUpChance: ch,
+          value: Math.round(ch * 100),
+        };
+      },
     },
 
     assassin_blood_drain: {
@@ -780,7 +790,7 @@
       job: "archmage",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "命中+{value}、魔法攻撃力も上がる",
+      desc: "命中+{accuracyBonus}%、魔法攻撃力+{magicBonus}",
       effect: (lv) => ({ accuracyBonus: lv * 3, magicBonus: lv * 6 }),
     },
     archmage_arcane_bolt: {
@@ -816,7 +826,7 @@
       job: "archmage",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "魔法攻撃力+{value}（Lvで増加。回復力も上がる）",
+      desc: "魔法攻撃力+{magicBonus}（Lvで増加。回復力+{healPowerBonus}）",
       effect: (lv) => ({ magicBonus: lv * 6, healPowerBonus: lv * 4 }),
     },
 
@@ -826,7 +836,7 @@
       job: "archmage",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "魔法攻撃力+{value}（命中も上がる。代わりに最大HPが下がる）",
+      desc: "魔法攻撃力+{magicBonus}（命中+{accuracyBonus}、最大HP{maxHpBonus}）",
       effect: (lv) => ({
         magicBonus: lv * 18,
         accuracyBonus: lv * 2,
@@ -865,7 +875,7 @@
       job: "sniper",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "会心率+{value}、命中も上がる",
+      desc: "会心率+{critBonus}%、命中+{accuracyBonus}%",
       effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
     sniper_piercing_shot: {
@@ -895,7 +905,7 @@
       job: "sniper",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}、命中+{value}。代わりに回避が下がる",
+      desc: "攻撃力+{attackBonus}、命中+{accuracyBonus}%、回避{evasionBonus}",
       effect: (lv) => ({
         attackBonus: lv * 8,
         accuracyBonus: lv * 3,
@@ -944,7 +954,7 @@
       job: "fistmaster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回避+{value}、回復力も上がる",
+      desc: "回避+{evasionBonus}、回復力+{healPowerBonus}",
       effect: (lv) => ({ evasionBonus: lv * 2, healPowerBonus: lv * 6 }),
     },
     fistmaster_healing_fist: {
@@ -955,7 +965,10 @@
       maxLevel: 3,
       cooldown: 6,
       desc: "HPを{value}%回復する",
-      effect: (lv) => ({ healRate: 0.12 + lv * 0.06 }),
+      effect: (lv) => {
+        const rate = 0.12 + lv * 0.06;
+        return { healRate: rate, value: Math.round(rate * 100) };
+      },
     },
     fistmaster_hundred_fists: {
       name: "百裂拳",
@@ -986,7 +999,7 @@
       job: "fistmaster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}（最大HPも上がる。代わりに回避が少し下がる）",
+      desc: "攻撃力+{attackBonus}（最大HP+{maxHpBonus}、回避{evasionBonus}）",
       effect: (lv) => ({
         attackBonus: lv * 12,
         maxHpBonus: lv * 18,
@@ -1043,7 +1056,7 @@
       job: "warlord",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "防御力+{value}（Lvで増加。命中も上がる）",
+      desc: "防御力+{defenseBonus}（Lvで増加。命中+{accuracyBonus}%）",
       effect: (lv) => ({ defenseBonus: lv * 8, accuracyBonus: lv * 2 }),
     },
     warlord_judgement: {
@@ -1064,7 +1077,7 @@
       job: "warlord",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "防御力+{value}（最大HPも上がる。代わりに命中が少し下がる）",
+      desc: "防御力+{defenseBonus}（最大HP+{maxHpBonus}、命中{accuracyBonus}%）",
       effect: (lv) => ({
         defenseBonus: lv * 10,
         maxHpBonus: lv * 26,
@@ -1137,7 +1150,7 @@
       job: "trickster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "索敵+{value}（Lvで増加。会心率も上がる）",
+      desc: "索敵+{searchBonus}（Lvで増加。会心率+{critBonus}%）",
       effect: (lv) => ({ searchBonus: lv * 2, critBonus: lv * 1 }),
     },
 
@@ -1147,7 +1160,7 @@
       job: "trickster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回避+{value}（最大HPも上がる）",
+      desc: "回避+{evasionBonus}（最大HP+{maxHpBonus}）",
       effect: (lv) => ({ evasionBonus: lv * 2, maxHpBonus: lv * 18 }),
     },
 
@@ -1184,7 +1197,7 @@
       job: "sage",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回復力+{value}（魔法攻撃力も上がる）",
+      desc: "回復力+{healPowerBonus}（魔法攻撃力+{magicBonus}）",
       effect: (lv) => ({ healPowerBonus: lv * 8, magicBonus: lv * 4 }),
     },
     sage_prayer: {
@@ -1195,7 +1208,10 @@
       maxLevel: 3,
       cooldown: 7,
       desc: "HPを{value}%回復する",
-      effect: (lv) => ({ healRate: 0.18 + lv * 0.07 }),
+      effect: (lv) => {
+        const rate = 0.18 + lv * 0.07;
+        return { healRate: rate, value: Math.round(rate * 100) };
+      },
     },
     sage_arcane_aid: {
       name: "秘術治癒",
@@ -1243,10 +1259,14 @@
       requiredPoints: 5,
       cooldown: 8,
       desc: "守りを張りつつ回復（HP{value}%回復、防御状態2ターン）",
-      effect: (lv) => ({
-        healRate: 0.14 + lv * 0.06,
-        defendTurns: 2,
-      }),
+      effect: (lv) => {
+        const rate = 0.14 + lv * 0.06;
+        return {
+          healRate: rate,
+          defendTurns: 2,
+          value: Math.round(rate * 100),
+        };
+      },
     },
 
     // ---- レンジャー (ranger) ----
@@ -1264,7 +1284,7 @@
       job: "ranger",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "索敵+{value}（回避も上がる）",
+      desc: "索敵+{searchBonus}（回避+{evasionBonus}）",
       effect: (lv) => ({ searchBonus: lv * 6, evasionBonus: lv * 2 }),
     },
     ranger_double_shot: {
@@ -1283,7 +1303,7 @@
       job: "ranger",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回避+{value}%（Lvで増加。最大HPも上がる）",
+      desc: "回避+{evasionBonus}%（Lvで増加。最大HP+{maxHpBonus}）",
       effect: (lv) => ({ evasionBonus: lv * 2, maxHpBonus: lv * 15 }),
     },
     ranger_healing_arrow: {
@@ -1294,7 +1314,10 @@
       maxLevel: 3,
       cooldown: 6,
       desc: "HPを{value}%回復する（遊撃の回復）",
-      effect: (lv) => ({ healRate: 0.08 + lv * 0.05 }),
+      effect: (lv) => {
+        const rate = 0.08 + lv * 0.05;
+        return { healRate: rate, value: Math.round(rate * 100) };
+      },
     },
     ranger_trap_shot: {
       name: "トラップショット",
@@ -1353,7 +1376,7 @@
       job: "asura",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}（命中も上がる）",
+      desc: "攻撃力+{attackBonus}（命中+{accuracyBonus}%）",
       effect: (lv) => ({ attackBonus: lv * 6, accuracyBonus: lv * 2 }),
     },
     asura_rush: {
@@ -1383,7 +1406,7 @@
       job: "asura",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "会心率+{value}%（Lvで増加。命中も上がる）",
+      desc: "会心率+{critBonus}%（Lvで増加。命中+{accuracyBonus}%）",
       effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
@@ -1434,7 +1457,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}（吸血+2%/Lv・最大10%）",
+      desc: "攻撃力+{attackBonus}（吸血+{lifeStealPctBonus}%）",
       effect: (lv) => ({
         attackBonus: lv * 10,
         lifeStealPctBonus: Math.min(10, lv * 2),
@@ -1471,7 +1494,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "物理攻撃力+{value}（Lvで増加。防御力+2/Lv）",
+      desc: "物理攻撃力+{attackBonus}（Lvで増加。防御力+{defenseBonus}）",
       effect: (lv) => ({ attackBonus: lv * 12, defenseBonus: lv * 2 }),
     },
 
@@ -1481,7 +1504,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "最大HP+{value}（防御も上がる。代わりに会心が少し下がる）",
+      desc: "最大HP+{maxHpBonus}（防御力+{defenseBonus}、会心{critBonus}%）",
       effect: (lv) => ({
         maxHpBonus: lv * 28,
         defenseBonus: lv * 6,
@@ -1515,7 +1538,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "blademaster_style",
-      desc: "攻撃力+{value}（会心+1%/Lv）",
+      desc: "攻撃力+{attackBonus}（会心率+{critBonus}%）",
       effect: (lv) => ({ attackBonus: lv * 9, critBonus: lv * 1.5 }),
     },
     blademaster_style_zanshin: {
@@ -1525,7 +1548,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "blademaster_style",
-      desc: "防御力+{value}（回避も上がる）",
+      desc: "防御力+{defenseBonus}（回避+{evasionBonus}）",
       effect: (lv) => ({ defenseBonus: lv * 8, evasionBonus: lv * 2 }),
     },
     blademaster_flash: {
@@ -1580,7 +1603,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "guardian_style",
-      desc: "防御力+{value}（最大HP+20/Lv）",
+      desc: "防御力+{defenseBonus}（最大HP+{maxHpBonus}）",
       effect: (lv) => ({ defenseBonus: lv * 10, maxHpBonus: lv * 20 }),
     },
     guardian_style_revenge: {
@@ -1590,7 +1613,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "guardian_style",
-      desc: "反撃強化（反撃率+{value}%、反撃威力も上がる）",
+      desc: "反撃強化（反撃率+{counterChanceBonus}%、反撃威力+{counterDamageBonus}%）",
       effect: (lv) => ({
         counterChanceBonus: lv * 3,
         counterDamageBonus: lv * 10,
@@ -1655,7 +1678,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "assassin_style",
-      desc: "会心率+{value}%（命中+1%/Lv）",
+      desc: "会心率+{critBonus}%（命中+{accuracyBonus}%）",
       effect: (lv) => ({ critBonus: lv * 3, accuracyBonus: lv * 1 }),
     },
     assassin_style_shadow: {
@@ -1665,7 +1688,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "assassin_style",
-      desc: "回避率+{value}%（スキル追撃率+3%/Lv）",
+      desc: "回避率+{evasionBonus}%（スキル追撃率+{skillFollowUpChance}%）",
       effect: (lv) => ({
         evasionBonus: lv * 4,
         skillFollowUpChance: Math.min(0.3, lv * 0.03),
@@ -1734,7 +1757,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "archmage_style",
-      desc: "魔法威力+{value}（命中+1%/Lv）",
+      desc: "魔法威力+{magicBonus}（命中+{accuracyBonus}%）",
       effect: (lv) => ({ magicBonus: lv * 14, accuracyBonus: lv * 1 }),
     },
     archmage_style_ward: {
@@ -1744,7 +1767,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "archmage_style",
-      desc: "防御力+{value}（最大HP+18/Lv）",
+      desc: "防御力+{defenseBonus}（最大HP+{maxHpBonus}）",
       effect: (lv) => ({ defenseBonus: lv * 8, maxHpBonus: lv * 18 }),
     },
 
@@ -1807,7 +1830,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "sniper_style",
-      desc: "命中率+{value}%（会心も上がる）",
+      desc: "命中率+{accuracyBonus}%（会心率+{critBonus}%）",
       effect: (lv) => ({ accuracyBonus: lv * 4, critBonus: lv * 1.5 }),
     },
     sniper_style_execute: {
@@ -1817,7 +1840,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "sniper_style",
-      desc: "攻撃力+{value}（回避は少し下がる）",
+      desc: "攻撃力+{attackBonus}（回避{evasionBonus}）",
       effect: (lv) => ({ attackBonus: lv * 10, evasionBonus: -lv * 1 }),
     },
 
@@ -1880,7 +1903,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "fistmaster_style",
-      desc: "回避率+{value}%（会心+1%/Lv）",
+      desc: "回避率+{evasionBonus}%（会心率+{critBonus}%）",
       effect: (lv) => ({ evasionBonus: lv * 4, critBonus: lv * 1 }),
     },
     fistmaster_style_body: {
@@ -1890,7 +1913,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "fistmaster_style",
-      desc: "最大HP+{value}（防御+4/Lv）",
+      desc: "最大HP+{maxHpBonus}（防御力+{defenseBonus}）",
       effect: (lv) => ({ maxHpBonus: lv * 25, defenseBonus: lv * 4 }),
     },
 
@@ -1955,7 +1978,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "warlord_style",
-      desc: "攻撃力+{value}（命中も上がる）",
+      desc: "攻撃力+{attackBonus}（命中+{accuracyBonus}%）",
       effect: (lv) => ({ attackBonus: lv * 11, accuracyBonus: lv * 2 }),
     },
     warlord_style_shield: {
@@ -1965,7 +1988,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "warlord_style",
-      desc: "防御力+{value}（反撃率+2%/Lv）",
+      desc: "防御力+{defenseBonus}（反撃率+{counterChanceBonus}%）",
       effect: (lv) => ({ defenseBonus: lv * 9, counterChanceBonus: lv * 2 }),
     },
 
@@ -2028,7 +2051,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "trickster_style",
-      desc: "索敵+{value}（会心+1%/Lv）",
+      desc: "索敵+{searchBonus}（会心率+{critBonus}%）",
       effect: (lv) => ({ searchBonus: lv * 8, critBonus: lv * 1 }),
     },
     trickster_style_deceive: {
@@ -2038,7 +2061,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "trickster_style",
-      desc: "回避率+{value}%（命中+1%/Lv）",
+      desc: "回避率+{evasionBonus}%（命中+{accuracyBonus}%）",
       effect: (lv) => ({ evasionBonus: lv * 4, accuracyBonus: lv * 1 }),
     },
     trickster_doubleplay: {
@@ -2112,7 +2135,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "sage_style",
-      desc: "魔法威力+{value}（会心+1%/Lv）",
+      desc: "魔法威力+{magicBonus}（会心率+{critBonus}%）",
       effect: (lv) => ({ magicBonus: lv * 10, critBonus: lv * 1 }),
     },
 
@@ -2178,7 +2201,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "ranger_style",
-      desc: "命中率+{value}%（索敵も上がる）",
+      desc: "命中率+{accuracyBonus}%（索敵+{searchBonus}）",
       effect: (lv) => ({ accuracyBonus: lv * 3, searchBonus: lv * 6 }),
     },
     ranger_style_survivor: {
@@ -2188,7 +2211,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "ranger_style",
-      desc: "回避率+{value}%（最大HPも上がる）",
+      desc: "回避率+{evasionBonus}%（最大HP+{maxHpBonus}）",
       effect: (lv) => ({ evasionBonus: lv * 3, maxHpBonus: lv * 15 }),
     },
     ranger_storm: {
@@ -2243,7 +2266,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "asura_style",
-      desc: "攻撃力+{value}（会心+1%/Lv）",
+      desc: "攻撃力+{attackBonus}（会心率+{critBonus}%）",
       effect: (lv) => ({ attackBonus: lv * 12, critBonus: lv * 1 }),
     },
     asura_style_combo: {
@@ -2253,7 +2276,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "asura_style",
-      desc: "命中率+{value}%（回避+1%/Lv）",
+      desc: "命中率+{accuracyBonus}%（回避率+{evasionBonus}%）",
       effect: (lv) => ({ accuracyBonus: lv * 3, evasionBonus: lv * 1 }),
     },
     asura_nine_slash: {
