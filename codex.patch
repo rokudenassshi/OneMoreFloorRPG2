@@ -1,156 +1,143 @@
 diff --git a/js/ui.js b/js/ui.js
-index 73254c7dfb4fdd4bb0e149ec89f05d38d0be55f0..f6225049021dd83e9c015ba77158b2a931cb7884 100644
+index 1f56b9dd6cc4664533477d7f1abd73d25985c16a..3f24cda2e5860c609ef5197371bcb61aca00dd7f 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1811,50 +1811,71 @@
-     return Math.max(1, Math.floor(c));
+@@ -777,50 +777,86 @@
+   function discardEquipment(ev, idx) {
+     if (ev) {
+       ev.stopPropagation();
+       ev.preventDefault();
+     }
+     const item = gameData.player.inventory[idx];
+     if (!item) return;
+ 
+     if (item.locked) {
+       log("🔒 ロック中のため捨てられない");
+       return;
+     }
+     if (isEquipped(item)) {
+       log("装備中のため捨てられない");
+       return;
+     }
+ 
+     gameData.player.inventory.splice(idx, 1);
+     log("🗑 捨てた");
+     getCombatStats();
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
-     const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
-     // 明示的な衝突指定
-     if (Array.isArray(skillDef?.exclusiveWith)) {
-       for (const k of skillDef.exclusiveWith) {
-         if (!k) continue;
-         if (Number(ps[k] || 0) > 0) return String(k);
-       }
-     }
-     // グループ衝突
-     const group = skillDef?.exclusiveGroup;
-     if (group) {
-       for (const k in skills) {
-         if (k === skillKey) continue;
-         const def = skills[k];
-         if (!def) continue;
-         if (def.exclusiveGroup === group && Number(ps[k] || 0) > 0) return String(k);
-       }
-     }
-     return null;
-   }
- 
-+  function getExclusiveDisplayName(skillKey, skillDef) {
-+    if (Array.isArray(skillDef?.exclusiveWith)) {
-+      for (const k of skillDef.exclusiveWith) {
-+        if (!k || String(k) === skillKey) continue;
-+        return skills[k]?.name || String(k);
-+      }
++  function discardAllUnprotectedEquipment() {
++    const player = gameData && gameData.player;
++    const inv = player && Array.isArray(player.inventory) ? player.inventory : null;
++    if (!inv || inv.length === 0) {
++      log("捨てられる装備がない");
++      return;
 +    }
 +
-+    const group = skillDef?.exclusiveGroup;
-+    if (group) {
-+      for (const k in skills) {
-+        if (k === skillKey) continue;
-+        const def = skills[k];
-+        if (!def || def.exclusiveGroup !== group) continue;
-+        return skills[k]?.name || String(k);
-+      }
++    const discardIndexes = [];
++    inv.forEach((item, idx) => {
++      if (!item || item.locked || isEquipped(item)) return;
++      discardIndexes.push(idx);
++    });
++
++    const discardCount = discardIndexes.length;
++    if (discardCount === 0) {
++      log("🔒 ロック中/装備中以外の装備がない");
++      return;
 +    }
 +
-+    return null;
++    const ok = window.confirm(
++      `ロック中/装備中以外の装備を${discardCount}件まとめて捨てます。よろしいですか？`,
++    );
++    if (!ok) return;
++
++    for (let i = discardIndexes.length - 1; i >= 0; i--) {
++      inv.splice(discardIndexes[i], 1);
++    }
++
++    log(`🗑 ${discardCount}件の装備を捨てた`);
++    getCombatStats();
++    updateBagUI();
++    updateUI();
++    if (typeof requestAutosave === "function") requestAutosave();
 +  }
 +
-   function isSkillPrereqMet(skillDef, playerSkills) {
-     const reqs = skillDef?.requires;
-     if (!Array.isArray(reqs) || reqs.length === 0) return true;
-     const ps = playerSkills && typeof playerSkills === "object" ? playerSkills : {};
-     return reqs.every((r) => {
-       if (!r) return true;
-       const k = String(r.key || "");
-       if (!k) return true;
-       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
-       return Math.floor(Number(ps[k] || 0)) >= needLv;
-     });
+   // 装備ルール:
+   // - 武器/防具: 装備1 / 装備2 の2枠
+   // - 装飾品: accessory 1枠
+   // - hands===2 は両手装備（もう片方は装備不可）
+   let pendingEquipIndex = null;
+ 
+   function isTwoHandLocked() {
+     const eq = gameData.player.equipment;
+     if (eq.slot1 && eq.slot1.hands === 2) return 1;
+     if (eq.slot2 && eq.slot2.hands === 2) return 2;
+     return 0;
    }
  
-   function updateSkillUI() {
-     const p = gameData.player;
-     const currentJob = p.job;
-     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
-     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
+   function openEquipSlotPicker(idx) {
+     const item = gameData.player.inventory[idx];
+     if (!item) return;
  
-     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
+     pendingEquipIndex = idx;
  
-     const commonList = document.getElementById("commonSkillsList");
-     const passiveList = document.getElementById("passiveSkillsList");
-     const activeList = document.getElementById("activeSkillsList");
+     const modal = document.getElementById("equipSlotModal");
+     const label = document.getElementById("equipSlotModalItem");
+     const btn1 = document.getElementById("equipSlotBtn1");
+     const btn2 = document.getElementById("equipSlotBtn2");
  
-@@ -1938,74 +1959,78 @@
+     if (label) {
+@@ -2194,50 +2230,51 @@
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
  
-       const canLevelUp =
-         (maxLv === Infinity || level < maxLv) &&
-         p.skillPoints >= cost &&
-         prereqOk &&
-         !conflictKey;
-       const canLevelDown = level > 0;
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
  
-       // 命中率表示（攻撃系スキルのみ）
-       const shownLvForAcc = level > 0 ? level : 1;
-       let previewEff = {};
-       try {
-         if (typeof skill.effect === "function")
-           previewEff = skill.effect(shownLvForAcc) || {};
-       } catch (e) {
-         previewEff = {};
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
++  window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+ 
+   // =====================
+   // Save Data Import / Export (参考実装に準拠)
+   // =====================
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
+   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
+   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
+   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
+   const SAVE_EXPORT_ITERATIONS = 100000;
+ 
+   function buildSaveDataSnapshot() {
+     const now = new Date();
+     const storage = {};
+     try {
+       for (let i = 0; i < localStorage.length; i++) {
+         const k = localStorage.key(i);
+         if (!k) continue;
+         storage[k] = localStorage.getItem(k);
        }
-       const isOffensiveSkill =
-         typeof previewEff.baseDamage === "number" ||
-         typeof previewEff.damageMultiplier === "number";
-       const accPct = Number.isFinite(Number(skill.accuracy))
-         ? Math.round(Number(skill.accuracy))
-         : 100;
-       const accDelta = accPct - 100;
-       const accDeltaSign = accDelta > 0 ? "+" : "";
-+      const exclusiveName = getExclusiveDisplayName(key, skill);
-+      const exclusiveLine = exclusiveName
-+        ? `<div style="font-size: 11px; color: #aaa;">${exclusiveName}と同時取得不可</div>`
-+        : "";
-       // 表示ルール：命中が100%（等倍）の場合は表示しない。100未満/超過のみ表示。
-       // 表記は「命中率+20%」「命中率-30%」のように差分表示。
-       const accLine =
-         skill.type === "active" && isOffensiveSkill && accDelta !== 0
-           ? `<div style="font-size: 11px; color: #aaa;">命中率${accDeltaSign}${accDelta}%</div>`
-           : "";
- 
-       const html = `
-         <div class="skill-item">
-           <div class="skill-info">
-             <div class="skill-name">${skill.name}${isCommon ? " <span style='font-size:12px; color:#aaa;'>(共通)</span>" : ""}</div>
-             <div class="skill-desc">${formatSkillDesc(skill, level)}</div>
-             ${skill.type === "active" ? `<div style="font-size: 11px; color: #aaa;">CT: ${skill.cooldown}ターン</div>` : ""}
-             ${accLine}
-             ${
-               cost !== 1
-                 ? `<div style="font-size: 11px; color: #aaa;">必要SP: ${cost}</div>`
-                 : ""
-             }
-             ${
-               (skill.exclusiveGroup ||
-                 (Array.isArray(skill.exclusiveWith) && skill.exclusiveWith.length > 0)) &&
-               level <= 0
--                ? `<div style="font-size: 11px; color: #aaa;">分岐（同時取得不可）</div>`
-+                ? exclusiveLine
-                 : ""
-             }
-             ${
-               !prereqOk && level <= 0
-                 ? `<div style="font-size: 11px; color: #f88;">🔒 前提スキル未達</div>`
-                 : ""
-             }
-             ${
-               conflictKey && level <= 0
-                 ? `<div style="font-size: 11px; color: #f88;">🔒 取得中：${
-                     skills[conflictKey]?.name || conflictKey
-                   }</div>`
-                 : ""
-             }
-           </div>
-           <div class="skill-actions">
-             <div class="skill-level">Lv.${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
-             ${
-               skill.type === "active" && level > 0
-                 ? `
-               <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
-               <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
-             `
-                 : ""
-             }
+     } catch (e) {}

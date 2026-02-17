@@ -798,7 +798,42 @@
     updateUI();
     if (typeof requestAutosave === "function") requestAutosave();
   }
+  function discardAllUnprotectedEquipment() {
+    const player = gameData && gameData.player;
+    const inv =
+      player && Array.isArray(player.inventory) ? player.inventory : null;
+    if (!inv || inv.length === 0) {
+      log("捨てられる装備がない");
+      return;
+    }
 
+    const discardIndexes = [];
+    inv.forEach((item, idx) => {
+      if (!item || item.locked || isEquipped(item)) return;
+      discardIndexes.push(idx);
+    });
+
+    const discardCount = discardIndexes.length;
+    if (discardCount === 0) {
+      log("🔒 ロック中/装備中以外の装備がない");
+      return;
+    }
+
+    const ok = window.confirm(
+      `ロック中/装備中以外の装備を${discardCount}件まとめて捨てます。よろしいですか？`,
+    );
+    if (!ok) return;
+
+    for (let i = discardIndexes.length - 1; i >= 0; i--) {
+      inv.splice(discardIndexes[i], 1);
+    }
+
+    log(`🗑 ${discardCount}件の装備を捨てた`);
+    getCombatStats();
+    updateBagUI();
+    updateUI();
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
   // 装備ルール:
   // - 武器/防具: 装備1 / 装備2 の2枠
   // - 装飾品: accessory 1枠
@@ -2216,6 +2251,7 @@
   window.toggleEquip = toggleEquip;
   window.toggleItemLock = toggleItemLock;
   window.discardEquipment = discardEquipment;
+  window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
   window.openEquipSlotPicker = openEquipSlotPicker;
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
