@@ -120,6 +120,18 @@
         `連続攻撃+${pct(r.multiStrikeChance)} / 連続威力+${pct(r.multiStrikeDamage)}`,
     },
     {
+      name: "襲撃の",
+      rarity: "rare",
+      weight: 9,
+      effects: [
+        { type: "bonusPct", key: "pursuitChance", min: 8, max: 18 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 15, max: 35 },
+      ],
+      describe: (r) =>
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)}`,
+    },
+
+    {
       name: "鬼神の",
       rarity: "epic",
       weight: 6,
@@ -130,6 +142,18 @@
       describe: (r) =>
         `攻撃力+${pct(r.attackPct)} / クリダメ+${pct(r.critDamage)}`,
     },
+    {
+      name: "断頭の",
+      rarity: "epic",
+      weight: 5,
+      effects: [
+        { type: "bonusPct", key: "executeDamage", min: 18, max: 40 },
+        { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
+      ],
+      describe: (r) =>
+        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)}`,
+    },
+
     {
       name: "毒々しい",
       rarity: "rare",
