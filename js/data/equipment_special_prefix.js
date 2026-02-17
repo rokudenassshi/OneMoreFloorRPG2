@@ -86,6 +86,13 @@
       ],
       describe: (r) => `再生${pct(r.regen)} / 最大HP+${pct(r.maxHpPct)}`,
     },
+    {
+      name: "時渡りの",
+      rarity: "epic",
+      weight: 5,
+      effects: [{ type: "bonusPct", key: "cooldownReduction", min: 1, max: 1 }],
+      describe: (r) => `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)}`,
+    },
   ];
 
   // 武器向け（攻撃的/手数/状態異常付与）

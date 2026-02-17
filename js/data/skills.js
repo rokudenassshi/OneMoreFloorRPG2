@@ -1056,7 +1056,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "blademaster_style",
-      desc: "攻撃力+{value}（会心も少し上がる）",
+      desc: "攻撃力+{value}（会心+1%/Lv）",
       effect: (lv) => ({ attackBonus: lv * 9, critBonus: lv * 1.5 }),
     },
     blademaster_style_zanshin: {
@@ -1089,7 +1089,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "guardian_style",
-      desc: "防御力+{value}（最大HPも少し上がる）",
+      desc: "防御力+{value}（最大HP+20/Lv）",
       effect: (lv) => ({ defenseBonus: lv * 10, maxHpBonus: lv * 20 }),
     },
     guardian_style_revenge: {
@@ -1125,7 +1125,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "assassin_style",
-      desc: "会心率+{value}%（命中も少し上がる）",
+      desc: "会心率+{value}%（命中+1%/Lv）",
       effect: (lv) => ({ critBonus: lv * 3, accuracyBonus: lv * 1 }),
     },
     assassin_style_shadow: {
@@ -1135,7 +1135,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "assassin_style",
-      desc: "回避率+{value}%（スキル追撃率も少し上がる）",
+      desc: "回避率+{value}%（スキル追撃率+3%/Lv）",
       effect: (lv) => ({
         evasionBonus: lv * 4,
         skillFollowUpChance: Math.min(0.3, lv * 0.03),
@@ -1161,7 +1161,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "archmage_style",
-      desc: "魔法威力+{value}（命中も少し上がる）",
+      desc: "魔法威力+{value}（命中+1%/Lv）",
       effect: (lv) => ({ magicBonus: lv * 14, accuracyBonus: lv * 1 }),
     },
     archmage_style_ward: {
@@ -1171,7 +1171,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "archmage_style",
-      desc: "防御力+{value}（最大HPも少し上がる）",
+      desc: "防御力+{value}（最大HP+18/Lv）",
       effect: (lv) => ({ defenseBonus: lv * 8, maxHpBonus: lv * 18 }),
     },
     archmage_arcane_storm: {
@@ -1227,7 +1227,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "fistmaster_style",
-      desc: "回避率+{value}%（会心も少し上がる）",
+      desc: "回避率+{value}%（会心+1%/Lv）",
       effect: (lv) => ({ evasionBonus: lv * 4, critBonus: lv * 1 }),
     },
     fistmaster_style_body: {
@@ -1237,7 +1237,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "fistmaster_style",
-      desc: "最大HP+{value}（防御も少し上がる）",
+      desc: "最大HP+{value}（防御+4/Lv）",
       effect: (lv) => ({ maxHpBonus: lv * 25, defenseBonus: lv * 4 }),
     },
     fistmaster_break: {
@@ -1270,7 +1270,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "warlord_style",
-      desc: "防御力+{value}（反撃率も少し上がる）",
+      desc: "防御力+{value}（反撃率+2%/Lv）",
       effect: (lv) => ({ defenseBonus: lv * 9, counterChanceBonus: lv * 2 }),
     },
     warlord_impale: {
@@ -1293,7 +1293,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "trickster_style",
-      desc: "索敵+{value}（会心も少し上がる）",
+      desc: "索敵+{value}（会心+1%/Lv）",
       effect: (lv) => ({ searchBonus: lv * 8, critBonus: lv * 1 }),
     },
     trickster_style_deceive: {
@@ -1303,7 +1303,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "trickster_style",
-      desc: "回避率+{value}%（命中も少し上がる）",
+      desc: "回避率+{value}%（命中+1%/Lv）",
       effect: (lv) => ({ evasionBonus: lv * 4, accuracyBonus: lv * 1 }),
     },
     trickster_doubleplay: {
@@ -1340,7 +1340,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "sage_style",
-      desc: "魔法威力+{value}（会心も少し上がる）",
+      desc: "魔法威力+{value}（会心+1%/Lv）",
       effect: (lv) => ({ magicBonus: lv * 10, critBonus: lv * 1 }),
     },
     sage_sanctuary: {
@@ -1396,7 +1396,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "asura_style",
-      desc: "攻撃力+{value}（会心も少し上がる）",
+      desc: "攻撃力+{value}（会心+1%/Lv）",
       effect: (lv) => ({ attackBonus: lv * 12, critBonus: lv * 1 }),
     },
     asura_style_combo: {
@@ -1406,7 +1406,7 @@
       maxLevel: 5,
       requiredPoints: 3,
       exclusiveGroup: "asura_style",
-      desc: "命中率+{value}%（回避も少し上がる）",
+      desc: "命中率+{value}%（回避+1%/Lv）",
       effect: (lv) => ({ accuracyBonus: lv * 3, evasionBonus: lv * 1 }),
     },
     asura_nine_slash: {
