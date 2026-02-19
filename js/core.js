@@ -482,17 +482,30 @@
         (relicBonus.dexterity || 0),
     };
 
-    // 格闘家系：武器を装備していない場合、基礎ステータスを2倍
-    const isMonkFamily = p.job === "monk" || (jobDef && jobDef.baseJob === "monk");
-    if (isMonkFamily) {
+    // 基礎ステータス倍率（職業特性）
+    // - 修羅など：traits.baseStatMultiplier を優先
+    // - 格闘家系：武器を装備していない場合、基礎ステータスを2倍（従来仕様）
+    {
+      const jobTraits = (jobDef && jobDef.traits) || {};
+
       const eq = p.equipment || {};
       const unarmed = [eq.slot1, eq.slot2].every((it) => !it || it.category !== "weapon");
-      if (unarmed) {
-        total.strength *= 2;
-        total.vitality *= 2;
-        total.intelligence *= 2;
-        total.agility *= 2;
-        total.dexterity *= 2;
+
+      let mult = 1;
+      const m = Number(jobTraits.baseStatMultiplier);
+      if (Number.isFinite(m) && m > 1) {
+        mult = m;
+      } else {
+        const isMonkFamily = p.job === "monk" || (jobDef && jobDef.baseJob === "monk");
+        if (isMonkFamily && unarmed) mult = 2;
+      }
+
+      if (mult !== 1) {
+        total.strength *= mult;
+        total.vitality *= mult;
+        total.intelligence *= mult;
+        total.agility *= mult;
+        total.dexterity *= mult;
       }
     }
     return total;
@@ -611,7 +624,11 @@ function resetPlayerBattleStateForBattle() {
   bs.nextCritTurns = 0; // 盗賊：ジャスト回避
   // 上級職/パッシブ用
   bs.rageStacks = 0; // 狂戦士：被弾で増える怒り
-  bs.skillFollowUpChance = 0; // 暗殺者：スキル追撃率（0-0.3）
+  bs.skillFollowUpChance = 0; // スキル追撃率（0-0.6）
+  bs.followUpDamageMulBonus = 0; // 追撃ダメージ補正（+% / 0.0=なし）
+  bs.followUpNoCrit = false; // 追撃は会心しない
+  bs.followUpOnAttack = false; // 通常攻撃でも追撃判定
+  bs.pierceDefFactorReduction = 0; // 物理：防御適用率を減らす（=貫通強化、0〜0.4）
   bs.lifeStealPctBonus = 0; // パッシブ吸血（%）
 
   // 反撃/上限/ボーナス（getCombatStats のパッシブ集計で加算される）
@@ -685,6 +702,35 @@ function applyPlayerHeal(baseHeal) {
   return { healed: Math.max(0, newHp - beforeHp), barrierGained };
 }
 
+
+function tryWarfiendLastStand() {
+  if (gameData.gameState !== "BATTLE") return false;
+  if (gameData.player.hp > 0) return false;
+  if (String(gameData.player?.job || "") !== "warfiend") return false;
+
+  const lv = Math.floor(Number(gameData.player?.skills?.warfiend_last_stand || 0));
+  if (!Number.isFinite(lv) || lv <= 0) return false;
+
+  // スキル効果から確率を取得（将来の拡張用）
+  let pct = 5;
+  try {
+    const def = skills && skills.warfiend_last_stand;
+    if (def && typeof def.effect === "function") {
+      const eff = def.effect(lv) || {};
+      const v = Number(eff.lastStandChance ?? eff.value ?? eff.chance);
+      if (Number.isFinite(v)) pct = v;
+    }
+  } catch (_e) {}
+
+  pct = clamp(pct, 0, 100);
+  if (Math.random() * 100 < pct) {
+    gameData.player.hp = 1;
+    log("🔥 不屈で踏みとどまった！");
+    return true;
+  }
+  return false;
+}
+
 function tryDeathAvoidOnce() {
   if (gameData.gameState !== "BATTLE") return false;
   if (gameData.player.hp > 0) return false;
@@ -732,7 +778,12 @@ function applyPlayerDamage(incoming, opts) {
 
 
   if (gameData.player.hp <= 0) {
-    // 1回だけ死亡回避
+    // 狂戦士スキル：何度でも踏みとどまる（確率）
+    if (tryWarfiendLastStand()) {
+      return { total: dmg, barrierUsed: used, hpDamage: remaining, deathAvoided: true, lastStand: true };
+    }
+
+    // 装飾品：1回だけ死亡回避
     if (tryDeathAvoidOnce()) {
       return { total: dmg, barrierUsed: used, hpDamage: remaining, deathAvoided: true };
     }
@@ -895,6 +946,15 @@ function getCombatStats() {
     const stats = getTotalStats();
     const favoredType = jobs?.[gameData.player?.job]?.favoredType || null;
     const jobTraits = jobs?.[gameData.player?.job]?.traits || {};
+
+    // 装備制限：武器を装備できない職（修羅など）
+    // 旧データ等で武器が装備されている場合でも効果が乗らないよう外す
+    if (jobTraits && jobTraits.cannotEquipWeapon) {
+      const eq = gameData.player?.equipment;
+      if (eq && eq.slot1 && eq.slot1.category === "weapon") eq.slot1 = null;
+      if (eq && eq.slot2 && eq.slot2.category === "weapon") eq.slot2 = null;
+    }
+
     const favoredMult = Number.isFinite(jobTraits.favoredMultiplier)
       ? jobTraits.favoredMultiplier
       : FAVORED_EQUIP_MULTIPLIER;
@@ -1025,12 +1085,36 @@ function getCombatStats() {
       // スキル追撃（battleState で参照）
       if (effect.skillFollowUpChance) {
         const bs = ensurePlayerBattleState();
-        // 0〜0.3（=30%）に正規化
+        // 0〜0.6（=60%）に正規化
         const v = Number(effect.skillFollowUpChance) || 0;
-        bs.skillFollowUpChance = Math.max(bs.skillFollowUpChance || 0, clamp(v, 0, 0.3));
+        bs.skillFollowUpChance = Math.max(bs.skillFollowUpChance || 0, clamp(v, 0, 0.6));
       }
 
-      // パッシブ吸血（%）
+      
+      // 追撃ダメージ補正（+%）
+      if (effect.followUpDamageMulBonus) {
+        const bs = ensurePlayerBattleState();
+        bs.followUpDamageMulBonus =
+          (bs.followUpDamageMulBonus || 0) + (Number(effect.followUpDamageMulBonus) || 0);
+      }
+      // 追撃は会心しない
+      if (effect.followUpNoCrit) {
+        const bs = ensurePlayerBattleState();
+        bs.followUpNoCrit = true;
+      }
+      // 通常攻撃でも追撃判定
+      if (effect.followUpOnAttack) {
+        const bs = ensurePlayerBattleState();
+        bs.followUpOnAttack = true;
+      }
+      // 物理：貫通（防御適用率を減らす）
+      if (effect.pierceDefFactorReduction) {
+        const bs = ensurePlayerBattleState();
+        const v2 = Number(effect.pierceDefFactorReduction) || 0;
+        bs.pierceDefFactorReduction = clamp((bs.pierceDefFactorReduction || 0) + v2, 0, 0.4);
+      }
+
+// パッシブ吸血（%）
       if (effect.lifeStealPctBonus) {
         const bs = ensurePlayerBattleState();
         bs.lifeStealPctBonus = (bs.lifeStealPctBonus || 0) + (Number(effect.lifeStealPctBonus) || 0);
@@ -1046,6 +1130,35 @@ function getCombatStats() {
         combat.evasion += jobTraits.evasionBonus;
       if (typeof jobTraits.critRateBonus === "number")
         combat.critRate += jobTraits.critRateBonus;
+      // 職業特性：貫通（防御適用率を減らす）
+      if (typeof jobTraits.pierceDefFactorReduction === "number") {
+        const bs = ensurePlayerBattleState();
+        bs.pierceDefFactorReduction = clamp(
+          (bs.pierceDefFactorReduction || 0) + jobTraits.pierceDefFactorReduction,
+          0,
+          0.4,
+        );
+      }
+      // 職業特性：追撃（スキル/通常攻撃）
+      if (typeof jobTraits.followUpBaseChance === "number") {
+        const bs = ensurePlayerBattleState();
+        bs.skillFollowUpChance = Math.max(
+          bs.skillFollowUpChance || 0,
+          clamp(jobTraits.followUpBaseChance, 0, 0.6),
+        );
+      }
+      if (jobTraits.followUpOnAttack) {
+        const bs = ensurePlayerBattleState();
+        bs.followUpOnAttack = true;
+      }
+      if (jobTraits.followUpNoCrit) {
+        const bs = ensurePlayerBattleState();
+        bs.followUpNoCrit = true;
+      }
+      if (typeof jobTraits.followUpDamageMulBonus === "number") {
+        const bs = ensurePlayerBattleState();
+        bs.followUpDamageMulBonus = (bs.followUpDamageMulBonus || 0) + jobTraits.followUpDamageMulBonus;
+      }
       if (typeof jobTraits.searchBonus === "number")
         combat.search += jobTraits.searchBonus;
 
@@ -1096,6 +1209,26 @@ function getCombatStats() {
           // 会心：スタック×(1+0.5*Lv)%
           combat.critRate += Math.round(stacks * (1 + 0.5 * rageSkillLv));
         }
+      }
+    }
+
+    // 修羅：攻撃のたび気が溜まり、気スタックで攻撃/会心/追撃が上昇（戦闘中のみ）
+    if (gameData.player?.job === "asura" && gameData.gameState === "BATTLE") {
+      const bs = ensurePlayerBattleState();
+      const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 10;
+      const stacks = clamp(Math.floor(Number(bs.qi || 0)), 0, qiMax > 0 ? qiMax : 99);
+
+      if (stacks > 0) {
+        // 攻撃：気×3%（最大+80%）
+        combat.attack *= 1 + Math.min(0.8, stacks * 0.03);
+
+        // 会心率：気×2%
+        combat.critRate += stacks * 2;
+
+        // 追撃率：気×2%（最大60%）
+        const followChance = clamp(stacks * 0.02, 0, 0.6);
+        bs.followUpOnAttack = true;
+        bs.skillFollowUpChance = Math.max(Number(bs.skillFollowUpChance || 0), followChance);
       }
     }
     // 端数が出ないように丸める
@@ -1198,10 +1331,42 @@ function getCombatStats() {
     const p = gameData.player;
     if (!p.achievements || typeof p.achievements !== "object")
       p.achievements = {};
+    if (!p.achievementRewardsClaimed || typeof p.achievementRewardsClaimed !== "object")
+      p.achievementRewardsClaimed = {};
     const defs = Array.isArray(window.achievementDefs)
       ? window.achievementDefs
       : [];
     const unlockedNow = [];
+
+    const grantReward = (def) => {
+      if (!def || !def.id) return;
+      const claimedMap = p.achievementRewardsClaimed;
+      if (claimedMap && claimedMap[def.id]) return;
+      const r = def.reward;
+      if (!r || typeof r !== "object") return;
+
+      // 例: reward.valuables = ["emblem_strength", { id: "emblem_vitality", amount: 2 }]
+      if (Array.isArray(r.valuables)) {
+        for (const v of r.valuables) {
+          let id = "";
+          let amount = 1;
+          if (typeof v === "string") {
+            id = v;
+          } else if (v && typeof v === "object") {
+            id = typeof v.id === "string" ? v.id : "";
+            const a = Number(v.amount);
+            if (Number.isFinite(a) && a > 0) amount = Math.floor(a);
+          }
+          if (!id) continue;
+          const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
+          if (!defRelic) continue;
+          addValuableByDef(defRelic, amount);
+        }
+
+      // 報酬は1回だけ
+      if (claimedMap && def.id) claimedMap[def.id] = true;
+      }
+    };
 
     for (const def of defs) {
       if (!def || !def.id || typeof def.isDone !== "function") continue;
@@ -1218,12 +1383,23 @@ function getCombatStats() {
       }
     }
 
+    // 報酬付与（解除済み実績にも一度だけ適用）
+    for (const def of defs) {
+      if (def && def.id && p.achievements[def.id]) grantReward(def);
+    }
+
     if (!silent && unlockedNow.length) {
       for (const def of unlockedNow) {
         log(`🏆 実績解除：${def.title}`);
         const b = def.bonus || {};
         if (typeof b.expRate === "number" && b.expRate > 0) {
           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
+        }
+
+        // 報酬ログ（任意）
+        const r = def.reward;
+        if (r && typeof r === "object" && typeof r.text === "string" && r.text) {
+          log(`🎁 報酬：${r.text}`);
         }
       }
     }
@@ -1563,11 +1739,26 @@ function startBattle(battleFloor) {
       return min <= floor && floor <= max;
     });
     const pool = candidates.length > 0 ? candidates : monsterTypes;
-    const baseMonster = pool[Math.floor(Math.random() * pool.length)];
+
+    // ボス生成（敵テーブル切替階層）
+    const bossDef =
+      typeof window.bossMonsters === "object" && window.bossMonsters
+        ? window.bossMonsters[floor]
+        : null;
+
+    const baseMonster = bossDef
+      ? bossDef
+      : pool[Math.floor(Math.random() * pool.length)];
     const enemy = JSON.parse(JSON.stringify(baseMonster));
 
     // 敵の状態異常格納を初期化
     ensureEnemyStatus(enemy);
+
+    // 事前定義の特殊効果（ボスなど）を保持しておく
+    const presetEffects =
+      enemy && enemy.effects && typeof enemy.effects === "object"
+        ? JSON.parse(JSON.stringify(enemy.effects))
+        : {};
 
     const combat = getCombatStats();
     const search = combat.search;
@@ -1584,8 +1775,13 @@ function startBattle(battleFloor) {
 
     // 二つ名判定（索敵が 0 の場合は出ない）
     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
-    const epithetChance =
-      search >= 100 ? 1 : search > 0 ? clamp(search, 0, 100) * 0.01 : 0;
+    const epithetChance = enemy && enemy.isBoss
+      ? 0
+      : search >= 100
+        ? 1
+        : search > 0
+          ? clamp(search, 0, 100) * 0.01
+          : 0;
     let epithet = null;
 
     if (Math.random() < epithetChance) {
@@ -1611,14 +1807,22 @@ function startBattle(battleFloor) {
       enemy.effects = {};
     }
 
+    // 事前定義の効果を最後にマージ（ボスなど）
+    if (presetEffects && typeof presetEffects === "object") {
+      const keys = Object.keys(presetEffects);
+      if (keys.length > 0) {
+        enemy.effects = Object.assign({}, enemy.effects || {}, presetEffects);
+      }
+    }
+
     enemy.maxHp = enemy.hp;
     enemy.attack = enemy.str * 2;
     enemy.defense = enemy.vit * 1.5;
     enemy.magic = enemy.int * 2;
 
-    enemy.displayName = epithet
-      ? `【${epithet.name}】${enemy.name}`
-      : enemy.name;
+    const bossTag = enemy && enemy.isBoss ? "【BOSS】" : "";
+    const epithetTag = epithet ? `【${epithet.name}】` : "";
+    enemy.displayName = `${bossTag}${epithetTag}${enemy.name}`;
 
     // 敵スキル
     enemy.skills = Array.isArray(enemy.skills) ? enemy.skills : [];
@@ -1813,6 +2017,8 @@ function startBattle(battleFloor) {
     // このアクション内の追撃は1回まで
     beginPlayerAction();
 
+    const isAsura = gameData.player?.job === "asura";
+
     const combat = getCombatStats();
     const enemy = gameData.enemy;
 
@@ -1820,6 +2026,8 @@ function startBattle(battleFloor) {
     const hitChance = Math.min(95, combat.accuracy - getEnemyAgiForHit(enemy));
     if (Math.random() * 100 > hitChance) {
       log("攻撃は外れた！");
+      // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
+      if (isAsura) gainQi(1);
       enemyTurn();
       return;
     }
@@ -1888,8 +2096,17 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         log(`🛡 バリア+${r.barrierGained}`);
       }
     }
+    // 職業：追撃（通常攻撃でも）
+    const bs = ensurePlayerBattleState();
+    if (bs.followUpOnAttack) {
+      trySkillFollowUp(enemy, combat);
+    }
+
     // 装飾品：追撃トリガー
     tryAccessoryPursuit(enemy, combat);
+
+    // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
+    if (isAsura) gainQi(1);
     checkBattleEnd();
 
     if (gameData.gameState === "BATTLE") {
@@ -1930,7 +2147,10 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     const isCrit = forceCrit ? true : Math.random() * 100 < combat.critRate;
     const critMul = isCrit ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100) : 1;
 
-    let damage = Math.max(1, (combat.attack - enemy.defense * 0.5) * 0.55 * critMul);
+    const defF = getPhysicalDefenseFactor({ ignoreDef: 0.5 });
+
+    const baseMul = 0.55 * (1 + (Number(bs.followUpDamageMulBonus) || 0));
+    let damage = Math.max(1, (combat.attack - enemy.defense * defF) * baseMul * critMul);
     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
     damage = applyEnemyIncomingReduction(enemy, damage);
     damage = applyEnemyVulnerableTaken(enemy, damage);
@@ -2087,6 +2307,14 @@ damage = Math.round(damage * (0.9 + Math.random() * 0.2));
         : 0;
     const effect = skillDef.effect(level);
 
+    // 修羅：攻撃（通常攻撃/攻撃スキル）を行うたびに気を溜める
+    // ※スキル側は「攻撃系スキル（ダメージを与える効果）」のみ対象
+    const isAsuraOffenseSkill =
+      curJob === "asura" &&
+      effect &&
+      (typeof effect.baseDamage === "number" ||
+        typeof effect.damageMultiplier === "number");
+
     // 防御系スキルの共通処理
     if (effect && typeof effect.defendTurns === "number" && effect.defendTurns > 0) {
       const st2 = gameData.player.status || (gameData.player.status = {});
@@ -2227,7 +2455,6 @@ const applyEnemyDebuffsFromSkillEffect = (eff) => {
 
     if (typeof effect.healRate === "number") {
       // 回復スキル（%回復。自分対象のため命中判定なし）
-      addJobProgress("heal", 1);
       const rate = clamp(Number(effect.healRate) || 0, 0, 2);
       const baseHeal = Math.round(combat.maxHp * rate);
       const r = applyPlayerHeal(baseHeal);
@@ -2242,7 +2469,6 @@ const applyEnemyDebuffsFromSkillEffect = (eff) => {
       }
 } else if (typeof effect.healAmount === "number") {
       // 回復スキル（自分対象のため命中判定なし）
-      addJobProgress("heal", 1);
       const jt = jobs?.[gameData.player?.job]?.traits || {};
       const healMult = typeof jt.healMult === "number" ? jt.healMult : 1;
       const healScale =
@@ -2274,7 +2500,16 @@ let base = effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
 
 let damage = base * skillMul;
 
-        // クリティカル判定（スキルでも有効）
+        
+function getPhysicalDefenseFactor(effect) {
+    const bs = ensurePlayerBattleState();
+    const base = typeof effect.ignoreDef === "number" ? effect.ignoreDef : 0.5;
+    const red = Number(bs.pierceDefFactorReduction || 0);
+    // 防御適用率を下げるほど貫通が強い（下限0.1）
+    return Math.max(0.1, base - (Number.isFinite(red) ? red : 0));
+}
+
+// クリティカル判定（スキルでも有効）
         const forceCritSkill = consumeNextCritFlag();
         const isCrit = forceCritSkill ? true : Math.random() * 100 < combat.critRate;
         const jt = jobs?.[gameData.player?.job]?.traits || {};
@@ -2440,7 +2675,7 @@ if (effect.healPercent) {
         } else {
           let damage = Math.max(
             1,
-            (combat.attack - enemy.defense * (effect.ignoreDef || 0.5)) *
+            (combat.attack - enemy.defense * getPhysicalDefenseFactor(effect)) *
               effect.damageMultiplier *
               skillMul,
           );
@@ -2574,6 +2809,9 @@ if (skillKey === "blademaster_iai") {
         log("⏱ クールタイムを踏み倒した！");
       }
     }
+
+    // 修羅：攻撃スキルを使用したら気+1（命中に関係なく）
+    if (isAsuraOffenseSkill) gainQi(1);
 
     checkBattleEnd();
 
@@ -3185,9 +3423,17 @@ if (skillKey === "blademaster_iai") {
 
     if (enemy.hp <= 0) {
       log(`${enemy.displayName}を倒した！`);
+      if (enemy.isBoss) {
+        log(`🏆 ボスを撃破した！`);
+      }
 
       // 撃破カウント
-      gameData.player.jobKills[gameData.player.job]++;
+      if (!gameData.player.jobKills || typeof gameData.player.jobKills !== "object") {
+        gameData.player.jobKills = {};
+      }
+      const jk = Number(gameData.player.jobKills[gameData.player.job] || 0);
+      gameData.player.jobKills[gameData.player.job] =
+        (Number.isFinite(jk) ? jk : 0) + 1;
       gameData.player.totalKills = (gameData.player.totalKills || 0) + 1;
       if (enemy && enemy.isNamed) {
         gameData.player.namedKills = (gameData.player.namedKills || 0) + 1;
@@ -3229,7 +3475,11 @@ if (skillKey === "blademaster_iai") {
           ? jobs[gameData.player.job].traits.dropRateBonus
           : 0;
 
-      if (Math.random() * 100 < dropChance) {
+      const isBoss = !!enemy.isBoss;
+      const willDrop = Math.random() * 100 < dropChance;
+
+      // ボスは装備が必ず1つドロップ
+      if (willDrop || isBoss) {
         const item = generateEquipment();
         gameData.player.inventory.push(item);
         log(`${item.name}を手に入れた！`);
@@ -3823,7 +4073,15 @@ if (skillKey === "blademaster_iai") {
         { min: 2201, max: 3300, template: "星鉄の{base}" },
         { min: 3301, max: 4800, template: "竜骨の{base}" },
         { min: 4801, max: 7000, template: "虚空の{base}" },
-        { min: 7001, template: "終焉の{base}" },
+
+        // 7000以降はさらに細分化（～10000まで段階的に増やす）
+        { min: 7001, max: 7500, template: "深淵の{base}" },
+        { min: 7501, max: 8000, template: "冥界の{base}" },
+        { min: 8001, max: 8500, template: "滅界の{base}" },
+        { min: 8501, max: 9000, template: "星喰の{base}" },
+        { min: 9001, max: 9500, template: "終焉の{base}" },
+        { min: 9501, max: 10000, template: "創世の{base}" },
+        { min: 10001, template: "超越の{base}" },
       ],
       magicAttack: [
         { min: 0, max: 99, template: "見習いの{base}" },
@@ -3835,7 +4093,15 @@ if (skillKey === "blademaster_iai") {
         { min: 2201, max: 3300, template: "星詠みの{base}" },
         { min: 3301, max: 4800, template: "禁呪の{base}" },
         { min: 4801, max: 7000, template: "虚無の{base}" },
-        { min: 7001, template: "叡智の果ての{base}" },
+
+        // 7000以降はさらに細分化（～10000まで段階的に増やす）
+        { min: 7001, max: 7500, template: "深淵の{base}" },
+        { min: 7501, max: 8000, template: "冥界の{base}" },
+        { min: 8001, max: 8500, template: "滅星の{base}" },
+        { min: 8501, max: 9000, template: "禁界の{base}" },
+        { min: 9001, max: 9500, template: "叡智の果ての{base}" },
+        { min: 9501, max: 10000, template: "根源の{base}" },
+        { min: 10001, template: "超越の{base}" },
       ],
       healPower: [
         { min: 0, max: 99, template: "癒しの{base}" },
@@ -3847,7 +4113,15 @@ if (skillKey === "blademaster_iai") {
         { min: 2201, max: 3300, template: "救済の{base}" },
         { min: 3301, max: 4800, template: "奇跡の{base}" },
         { min: 4801, max: 7000, template: "天啓の{base}" },
-        { min: 7001, template: "神話の{base}" },
+
+        // 7000以降はさらに細分化（～10000まで段階的に増やす）
+        { min: 7001, max: 7500, template: "深祈の{base}" },
+        { min: 7501, max: 8000, template: "聖域の{base}" },
+        { min: 8001, max: 8500, template: "神域の{base}" },
+        { min: 8501, max: 9000, template: "天恵の{base}" },
+        { min: 9001, max: 9500, template: "神話の{base}" },
+        { min: 9501, max: 10000, template: "創世の{base}" },
+        { min: 10001, template: "超越の{base}" },
       ],
     },
     armor: {
@@ -3861,7 +4135,15 @@ if (skillKey === "blademaster_iai") {
         { min: 2201, max: 3300, template: "星鉄の{base}" },
         { min: 3301, max: 4800, template: "竜鱗の{base}" },
         { min: 4801, max: 7000, template: "虚空の{base}" },
-        { min: 7001, template: "終焉の{base}" },
+
+        // 7000以降はさらに細分化（～10000まで段階的に増やす）
+        { min: 7001, max: 7500, template: "深淵の{base}" },
+        { min: 7501, max: 8000, template: "冥界の{base}" },
+        { min: 8001, max: 8500, template: "滅界の{base}" },
+        { min: 8501, max: 9000, template: "星喰の{base}" },
+        { min: 9001, max: 9500, template: "終焉の{base}" },
+        { min: 9501, max: 10000, template: "創世の{base}" },
+        { min: 10001, template: "超越の{base}" },
       ],
     },
   };

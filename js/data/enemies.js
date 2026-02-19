@@ -228,7 +228,70 @@
     { name: "原初の終末", hp: 26000, str: 600, vit: 1150, int: 400, agi: 74, dex: 90, exp: 5000, minFloor: 985, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
 ];
 
-  window.epithets = epithets;
+  
+  // --------------------
+  // ボスモンスター（敵テーブル切替階層）
+  // --------------------
+  // 100F / 200F / 500F / 1000F に固定出現するボス。
+  // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
+  const bossMonsters = {
+    100: {
+      name: "境界の守護竜",
+      hp: 900,
+      str: 38,
+      vit: 28,
+      int: 20,
+      agi: 10,
+      dex: 14,
+      exp: 380,
+      isBoss: true,
+      skills: ["fireball", "power_strike", "roar", "heal"],
+      effects: { damageReduction: 0.08, regenRate: 0.03 },
+    },
+    200: {
+      name: "黒鋼の巨王",
+      hp: 1800,
+      str: 68,
+      vit: 62,
+      int: 18,
+      agi: 12,
+      dex: 18,
+      exp: 900,
+      isBoss: true,
+      skills: ["crushing_blow", "thunder_strike", "power_strike", "roar", "heal"],
+      effects: { damageReduction: 0.12, armorPierceRate: 0.2 },
+    },
+    500: {
+      name: "冥界の審理者",
+      hp: 8500,
+      str: 300,
+      vit: 520,
+      int: 260,
+      agi: 45,
+      dex: 65,
+      exp: 2200,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "ice_lance", "crushing_blow", "silence_hex", "heal"],
+      effects: { damageReduction: 0.18, regenRate: 0.04, extraTurnChance: 0.08 },
+    },
+    1000: {
+      name: "終焉の根源",
+      hp: 32000,
+      str: 780,
+      vit: 1400,
+      int: 520,
+      agi: 90,
+      dex: 120,
+      exp: 9000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.22, regenRate: 0.05, extraTurnChance: 0.12, armorPierceRate: 0.25 },
+    },
+  };
+
+
+window.epithets = epithets;
   window.enemySkills = enemySkills;
   window.monsterTypes = monsterTypes;
+  window.bossMonsters = bossMonsters;
 })();

@@ -75,15 +75,14 @@
 
       const inBattle = gameData.gameState === "BATTLE";
 
-      // 気（格闘家）：戦闘中のみ表示（0 と 最大 は非表示）
+      // 気（格闘家/修羅）：戦闘中のみ表示
+      // - 格闘家は 0 と 最大 は非表示
+      // - 修羅は重要度が高いので最大でも表示
       const qi = Math.max(0, Math.floor(Number(bs.qi) || 0));
       const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 0;
-      if (
-        inBattle &&
-        p.job === "monk" &&
-        qi > 0 &&
-        (qiMax <= 0 || qi < qiMax)
-      ) {
+      const isQiJob = p.job === "monk" || p.job === "asura";
+      const hideAtMax = p.job === "monk";
+      if (inBattle && isQiJob && qi > 0 && (!hideAtMax || qiMax <= 0 || qi < qiMax)) {
         parts.push(`気：${qi}${qiMax > 0 ? `/${qiMax}` : ""}`);
       }
 
@@ -98,6 +97,15 @@
         (stanceMax <= 0 || stance < stanceMax)
       ) {
         parts.push(`構え：${stance}${stanceMax > 0 ? `/${stanceMax}` : ""}`);
+      }
+
+
+      // 勢い（騎士）：戦闘中のみ表示（0 は非表示）
+      const momentum = Math.max(0, Math.floor(Number(bs.momentum) || 0));
+      const momentumMax =
+        typeof getMaxMomentum === "function" ? Math.floor(getMaxMomentum()) : 0;
+      if (inBattle && p.job === "warlord" && momentum > 0) {
+        parts.push(`勢い：${momentum}${momentumMax > 0 ? `/${momentumMax}` : ""}`);
       }
 
       if (parts.length > 0) {
@@ -851,6 +859,18 @@
     const item = gameData.player.inventory[idx];
     if (!item) return;
 
+    // 職業制限：武器を装備できない職（拳聖/修羅など）
+    {
+      const jobKey = gameData.player?.job;
+      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits)
+        ? jobs[jobKey].traits
+        : {};
+      if (jt && jt.cannotEquipWeapon && item.category === "weapon") {
+        log("この職業では武器を装備できない");
+        return;
+      }
+    }
+
     pendingEquipIndex = idx;
 
     const modal = document.getElementById("equipSlotModal");
@@ -865,6 +885,11 @@
     const lock = isTwoHandLocked();
 
     const canEquipTo = (slotNo) => {
+      // 職業制限：武器を装備できない職（拳聖/修羅など）
+      const jobKey = gameData.player?.job;
+      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits) ? jobs[jobKey].traits : {};
+      if (jt && jt.cannotEquipWeapon && item && item.category === "weapon") return false;
+
       // 両手武器はどちらでも選べる（もう片方は空になる）
       if (item.hands === 2) return true;
 
@@ -900,6 +925,16 @@
 
   function equipItemToSlot(item, slotNo) {
     const eq = gameData.player.equipment;
+
+    // 職業制限：武器を装備できない職（拳聖/修羅など）
+    {
+      const jobKey = gameData.player?.job;
+      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits) ? jobs[jobKey].traits : {};
+      if (jt && jt.cannotEquipWeapon && item && item.category === "weapon") {
+        log("この職業では武器を装備できない");
+        return;
+      }
+    }
 
     // 装飾品は専用スロット
     if (item.category === "accessory") {
@@ -1327,8 +1362,13 @@
 
     const job = jobs[p.job] || { name: "-", favoredType: null };
     const favoredName = getFavoredTypeLabel(job.favoredType);
+    const jt = (job && job.traits) || {};
+    const extra = [];
+    if (jt && jt.cannotEquipWeapon) extra.push("武器不可");
+    const bsm = Number(jt && jt.baseStatMultiplier);
+    if (Number.isFinite(bsm) && bsm > 1) extra.push(`基礎ステータス×${bsm}`);
     document.getElementById("currentJob").textContent =
-      `${job.name}（得意: ${favoredName}）`;
+      `${job.name}（得意: ${favoredName}${extra.length ? ` / ${extra.join("・")}` : ""}）`;
 
     document.getElementById("statStr").textContent = fmtStat(
       stats.strength,
@@ -1530,10 +1570,12 @@
           ? `<p class="job-req">✅ 解放済み</p>`
           : "";
 
+      const shownDesc = String(job.desc || \"\").replace(/（上級職）/g, \"\").replace(/\(上級職\)/g, \"\").trim();
+
       grid.innerHTML += `
         <div class="job-card ${isSelected ? "selected" : ""} ${locked ? "locked" : ""}" onclick="selectJob('${key}')">
           <h4>${job.name}${job.tier === "advanced" ? " <span class='job-adv-tag'>上級</span>" : ""}</h4>
-          <p>${job.desc}</p>
+          <p>${shownDesc}</p>
           <p style="font-size:12px; color:#aaa;">得意: ${favoredName}</p>
           ${extra}
         </div>
@@ -1688,6 +1730,26 @@
     p.equippedSkills = [null, null];
     p.equippedSkill = null;
     p.skillCooldown = 0;
+
+    // 2.5) 装備制限：武器を装備できない職（拳聖/修羅など）なら武器を外す
+    {
+      const nt = (jd && jd.traits) || {};
+      if (nt && nt.cannotEquipWeapon) {
+        const eq = p.equipment || (p.equipment = { slot1: null, slot2: null, accessory: null });
+        const removed = [];
+        if (eq.slot1 && eq.slot1.category === "weapon") {
+          removed.push(eq.slot1.name || "武器");
+          eq.slot1 = null;
+        }
+        if (eq.slot2 && eq.slot2.category === "weapon") {
+          removed.push(eq.slot2.name || "武器");
+          eq.slot2 = null;
+        }
+        if (removed.length) {
+          log(`🧤 武器不可のため外した：${removed.join(" / ")}`);
+        }
+      }
+    }
 
     // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
     const build = p.jobSkillBuilds[newGroup];
@@ -1919,10 +1981,12 @@
       ];
 
       let fallbackValue = null;
+      let fallbackKey = null;
       for (const k of priorityKeys) {
         const v = eff?.[k];
         if (Number.isFinite(v)) {
           fallbackValue = v;
+          fallbackKey = k;
           break;
         }
       }
@@ -1931,6 +1995,7 @@
           const v = eff[k];
           if (Number.isFinite(v)) {
             fallbackValue = v;
+            fallbackKey = k;
             break;
           }
         }
@@ -1944,16 +2009,29 @@
         return v;
       };
 
-      return raw.replace(/\{([a-zA-Z0-9_]+)\}/g, (_m, key) => {
+      return raw.replace(/\{([a-zA-Z0-9_]+)\}/g, (_m, key, offset, str) => {
         let v = null;
+        let actualKey = key;
         if (key === "value") {
           v = fallbackValue;
+          actualKey = fallbackKey;
         } else {
           v = eff?.[key];
         }
         if (!Number.isFinite(v)) return "-";
-        const rep = formatNumber(maybePercent(v));
-        return rep || "-";
+
+        let rep = formatNumber(maybePercent(v));
+        if (!rep) return "-";
+
+        // 回避上昇は % として表示（説明文側に % が無い場合でも付与）
+        // 例: "回避+{evasionBonus}" -> "回避+3%"
+        if (actualKey === "evasionBonus") {
+          const base = String(str || raw);
+          const nextChar = base.charAt(offset + String(_m).length);
+          if (nextChar !== "%" && nextChar !== "％") rep += "%";
+        }
+
+        return rep;
       });
     };
 

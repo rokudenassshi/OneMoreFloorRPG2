@@ -144,52 +144,52 @@
           </div>
           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
         </div>
-      </div>
-      <div class="status-section">
-        <h4>基本ステータス</h4>
-        <div class="stat-grid">
-          <div class="stat-item">
-            <span class="stat-name">⚔️ 力</span>
-            <span class="stat-value" id="statStr">5</span>
+        <div class="status-section">
+          <h4>基本ステータス</h4>
+          <div class="stat-grid">
+            <div class="stat-item">
+              <span class="stat-name">⚔️ 力</span>
+              <span class="stat-value" id="statStr">5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">❤️ 体力</span>
+              <span class="stat-value" id="statVit">5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">🧙 賢さ</span>
+              <span class="stat-value" id="statInt">5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">⚡ 素早さ</span>
+              <span class="stat-value" id="statAgi">5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-name">🎯 器用さ</span>
+              <span class="stat-value" id="statDex">5</span>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-name">❤️ 体力</span>
-            <span class="stat-value" id="statVit">5</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-name">🧙 賢さ</span>
-            <span class="stat-value" id="statInt">5</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-name">⚡ 素早さ</span>
-            <span class="stat-value" id="statAgi">5</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-name">🎯 器用さ</span>
-            <span class="stat-value" id="statDex">5</span>
+          <div class="stat-points-display">
+            ステータスポイント: <strong id="statPoints">0</strong>
+            <button class="small-btn" onclick="openStatAllocation()">振り分け</button>
           </div>
         </div>
-        <div class="stat-points-display">
-          ステータスポイント: <strong id="statPoints">0</strong>
-          <button class="small-btn" onclick="openStatAllocation()">振り分け</button>
-        </div>
-      </div>
 
-      <div class="status-section">
-        <h4>装備中</h4>
-        <div class="equipped-slots">
-          <div class="equip-slot" id="equipSlot1">装備1: 空</div>
-          <div class="equip-slot" id="equipSlot2">装備2: 空</div>
-          <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
+        <div class="status-section">
+          <h4>装備中</h4>
+          <div class="equipped-slots">
+            <div class="equip-slot" id="equipSlot1">装備1: 空</div>
+            <div class="equip-slot" id="equipSlot2">装備2: 空</div>
+            <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
+          </div>
+          <div class="equip-note" id="equipNoteOffhand">
+            ※装備2に装備した片手武器の攻撃力は60%として計算されます。
+          </div>
         </div>
-        <div class="equip-note" id="equipNoteOffhand">
-          ※装備2に装備した片手武器の攻撃力は60%として計算されます。
-        </div>
-      </div>
 
-      <div class="status-section">
-        <h4>計算後ステータス</h4>
-        <div class="calc-stats" id="calcStats"></div>
+        <div class="status-section">
+          <h4>計算後ステータス</h4>
+          <div class="calc-stats" id="calcStats"></div>
+        </div>
       </div>
 
 

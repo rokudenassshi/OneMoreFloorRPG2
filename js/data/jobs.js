@@ -107,25 +107,17 @@
       bonuses: { strength: 2, vitality: 1, intelligence: 0, agility: 2, dexterity: 6 },
       traits: {
         "accuracyBonus": 14,
-        "critRateBonus": 5,
-        "critDamageMul": 2.25,
+        "critRateBonus": 12,
+        // 貫通（物理の防御適用率を -5%）
+        "pierceDefFactorReduction": 0.05,
+        "critDamageMul": 2.35,
         // 器用さで火力も伸びる（DEXビルドが成立）
         "attackFromDex": 0.85,
         "attackMult": 1.06,
         "favoredMultiplier": 1.25,
       },
     },
-    fistmaster: {
-      name: "拳聖",
-      desc: "拳の達人（上級職）",
-      tier: "advanced",
-      skillGroup: "monk",
-      baseJob: "monk",
-      favoredType: "gloves",
-      unlock: { type: "heal", target: 80, text: "格闘家で回復スキルを80回使う" },
-      bonuses: { strength: 2, vitality: 2, intelligence: 1, agility: 5, dexterity: 0 },
-      traits: {"evasionBonus": 8, "attackMult": 1.08, "healMult": 1.15},
-    },
+
     warlord: {
       name: "騎士",
       desc: "防御寄りだが攻撃もこなす（上級職）",
@@ -170,39 +162,17 @@
       bonuses: { strength: -1, vitality: 0, intelligence: 6, agility: 1, dexterity: 2 },
       traits: {"magicPowerMult": 1.1, "expRate": 0.05, "healMult": 1.1, "cooldownMult": 0.85},
     },
-    ranger: {
-      name: "遊撃手",
-      desc: "機動・探索・支援を切り替える（上級職）",
-      tier: "advanced",
-      skillGroup: "archer",
-      baseJob: "archer",
-      // 弓/クロスボウに加え、短剣も得意（近接遊撃ビルドも可能）
-      favoredType: ["bow", "crossbow", "dagger"],
-      unlock: { type: "evade", target: 80, text: "弓使いで攻撃を80回回避する" },
-      // 素早さ寄りにしつつ、支援ビルド用に賢さも少し上げる
-      bonuses: { strength: 2, vitality: 2, intelligence: 1, agility: 5, dexterity: 3 },
-      traits: {
-        "evasionBonus": 10,
-        "dropRateBonus": 5,
-        "searchBonus": 1,
-        // 素早さで火力が伸びる（AGIビルドが成立）
-        "attackFromAgi": 0.75,
-        // 回復スキル（healAmount系）を支援寄りに強化
-        "healMult": 1.1,
-        "attackMult": 1.03,
-        "favoredMultiplier": 1.25,
-      },
-    },
+
     asura: {
       name: "修羅",
-      desc: "猛攻に特化する（上級職）",
+      desc: "攻撃特化の格闘家（上級職）。武器を装備できない。基礎ステータスが10倍。攻撃を行うたび気が溜まり、気1につき会心率+2%、攻撃力+3%、追撃率+2%（戦闘中）。",
       tier: "advanced",
       skillGroup: "monk",
       baseJob: "monk",
-      favoredType: "gloves",
+      favoredType: null,
       unlock: { type: "attackHit", target: 300, text: "格闘家で攻撃を300回命中させる" },
       bonuses: { strength: 6, vitality: 1, intelligence: 0, agility: 3, dexterity: 0 },
-      traits: {"attackMult": 1.18, "critRateBonus": 6, "defenseMult": 0.95, "favoredMultiplier": 1.25},
+      traits: {"attackMult": 1.18, "critRateBonus": 6, "defenseMult": 0.95, "favoredMultiplier": 1.25, "baseStatMultiplier": 10, "cannotEquipWeapon": true},
     },
     warfiend: {
       name: "狂戦士",

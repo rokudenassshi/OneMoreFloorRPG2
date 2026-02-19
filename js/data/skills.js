@@ -875,8 +875,8 @@
       job: "sniper",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "会心率+{critBonus}%、命中+{accuracyBonus}%",
-      effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
+      desc: "会心率+{critBonus}%、命中+{accuracyBonus}%、貫通+{piercePct}%",
+      effect: (lv) => ({ critBonus: lv * 3, accuracyBonus: lv * 2, pierceDefFactorReduction: lv * 0.03, piercePct: Math.round(lv * 3) }),
     },
     sniper_piercing_shot: {
       name: "貫通射ち",
@@ -885,8 +885,11 @@
       job: "sniper",
       maxLevel: 3,
       cooldown: 4,
-      desc: "高精度の一撃（{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 1.57 + lv * 0.25 }),
+      desc: "貫通+会心寄りの一撃（{value}倍 / 防御適用率{defFactor}%）",
+      effect: (lv) => {
+        const defFactor = Math.max(0.28, 0.42 - lv * 0.04);
+        return { damageMultiplier: 1.57 + lv * 0.25, ignoreDef: defFactor, defFactor: Math.round(defFactor * 100) };
+      },
     },
     sniper_headshot: {
       name: "ヘッドショット",
@@ -896,8 +899,11 @@
       maxLevel: 3,
       requiredPoints: 5,
       cooldown: 7,
-      desc: "超精密の一撃（{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 1.87 + lv * 0.25, ignoreDef: 0.35 }),
+      desc: "致命の一撃（{value}倍 / 防御適用率{defFactor}%）",
+      effect: (lv) => {
+        const defFactor = 0.25;
+        return { damageMultiplier: 1.95 + lv * 0.3, ignoreDef: defFactor, defFactor: Math.round(defFactor * 100) };
+      },
     },
     sniper_camouflage: {
       name: "狙撃姿勢",
@@ -936,89 +942,6 @@
         hits: 3,
         damageMultiplier: 0.54 + lv * 0.06,
         enemyDebuffs: [{ type: "accuracyDown", turns: 2, rate: 0.25 + lv * 0.05 }],
-      }),
-    },
-
-    // ---- 拳聖 (fistmaster) ----
-    fistmaster_flow: {
-      name: "拳気流転",
-      type: "passive",
-      job: "fistmaster",
-      maxLevel: 5,
-      desc: "回避+{value}",
-      effect: (lv) => ({ evasionBonus: lv * 3 }),
-    },
-    fistmaster_qi_cycle: {
-      name: "闘気循環",
-      type: "passive",
-      job: "fistmaster",
-      maxLevel: 5,
-      requiredPoints: 3,
-      desc: "回避+{evasionBonus}、回復力+{healPowerBonus}",
-      effect: (lv) => ({ evasionBonus: lv * 2, healPowerBonus: lv * 6 }),
-    },
-    fistmaster_healing_fist: {
-      name: "癒しの拳",
-      type: "active",
-      accuracy: 100,
-      job: "fistmaster",
-      maxLevel: 3,
-      cooldown: 6,
-      desc: "HPを{value}%回復する",
-      effect: (lv) => {
-        const rate = 0.12 + lv * 0.06;
-        return { healRate: rate, value: Math.round(rate * 100) };
-      },
-    },
-    fistmaster_hundred_fists: {
-      name: "百裂拳",
-      type: "active",
-      accuracy: 105,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 5,
-      cooldown: 6,
-      desc: "5連打（{value}倍×5）",
-      effect: (lv) => ({ hits: 5, damageMultiplier: 0.36 + lv * 0.08 }),
-    },
-    fistmaster_inner_heal: {
-      name: "内気功療法",
-      type: "active",
-      accuracy: 100,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 4,
-      cooldown: 7,
-      desc: "HP回復（{value}+回復力×0.8）",
-      effect: (lv) => ({ healAmount: 70 + lv * 45, healScale: 0.8 }),
-    },
-
-    fistmaster_titan_body: {
-      name: "剛体",
-      type: "passive",
-      job: "fistmaster",
-      maxLevel: 5,
-      requiredPoints: 3,
-      desc: "攻撃力+{attackBonus}（最大HP+{maxHpBonus}、回避{evasionBonus}）",
-      effect: (lv) => ({
-        attackBonus: lv * 12,
-        maxHpBonus: lv * 18,
-        evasionBonus: -lv * 1,
-      }),
-    },
-
-    fistmaster_breaker_punch: {
-      name: "破砕拳",
-      type: "active",
-      accuracy: 105,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 5,
-      cooldown: 7,
-      desc: "防御を崩す強打（{value}倍、脆弱2ターン）",
-      effect: (lv) => ({
-        damageMultiplier: 1.75 + lv * 0.2,
-        enemyDebuffs: [{ type: "vulnerable", turns: 2, rate: 0.2 + lv * 0.05 }],
       }),
     },
 
@@ -1269,98 +1192,6 @@
       },
     },
 
-    // ---- レンジャー (ranger) ----
-    ranger_trail: {
-      name: "追跡",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      desc: "索敵+{value}",
-      effect: (lv) => ({ searchBonus: lv * 2 }),
-    },
-    ranger_wild_instinct: {
-      name: "野生の勘",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      requiredPoints: 3,
-      desc: "索敵+{searchBonus}（回避+{evasionBonus}）",
-      effect: (lv) => ({ searchBonus: lv * 6, evasionBonus: lv * 2 }),
-    },
-    ranger_double_shot: {
-      name: "連射",
-      type: "active",
-      accuracy: 110,
-      job: "ranger",
-      maxLevel: 3,
-      cooldown: 5,
-      desc: "2連射（{value}倍×2）",
-      effect: (lv) => ({ damageMultiplier: 0.9 + lv * 0.1, hits: 2 }),
-    },
-    ranger_survival: {
-      name: "サバイバル",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      requiredPoints: 3,
-      desc: "回避+{evasionBonus}%（Lvで増加。最大HP+{maxHpBonus}）",
-      effect: (lv) => ({ evasionBonus: lv * 2, maxHpBonus: lv * 15 }),
-    },
-    ranger_healing_arrow: {
-      name: "癒しの矢",
-      type: "active",
-      job: "ranger",
-      accuracy: 100,
-      maxLevel: 3,
-      cooldown: 6,
-      desc: "HPを{value}%回復する（遊撃の回復）",
-      effect: (lv) => {
-        const rate = 0.08 + lv * 0.05;
-        return { healRate: rate, value: Math.round(rate * 100) };
-      },
-    },
-    ranger_trap_shot: {
-      name: "トラップショット",
-      type: "active",
-      accuracy: 120,
-      job: "ranger",
-      maxLevel: 3,
-      requiredPoints: 4,
-      cooldown: 6,
-      desc: "素早い三連射（{value}倍×3）",
-      effect: (lv) => ({ hits: 3, damageMultiplier: 0.65 + lv * 0.08 }),
-    },
-
-    ranger_beastslayer: {
-      name: "獣狩り",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      requiredPoints: 3,
-      desc: "攻撃力+{value}（会心も少し上がる。代わりに索敵が少し下がる）",
-      effect: (lv) => ({
-        attackBonus: lv * 10,
-        critBonus: lv * 1,
-        searchBonus: -lv * 2,
-      }),
-    },
-
-    ranger_pin_down: {
-      name: "拘束矢",
-      type: "active",
-      accuracy: 120,
-      job: "ranger",
-      maxLevel: 3,
-      requiredPoints: 4,
-      cooldown: 6,
-      desc: "動きを奪う射撃（{value}倍×2、鈍足2ターン）",
-      effect: (lv) => ({
-        hits: 2,
-        damageMultiplier: 0.82 + lv * 0.06,
-        enemyDebuffs: [{ type: "slow", turns: 2, rate: 0.25 + lv * 0.05 }],
-      }),
-    },
-
     // ---- 阿修羅 (asura) ----
     asura_fury: {
       name: "修羅の怒り",
@@ -1510,6 +1341,16 @@
         defenseBonus: lv * 6,
         critBonus: -lv * 1,
       }),
+    },
+
+    warfiend_last_stand: {
+      name: "不屈",
+      type: "passive",
+      job: "warfiend",
+      maxLevel: 1,
+      requiredPoints: 5,
+      desc: "HPが0になった時、{value}%の確率でHP1で踏みとどまる（戦闘中何度でも）",
+      effect: (_lv) => ({ value: 5, lastStandChance: 5 }),
     },
 
     warfiend_ogre_roar: {
@@ -1895,81 +1736,6 @@
       }),
     },
 
-    // --- 拳聖 (fistmaster)
-    fistmaster_style_flow: {
-      name: "流拳",
-      type: "passive",
-      job: "fistmaster",
-      maxLevel: 5,
-      requiredPoints: 3,
-      exclusiveGroup: "fistmaster_style",
-      desc: "回避率+{evasionBonus}%（会心率+{critBonus}%）",
-      effect: (lv) => ({ evasionBonus: lv * 4, critBonus: lv * 1 }),
-    },
-    fistmaster_style_body: {
-      name: "剛体",
-      type: "passive",
-      job: "fistmaster",
-      maxLevel: 5,
-      requiredPoints: 3,
-      exclusiveGroup: "fistmaster_style",
-      desc: "最大HP+{maxHpBonus}（防御力+{defenseBonus}）",
-      effect: (lv) => ({ maxHpBonus: lv * 25, defenseBonus: lv * 4 }),
-    },
-
-    fistmaster_break: {
-      name: "崩拳",
-      type: "active",
-      accuracy: 105,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 7,
-      exclusiveGroup: "fistmaster_ultimate",
-      cooldown: 8,
-      desc: "四連打（{value}倍×4、1Tスタン）",
-      effect: (lv) => ({
-        hits: 4,
-        damageMultiplier: 0.58 + lv * 0.07,
-        enemyStunTurns: 1,
-      }),
-    },
-
-
-    fistmaster_mountain_crush: {
-      name: "山砕き",
-      type: "active",
-      accuracy: 95,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 7,
-      exclusiveGroup: "fistmaster_ultimate",
-      cooldown: 9,
-      desc: "渾身の一撃（{value}倍、与ダメの25%回復、貫通）",
-      effect: (lv) => ({
-        damageMultiplier: 2.05 + lv * 0.28,
-        healPercent: 0.25,
-        ignoreDef: 0.6,
-      }),
-    },
-
-
-    fistmaster_fist_dance: {
-      name: "拳舞",
-      type: "active",
-      accuracy: 110,
-      job: "fistmaster",
-      maxLevel: 3,
-      requiredPoints: 7,
-      exclusiveGroup: "fistmaster_ultimate",
-      cooldown: 7,
-      desc: "八連撃（{value}倍×8、与ダメの12%回復）",
-      effect: (lv) => ({
-        hits: 8,
-        damageMultiplier: 0.28 + lv * 0.02,
-        healPercent: 0.12,
-      }),
-    },
-
     // --- 覇王 (warlord)
     warlord_style_lance: {
       name: "槍武",
@@ -2191,71 +1957,6 @@
         nextCritTurns: 2,
         value: 120 + lv * 80,
       }),
-    },
-
-    // --- レンジャー (ranger)
-    ranger_style_hunter: {
-      name: "狩人",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      requiredPoints: 3,
-      exclusiveGroup: "ranger_style",
-      desc: "命中率+{accuracyBonus}%（索敵+{searchBonus}）",
-      effect: (lv) => ({ accuracyBonus: lv * 3, searchBonus: lv * 6 }),
-    },
-    ranger_style_survivor: {
-      name: "生存",
-      type: "passive",
-      job: "ranger",
-      maxLevel: 5,
-      requiredPoints: 3,
-      exclusiveGroup: "ranger_style",
-      desc: "回避率+{evasionBonus}%（最大HP+{maxHpBonus}）",
-      effect: (lv) => ({ evasionBonus: lv * 3, maxHpBonus: lv * 15 }),
-    },
-    ranger_storm: {
-      name: "嵐矢",
-      type: "active",
-      accuracy: 115,
-      job: "ranger",
-      maxLevel: 3,
-      requiredPoints: 6,
-      exclusiveGroup: "ranger_ultimate",
-      cooldown: 7,
-      desc: "4連射（{value}倍×4）",
-      effect: (lv) => ({ hits: 4, damageMultiplier: 0.53 + lv * 0.06 }),
-    },
-
-    ranger_shadow_shot: {
-      name: "影矢",
-      type: "active",
-      accuracy: 110,
-      job: "ranger",
-      maxLevel: 3,
-      requiredPoints: 7,
-      exclusiveGroup: "ranger_ultimate",
-      cooldown: 7,
-      desc: "闇の三連射（{value}倍×3、命中低下2T）",
-      effect: (lv) => ({
-        hits: 3,
-        damageMultiplier: 0.62 + lv * 0.05,
-        enemyAccuracyDownTurns: 2,
-        enemyAccuracyDownRate: 0.25 + lv * 0.05,
-      }),
-    },
-
-    ranger_sting_heal: {
-      name: "止血の一矢",
-      type: "active",
-      accuracy: 115,
-      job: "ranger",
-      maxLevel: 3,
-      requiredPoints: 6,
-      exclusiveGroup: "ranger_ultimate",
-      cooldown: 8,
-      desc: "狙撃しつつ回復（{value}倍、与ダメの18%回復）",
-      effect: (lv) => ({ damageMultiplier: 2.0 + lv * 0.2, healPercent: 0.18 }),
     },
 
     // --- 修羅 (asura)
