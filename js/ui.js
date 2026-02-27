@@ -2219,9 +2219,16 @@
         }
       }
 
-      const maybePercent = (v) => {
-        // 説明文に % が含まれていて、値が 0.x の場合は 100倍して表示（例: healRate, chance 系）
-        if (!raw.includes("%")) return v;
+      const maybePercent = (v, key, offset, tokenLength, str) => {
+        // 置換対象の直後が % のときのみ 0.x を % 表示へ変換する
+        const base = String(str || raw);
+        const nextChar = base.charAt(offset + tokenLength);
+        const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
+          String(key || "")
+        );
+        const shouldPercentize =
+          nextChar === "%" || nextChar === "％" || keyLooksPercent;
+        if (!shouldPercentize) return v;
         if (!Number.isFinite(v)) return v;
         if (v > 0 && v < 1) return v * 100;
         return v;
@@ -2238,7 +2245,9 @@
         }
         if (!Number.isFinite(v)) return "-";
 
-        let rep = formatNumber(maybePercent(v));
+        let rep = formatNumber(
+          maybePercent(v, actualKey, offset, String(_m).length, str)
+        );
         if (!rep) return "-";
 
         // 回避上昇は % として表示（説明文側に % が無い場合でも付与）

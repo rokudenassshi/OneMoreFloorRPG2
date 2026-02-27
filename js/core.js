@@ -470,7 +470,41 @@
       saveGameNow();
     }, AUTOSAVE_INTERVAL_MS);
 
+    applyUrlActions();
+
     updateUI();
+  }
+
+  function applyUrlActions() {
+    let params;
+    try {
+      params = new URLSearchParams(window.location.search || "");
+    } catch (e) {
+      return;
+    }
+
+    if (!params.has("back")) return;
+
+    // 非戦闘時：通常の移動ロジックを利用
+    if (gameData.gameState === "EXPLORE") {
+      move(-1);
+      return;
+    }
+
+    // 戦闘時：URL指定は確定で離脱して1階層戻る
+    if (gameData.gameState === "BATTLE") {
+      const curBattleFloor = Number(gameData.battleFloor);
+      const baseFloor =
+        Number.isFinite(curBattleFloor) && curBattleFloor > 0
+          ? curBattleFloor
+          : Number(gameData.floor || 1);
+
+      gameData.pendingFloorAfterWin = null;
+      gameData.floor = clampFloor(baseFloor - 1);
+      log(`↩ URL指定で${gameData.floor}階層へ戻った`);
+      endBattle(false);
+      requestAutosave();
+    }
   }
 
   // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、
@@ -674,6 +708,16 @@
     const p = gameData.player || (gameData.player = {});
     if (!p.battleState || typeof p.battleState !== "object") p.battleState = {};
     return p.battleState;
+  }
+
+
+  function getPhysicalDefenseFactor(effect) {
+    const bs = ensurePlayerBattleState();
+    const base =
+      effect && typeof effect.ignoreDef === "number" ? effect.ignoreDef : 0.5;
+    const red = Number(bs.pierceDefFactorReduction || 0);
+    // 防御適用率を下げるほど貫通が強い（下限0.1）
+    return Math.max(0.1, base - (Number.isFinite(red) ? red : 0));
   }
 
   function resetPlayerBattleStateForBattle() {
@@ -2732,15 +2776,6 @@
           effect.baseDamage + combat.magicPower * (effect.magicScale || 1);
 
         let damage = base * skillMul;
-
-        function getPhysicalDefenseFactor(effect) {
-          const bs = ensurePlayerBattleState();
-          const base =
-            typeof effect.ignoreDef === "number" ? effect.ignoreDef : 0.5;
-          const red = Number(bs.pierceDefFactorReduction || 0);
-          // 防御適用率を下げるほど貫通が強い（下限0.1）
-          return Math.max(0.1, base - (Number.isFinite(red) ? red : 0));
-        }
 
         // クリティカル判定（スキルでも有効）
         const forceCritSkill = consumeNextCritFlag();

@@ -1,132 +1,92 @@
-diff --git a/game_new.html b/game_new.html
-index 846ac8c680ab9c77ba6cc44bef25719ee412b4e1..1359c29dff167cf01d88be34fc75b665609da1d1 100644
---- a/game_new.html
-+++ b/game_new.html
-@@ -122,97 +122,97 @@
+diff --git a/js/core.js b/js/core.js
+index 84cddc8505c256dc4d674819f235ba792153377b..4b36c8bbc305e658f95f236690f6db2dd0f7c9a9 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -448,53 +448,87 @@
+       return;
+     }
  
-       <div class="status-tabs">
-         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
-         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
-         <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
-       </div>
+     __initDone = true;
  
-       <div id="tabStatus">
-         <div class="status-section">
-           <div class="job-display">
-             <span>職業：<strong id="currentJob">剣士</strong></span>
-             <button class="small-btn" onclick="openJobSelector()">変更</button>
-           </div>
+     // UI参照
+     gameData.battleButtons = document.getElementById("battleButtons");
+     gameData.exploreButtons = document.getElementById("exploreButtons");
  
-         </div>
-         <div class="status-section">
-           <h4>スキル</h4>
-           <div class="skill-points-display">
-             スキルポイント: <strong id="skillPoints">0</strong>
-           </div>
-           <div class="equipped-skill">
-             装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
-           </div>
-           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
-         </div>
--      </div>
-       <div class="status-section">
-         <h4>基本ステータス</h4>
-         <div class="stat-grid">
-           <div class="stat-item">
-             <span class="stat-name">⚔️ 力</span>
-             <span class="stat-value" id="statStr">5</span>
-           </div>
-           <div class="stat-item">
-             <span class="stat-name">❤️ 体力</span>
-             <span class="stat-value" id="statVit">5</span>
-           </div>
-           <div class="stat-item">
-             <span class="stat-name">🧙 賢さ</span>
-             <span class="stat-value" id="statInt">5</span>
-           </div>
-           <div class="stat-item">
-             <span class="stat-name">⚡ 素早さ</span>
-             <span class="stat-value" id="statAgi">5</span>
-           </div>
-           <div class="stat-item">
-             <span class="stat-name">🎯 器用さ</span>
-             <span class="stat-value" id="statDex">5</span>
-           </div>
-         </div>
-         <div class="stat-points-display">
-           ステータスポイント: <strong id="statPoints">0</strong>
-           <button class="small-btn" onclick="openStatAllocation()">振り分け</button>
-         </div>
-       </div>
+     applyPendingImportIfAny();
+     autosaveEnabled = isAutosaveEnabled();
  
-       <div class="status-section">
-         <h4>装備中</h4>
-         <div class="equipped-slots">
-           <div class="equip-slot" id="equipSlot1">装備1: 空</div>
-           <div class="equip-slot" id="equipSlot2">装備2: 空</div>
-           <div class="equip-slot" id="equipAccessorySlot">装飾品: 空</div>
-         </div>
-         <div class="equip-note" id="equipNoteOffhand">
-           ※装備2に装備した片手武器の攻撃力は60%として計算されます。
-         </div>
-       </div>
+     const loaded = loadGameIfExists();
+     getCombatStats();
  
-       <div class="status-section">
-         <h4>計算後ステータス</h4>
-         <div class="calc-stats" id="calcStats"></div>
-       </div>
-+      </div>
+     if (loaded) {
+       log("✅ オートセーブを読み込みました");
+     } else {
+       log("探索開始");
+     }
  
+     setInterval(() => {
+       saveGameNow();
+     }, AUTOSAVE_INTERVAL_MS);
  
++    applyUrlActions();
++
+     updateUI();
+   }
  
-       <div id="tabAchievements" style="display:none;">
-         <div class="status-section">
-           <h4>実績</h4>
-           <div id="achievementsContent" class="achievements-list"></div>
-         </div>
-       </div>
++  function applyUrlActions() {
++    let params;
++    try {
++      params = new URLSearchParams(window.location.search || "");
++    } catch (e) {
++      return;
++    }
++
++    if (!params.has("back")) return;
++
++    // 非戦闘時：通常の移動ロジックを利用
++    if (gameData.gameState === "EXPLORE") {
++      move(-1);
++      return;
++    }
++
++    // 戦闘時：URL指定は確定で離脱して1階層戻る
++    if (gameData.gameState === "BATTLE") {
++      const curBattleFloor = Number(gameData.battleFloor);
++      const baseFloor =
++        Number.isFinite(curBattleFloor) && curBattleFloor > 0
++          ? curBattleFloor
++          : Number(gameData.floor || 1);
++
++      gameData.pendingFloorAfterWin = null;
++      gameData.floor = clampFloor(baseFloor - 1);
++      log(`↩ URL指定で${gameData.floor}階層へ戻った`);
++      endBattle(false);
++      requestAutosave();
++    }
++  }
++
+   // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、
+   // readyState を見て即時初期化する。
+   if (
+     document.readyState === "complete" ||
+     document.readyState === "interactive"
+   ) {
+     // すでにDOM構築済み
+     queueMicrotask(initGame);
+   } else {
+     window.addEventListener("DOMContentLoaded", initGame, { once: true });
+     window.addEventListener("load", initGame, { once: true });
+   }
  
-       <div id="tabRecords" style="display:none;">
-         <div class="status-section">
-           <h4>記録</h4>
-           <div class="record-list">
-             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
-             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
-           </div>
-         </div>
-       </div>
-     </div>
+   // -------------------
+   // ステータス計算
+   // -------------------
+   function clampMin0(n) {
+     return Math.max(0, Math.floor(n));
+   }
  
-     <!-- スキル画面 -->
-     <div id="skillScreen" style="display:none;">
-       <div class="screen-header">
-         <h3>スキル管理</h3>
-@@ -370,26 +370,26 @@
-           })
-           .catch(() => "dev");
-       }
- 
-       getVersion()
-         .then((version) => {
-           // 他のJS（セーブ出力など）でも使えるように window に乗せる
-           window.GAME_VERSION = version;
- 
-           // 順番に読み込む（依存関係を壊さない）
-           let chain = Promise.resolve();
-           for (const p of scriptList) {
-             const src = p + "?v=" + encodeURIComponent(version);
-             chain = chain.then(() => loadScript(src));
-           }
-           return chain;
-         })
-         .catch((err) => {
-           console.error(err);
-           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
-         });
-     })();
-   </script>
- </body>
- 
--</html>
-\ No newline at end of file
-+</html>
+   function getTotalStats() {
+     const p = gameData.player;
+     const jobDef = jobs && p && p.job && jobs[p.job] ? jobs[p.job] : null;
+     const jobBonus =
+       jobDef && jobDef.bonuses
