@@ -1604,14 +1604,12 @@
     if (gameData.gameState !== "EXPLORE") return;
 
     const cur = clampFloor(gameData.floor || 1);
+    const isAtTestFloorCap =
+      Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0 && cur >= TEST_FLOOR_CAP;
 
     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
-    if (
-      dir > 0 &&
-      Number.isFinite(TEST_FLOOR_CAP) &&
-      TEST_FLOOR_CAP > 0 &&
-      cur >= TEST_FLOOR_CAP
-    ) {
+    if (dir > 0 && isAtTestFloorCap) {
+      gameData.floor = cur;
       // 進行待ちを残さず、現在階層で戦闘開始
       gameData.pendingFloorAfterWin = null;
       startBattle(cur);

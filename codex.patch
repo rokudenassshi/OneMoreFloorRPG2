@@ -1,92 +1,67 @@
 diff --git a/js/core.js b/js/core.js
-index 84cddc8505c256dc4d674819f235ba792153377b..4b36c8bbc305e658f95f236690f6db2dd0f7c9a9 100644
+index ec3d198721d881bd5665ac8d0ebcb421f1d988ce..c10558993bc3e268652030879c0d0dbb45f802b8 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -448,53 +448,87 @@
+@@ -1582,58 +1582,56 @@
+         }
+ 
+         // 報酬ログ（任意）
+         const r = def.reward;
+         if (
+           r &&
+           typeof r === "object" &&
+           typeof r.text === "string" &&
+           r.text
+         ) {
+           log(`🎁 報酬：${r.text}`);
+         }
+       }
+     }
+ 
+     return unlockedNow;
+   }
+ 
+   // -------------------
+   // 探索
+   // -------------------
+   function move(dir) {
+     if (gameData.gameState !== "EXPLORE") return;
+ 
+     const cur = clampFloor(gameData.floor || 1);
++    const isAtTestFloorCap =
++      Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0 && cur >= TEST_FLOOR_CAP;
+ 
+     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
+-    if (
+-      dir > 0 &&
+-      Number.isFinite(TEST_FLOOR_CAP) &&
+-      TEST_FLOOR_CAP > 0 &&
+-      cur >= TEST_FLOOR_CAP
+-    ) {
++    if (dir > 0 && isAtTestFloorCap) {
++      gameData.floor = cur;
+       // 進行待ちを残さず、現在階層で戦闘開始
+       gameData.pendingFloorAfterWin = null;
+       startBattle(cur);
        return;
      }
  
-     __initDone = true;
+     const target = clampFloor(cur + dir);
  
-     // UI参照
-     gameData.battleButtons = document.getElementById("battleButtons");
-     gameData.exploreButtons = document.getElementById("exploreButtons");
+     // 進む（敵と遭遇した場合は、倒してから階層が上がる）
+     if (dir > 0) {
+       // 戦闘開始
+       if (Math.random() < 0.8 || target <= 5) {
+         gameData.pendingFloorAfterWin = target;
+         startBattle(target);
+       } else {
+         gameData.floor = target;
  
-     applyPendingImportIfAny();
-     autosaveEnabled = isAutosaveEnabled();
- 
-     const loaded = loadGameIfExists();
-     getCombatStats();
- 
-     if (loaded) {
-       log("✅ オートセーブを読み込みました");
-     } else {
-       log("探索開始");
-     }
- 
-     setInterval(() => {
-       saveGameNow();
-     }, AUTOSAVE_INTERVAL_MS);
- 
-+    applyUrlActions();
-+
-     updateUI();
-   }
- 
-+  function applyUrlActions() {
-+    let params;
-+    try {
-+      params = new URLSearchParams(window.location.search || "");
-+    } catch (e) {
-+      return;
-+    }
-+
-+    if (!params.has("back")) return;
-+
-+    // 非戦闘時：通常の移動ロジックを利用
-+    if (gameData.gameState === "EXPLORE") {
-+      move(-1);
-+      return;
-+    }
-+
-+    // 戦闘時：URL指定は確定で離脱して1階層戻る
-+    if (gameData.gameState === "BATTLE") {
-+      const curBattleFloor = Number(gameData.battleFloor);
-+      const baseFloor =
-+        Number.isFinite(curBattleFloor) && curBattleFloor > 0
-+          ? curBattleFloor
-+          : Number(gameData.floor || 1);
-+
-+      gameData.pendingFloorAfterWin = null;
-+      gameData.floor = clampFloor(baseFloor - 1);
-+      log(`↩ URL指定で${gameData.floor}階層へ戻った`);
-+      endBattle(false);
-+      requestAutosave();
-+    }
-+  }
-+
-   // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、
-   // readyState を見て即時初期化する。
-   if (
-     document.readyState === "complete" ||
-     document.readyState === "interactive"
-   ) {
-     // すでにDOM構築済み
-     queueMicrotask(initGame);
-   } else {
-     window.addEventListener("DOMContentLoaded", initGame, { once: true });
-     window.addEventListener("load", initGame, { once: true });
-   }
- 
-   // -------------------
-   // ステータス計算
-   // -------------------
-   function clampMin0(n) {
-     return Math.max(0, Math.floor(n));
-   }
- 
-   function getTotalStats() {
-     const p = gameData.player;
-     const jobDef = jobs && p && p.job && jobs[p.job] ? jobs[p.job] : null;
-     const jobBonus =
-       jobDef && jobDef.bonuses
+         if (typeof gameData.player.maxReachedFloor !== "number")
+           gameData.player.maxReachedFloor = 1;
+         gameData.player.maxReachedFloor = Math.max(
+           gameData.player.maxReachedFloor,
+           gameData.floor,
+         );
+         gameData.player.maxReachedFloor = clampFloor(
+           gameData.player.maxReachedFloor,
