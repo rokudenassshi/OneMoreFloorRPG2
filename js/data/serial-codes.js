@@ -1,7 +1,8 @@
 // ===================
 // シリアルコード
 // - オプション画面から入力して、特典/機能の解放に使う
-// - 参考ZIPの構成（serialCodeActions / serialCodeLookup）に合わせる
+// - 基本は Firebase Functions 側で検証（コード表はクライアントに置かない）
+// - ui.js が Firebase が使えない場合だけローカル表（serialCodeLookup）にフォールバックする
 // ===================
 
 (function () {
@@ -25,16 +26,15 @@
     } catch (e) {}
   }
 
+  function getPlayer() {
+    return window.gameData && window.gameData.player
+      ? window.gameData.player
+      : null;
+  }
+
   // ✅ “シリアルコード → 解放キー”
-  // 本来はサーバー側で検証するのが安全だが、
-  // このプロジェクトではローカル検証（オフラインでも動作）を優先。
-  // 追加する場合はこの表に追記する。
-  const serialCodeLookup = {
-    // 参考ZIPと同じコード
-    unlockrokudemonaistay: "stayBattle",
-    unlockaccsynx9k2p8mrokudemonai7q4r6t1: "accessorySynthesis",
-    unlockdoubleeffectbonus8r2k9m1x: "doubleEffectBonus",
-  };
+  // セキュリティのため通常は空（サーバー側で検証）。
+  const serialCodeLookup = {};
 
   // ✅ “解放キー → 実行内容”
   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
@@ -65,6 +65,36 @@
         saveStore(s);
       },
       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
+    },
+
+    // 前世の記憶（実績解除：経験値+10%）
+    pastLifeMemory: {
+      isUnlocked: () => {
+        const s = loadStore();
+        if (s.pastLifeMemory) return true;
+        const p = getPlayer();
+        return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
+      },
+      unlock: () => {
+        // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
+        const s = loadStore();
+        s.pastLifeMemory = true;
+        saveStore(s);
+
+        // 2) セーブデータ側にも保存（実績用）
+        const p = getPlayer();
+        if (p) {
+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+            p.serialUnlocks = {};
+          p.serialUnlocks.pastLifeMemory = true;
+        }
+
+        // 3) 実績解除チェック（ログもここで出る）
+        if (typeof window.checkAndUnlockAchievements === "function") {
+          window.checkAndUnlockAchievements({ silent: false });
+        }
+      },
+      logMessage: "✨ シリアルコードを確認しました。",
     },
   };
 

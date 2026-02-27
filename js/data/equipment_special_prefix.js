@@ -65,21 +65,18 @@
     {
       name: "栄光の",
       rarity: "rare",
-      weight: 10,
       effects: [{ type: "bonusPct", key: "expBonus", min: 10, max: 20 }],
       describe: (r) => `経験値+${pct(r.expBonus)}`,
     },
     {
       name: "幸運の",
       rarity: "rare",
-      weight: 8,
       effects: [{ type: "bonusPct", key: "dropRate", min: 8, max: 18 }],
       describe: (r) => `ドロップ率+${pct(r.dropRate)}`,
     },
     {
       name: "探求者の",
       rarity: "rare",
-      weight: 7,
       effects: [
         { type: "bonusPct", key: "search", min: 6, max: 12 },
         { type: "bonusPct", key: "dropRate", min: 8, max: 18 },
@@ -90,7 +87,6 @@
     {
       name: "不死なる",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "regen", min: 2, max: 5 }, // regen は %/turn
         { type: "statPct", stat: "maxHp", min: 6, max: 12 },
@@ -100,14 +96,12 @@
     {
       name: "時渡りの",
       rarity: "epic",
-      weight: 5,
       effects: [{ type: "bonusPct", key: "cooldownReduction", min: 1, max: 1 }],
       describe: (r) => `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)}`,
     },
     {
       name: "先制の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "firstHitCrit", min: 1, max: 1 },
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
@@ -121,7 +115,6 @@
     {
       name: "不死鳥の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "lifeSteal", min: 6, max: 12 },
         { type: "bonusPct", key: "regen", min: 2, max: 5 },
@@ -131,12 +124,33 @@
     {
       name: "剛力の",
       rarity: "rare",
-      weight: 8,
       effects: [
         { type: "statPct", stat: "attack", min: 6, max: 12 },
         { type: "statPct", stat: "maxHp", min: 6, max: 12 },
       ],
       describe: (r) => `攻撃力+${pct(r.attackPct)} / 最大HP+${pct(r.maxHpPct)}`,
+    },
+    {
+      name: "盗賊の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "expBonus", min: 20, max: 40 },
+        { type: "bonusPct", key: "dropRate", min: 18, max: 35 },
+        { type: "bonusPct", key: "search", min: 25, max: 45 },
+      ],
+      describe: (r) =>
+        `経験値+${pct(r.expBonus)} / ドロップ率+${pct(r.dropRate)} / 索敵+${Math.round(Number(r.search) || 0)}`,
+    },
+    {
+      name: "永劫の",
+      rarity: "legendary",
+      effects: [
+        { type: "statPct", stat: "maxHp", min: 14, max: 24 },
+        { type: "bonusPct", key: "regen", min: 4, max: 8 }, // regen は %/turn
+        { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
+      ],
+      describe: (r) =>
+        `最大HP+${pct(r.maxHpPct)} / 再生${pct(r.regen)} / 被ダメ軽減+${pct(r.damageReduction)}`,
     },
   ];
 
@@ -148,7 +162,6 @@
     {
       name: "渇血の",
       rarity: "rare",
-      weight: 9,
       effects: [
         { type: "bonusPct", key: "lifeSteal", min: 4, max: 10 },
         { type: "statPct", stat: "attack", min: 6, max: 12 },
@@ -158,28 +171,27 @@
     {
       name: "血宴の",
       rarity: "epic",
-      weight: 6,
       effects: [
         { type: "bonusPct", key: "lifeSteal", min: 8, max: 14 },
         { type: "bonusPct", key: "pursuitChance", min: 10, max: 22 },
       ],
-      describe: (r) => `吸血+${pct(r.lifeSteal)} / 追撃率+${pct(r.pursuitChance)}`,
+      describe: (r) =>
+        `吸血+${pct(r.lifeSteal)} / 追撃率+${pct(r.pursuitChance)}`,
     },
     {
       name: "屠りの",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "lifeSteal", min: 6, max: 12 },
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
       ],
-      describe: (r) => `吸血+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
+      describe: (r) =>
+        `吸血+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
     },
 
     {
       name: "処刑人の",
       rarity: "rare",
-      weight: 10,
       effects: [
         { type: "bonusPct", key: "executeDamage", min: 10, max: 22 },
         { type: "statPct", stat: "attack", min: 6, max: 12 },
@@ -190,7 +202,6 @@
     {
       name: "連撃の",
       rarity: "rare",
-      weight: 9,
       effects: [
         // 連続攻撃/追撃を統一（名称は「追撃」）
         { type: "bonusPct", key: "pursuitChance", min: 6, max: 14 },
@@ -202,7 +213,6 @@
     {
       name: "襲撃の",
       rarity: "rare",
-      weight: 9,
       effects: [
         { type: "bonusPct", key: "pursuitChance", min: 8, max: 18 },
         { type: "bonusPct", key: "pursuitDamagePct", min: 15, max: 35 },
@@ -214,7 +224,6 @@
     {
       name: "鬼神の",
       rarity: "epic",
-      weight: 6,
       effects: [
         { type: "statPct", stat: "attack", min: 10, max: 18 },
         { type: "bonusPct", key: "critDamage", min: 18, max: 40 },
@@ -225,7 +234,6 @@
     {
       name: "断頭の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "executeDamage", min: 18, max: 40 },
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
@@ -237,14 +245,12 @@
     {
       name: "術式の",
       rarity: "epic",
-      weight: 6,
       effects: [{ type: "bonusPct", key: "skillPower", min: 15, max: 35 }],
       describe: (r) => `スキル威力+${pct(r.skillPower)}`,
     },
     {
       name: "雷鳴の",
       rarity: "epic",
-      weight: 5,
       effects: [
         {
           type: "onHit",
@@ -255,26 +261,22 @@
           turnsMax: 2,
         },
       ],
-      describe: (r) =>
-        `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T）`,
+      describe: (r) => `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T）`,
     },
 
     {
       name: "連鎖の",
       rarity: "epic",
-      weight: 6,
       effects: [
         // 追撃/連続攻撃を統一：2つの確率を合算して「追撃率」として扱う
         { type: "bonusPct", key: "pursuitChance", min: 18, max: 38 },
       ],
-      describe: (r) =>
-        `追撃率+${pct(r.pursuitChance)}`,
+      describe: (r) => `追撃率+${pct(r.pursuitChance)}`,
     },
 
     {
       name: "毒々しい",
       rarity: "rare",
-      weight: 10,
       effects: [
         {
           type: "onHit",
@@ -290,7 +292,6 @@
     {
       name: "炎を纏いし",
       rarity: "rare",
-      weight: 10,
       effects: [
         {
           type: "onHit",
@@ -303,10 +304,74 @@
       ],
       describe: (r) => `攻撃時${pct(r.burnChance)}で火傷（${r.burnTurns}T）`,
     },
+    // -------------------
+    // 追加：レジェンダリー拡張
+    // -------------------
+    {
+      name: "猛襲の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "pursuitChance", min: 22, max: 38 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 60, max: 110 },
+        { type: "statPct", stat: "attack", min: 10, max: 18 },
+      ],
+      describe: (r) =>
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 攻撃力+${pct(r.attackPct)}`,
+    },
+    {
+      name: "破滅の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "executeDamage", min: 25, max: 55 },
+        { type: "bonusPct", key: "critDamage", min: 60, max: 120 },
+        { type: "statPct", stat: "attack", min: 10, max: 18 },
+      ],
+      describe: (r) =>
+        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
+    },
+    {
+      name: "迅詠の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "cooldownReduction", min: 1, max: 1 },
+        { type: "bonusPct", key: "skillPower", min: 25, max: 55 },
+        { type: "bonusPct", key: "accuracy", min: 10, max: 18 },
+      ],
+      describe: (r) =>
+        `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)} / スキル威力+${pct(r.skillPower)} / 命中+${pct(r.accuracy)}`,
+    },
+    {
+      name: "天穿つ",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "accuracy", min: 12, max: 22 },
+        { type: "bonusPct", key: "critRate", min: 8, max: 16 },
+        { type: "bonusPct", key: "critDamage", min: 50, max: 100 },
+      ],
+      describe: (r) =>
+        `命中+${pct(r.accuracy)} / クリティカル率+${pct(r.critRate)} / クリダメ+${pct(r.critDamage)}`,
+    },
+    {
+      name: "雷鎖の",
+      rarity: "legendary",
+      effects: [
+        {
+          type: "onHit",
+          effect: "stun",
+          chanceMin: 10,
+          chanceMax: 18,
+          turnsMin: 1,
+          turnsMax: 2,
+        },
+        { type: "bonusPct", key: "pursuitChance", min: 18, max: 32 },
+        { type: "bonusPct", key: "accuracy", min: 10, max: 18 },
+      ],
+      describe: (r) =>
+        `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T） / 追撃率+${pct(r.pursuitChance)} / 命中+${pct(r.accuracy)}`,
+    },
     {
       name: "神速の",
       rarity: "legendary",
-      weight: 2,
       effects: [
         { type: "bonusPct", key: "critRate", min: 6, max: 12 },
         { type: "bonusPct", key: "accuracy", min: 6, max: 12 },
@@ -318,7 +383,6 @@
     {
       name: "災禍の",
       rarity: "legendary",
-      weight: 1,
       effects: [
         { type: "bonusPct", key: "pursuitChance", min: 18, max: 30 },
         { type: "bonusPct", key: "pursuitDamagePct", min: 40, max: 80 },
@@ -337,17 +401,16 @@
     {
       name: "堅守の",
       rarity: "rare",
-      weight: 9,
       effects: [
         { type: "statPct", stat: "defense", min: 8, max: 14 },
         { type: "statPct", stat: "maxHp", min: 6, max: 12 },
       ],
-      describe: (r) => `防御力+${pct(r.defensePct)} / 最大HP+${pct(r.maxHpPct)}`,
+      describe: (r) =>
+        `防御力+${pct(r.defensePct)} / 最大HP+${pct(r.maxHpPct)}`,
     },
     {
       name: "鉄壁の",
       rarity: "rare",
-      weight: 10,
       effects: [
         { type: "statPct", stat: "defense", min: 8, max: 14 },
         { type: "bonusPct", key: "damageReduction", min: 6, max: 12 },
@@ -358,7 +421,6 @@
     {
       name: "守護神の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "statPct", stat: "maxHp", min: 10, max: 18 },
         { type: "bonusPct", key: "healReceived", min: 12, max: 25 },
@@ -369,7 +431,6 @@
     {
       name: "聖域の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "healReceived", min: 12, max: 25 },
         { type: "bonusPct", key: "overhealBarrierCap", min: 20, max: 45 },
@@ -380,7 +441,6 @@
     {
       name: "反撃の",
       rarity: "rare",
-      weight: 9,
       effects: [
         { type: "bonusPct", key: "counterChance", min: 6, max: 14 },
         { type: "bonusPct", key: "counterDamage", min: 15, max: 35 },
@@ -391,7 +451,6 @@
     {
       name: "反射の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "counterChance", min: 8, max: 16 },
         { type: "bonusPct", key: "counterDamage", min: 25, max: 60 },
@@ -399,10 +458,9 @@
       describe: (r) =>
         `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)}`,
     },
-        {
+    {
       name: "浄化の",
       rarity: "rare",
-      weight: 8,
       effects: [
         { type: "bonusPct", key: "ailmentResist", min: 12, max: 25 },
         { type: "bonusPct", key: "ailmentDurationDown", min: 10, max: 25 },
@@ -413,7 +471,6 @@
     {
       name: "強靭の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "statPct", stat: "maxHp", min: 10, max: 18 },
         { type: "bonusPct", key: "regen", min: 3, max: 7 },
@@ -423,7 +480,6 @@
     {
       name: "反骨の",
       rarity: "epic",
-      weight: 5,
       effects: [
         { type: "bonusPct", key: "hitCdMinusChance", min: 10, max: 25 },
         { type: "bonusPct", key: "damageReduction", min: 6, max: 12 },
@@ -431,10 +487,45 @@
       describe: (r) =>
         `被弾でCT-1+${pct(r.hitCdMinusChance)} / 被ダメ軽減+${pct(r.damageReduction)}`,
     },
+    // -------------------
+    // 追加：レジェンダリー拡張
+    // -------------------
+    {
+      name: "堅牢の",
+      rarity: "legendary",
+      effects: [
+        { type: "statPct", stat: "defense", min: 16, max: 26 },
+        { type: "bonusPct", key: "damageReduction", min: 12, max: 20 },
+        { type: "statPct", stat: "maxHp", min: 12, max: 22 },
+      ],
+      describe: (r) =>
+        `防御力+${pct(r.defensePct)} / 被ダメ軽減+${pct(r.damageReduction)} / 最大HP+${pct(r.maxHpPct)}`,
+    },
+    {
+      name: "返報の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "counterChance", min: 14, max: 24 },
+        { type: "bonusPct", key: "counterDamage", min: 50, max: 100 },
+        { type: "bonusPct", key: "damageReduction", min: 8, max: 16 },
+      ],
+      describe: (r) =>
+        `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+    },
+    {
+      name: "不屈の",
+      rarity: "legendary",
+      effects: [
+        { type: "statPct", stat: "maxHp", min: 14, max: 24 },
+        { type: "bonusPct", key: "healReceived", min: 15, max: 30 },
+        { type: "bonusPct", key: "damageReduction", min: 8, max: 16 },
+      ],
+      describe: (r) =>
+        `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+    },
     {
       name: "不動の",
       rarity: "legendary",
-      weight: 2,
       effects: [
         { type: "statPct", stat: "defense", min: 12, max: 20 },
         { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
@@ -447,7 +538,6 @@
     {
       name: "生還者の",
       rarity: "legendary",
-      weight: 2,
       effects: [{ type: "bonusPct", key: "deathAvoidOnce", min: 1, max: 1 }],
       describe: () => `戦闘中1回だけ死亡回避`,
     },
@@ -465,14 +555,6 @@
     legendary: 0.12,
   };
 
-  function getAllowedPrefixRaritiesByItemRarity(itemRarity) {
-    if (itemRarity === "legendary")
-      return new Set(["rare", "epic", "legendary"]);
-    if (itemRarity === "epic") return new Set(["rare", "epic"]);
-    // common/uncommon/rare は rare のみ
-    return new Set(["rare"]);
-  }
-
   /**
    * 特殊接頭語を抽選
    * @param {"common"|"uncommon"|"rare"|"epic"|"legendary"} itemRarity
@@ -484,12 +566,10 @@
 
     if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
 
-    // 武器は「武器レア度に関係なく」接頭語テーブル全体から抽選できる
+    // 武器/防具とも「装備レア度に関係なく」接頭語テーブル全体から抽選できる
     // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）
-    const allowed =
-      category === "weapon"
-        ? new Set(["rare", "epic", "legendary"])
-        : getAllowedPrefixRaritiesByItemRarity(itemRarity);
+    // テスト用：legendary を一時的に無効化（必要になったらコメントアウトを外す）
+    const allowed = new Set(["rare", "epic" /*, "legendary" */]);
 
     const poolBase = [
       ...SPECIAL_PREFIXES_COMMON,
@@ -503,11 +583,20 @@
 
     if (!candidates.length) return null;
 
-    const picked = pickWeighted(candidates, (p) => {
-      const baseW = Number(p.weight) || 1;
-      const mul = PREFIX_RARITY_WEIGHT_MULT[p.rarity] || 1.0;
-      return baseW * mul;
+    // まず rarity を抽選（候補がある rarity のみ）
+    const rarityKeys = ["rare", "epic" /*, "legendary" */].filter((r) =>
+      candidates.some((p) => p.rarity === r),
+    );
+
+    const pickedRarity = pickWeighted(rarityKeys, (r) => {
+      return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
     });
+
+    if (!pickedRarity) return null;
+
+    // 抽選された rarity の中から均等に 1つ選ぶ（各接頭語 weight は使わない）
+    const rarityPool = candidates.filter((p) => p.rarity === pickedRarity);
+    const picked = rarityPool[Math.floor(Math.random() * rarityPool.length)];
 
     if (!picked) return null;
 

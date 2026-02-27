@@ -34,6 +34,17 @@
       // 経験値 +5%
       bonus: { expRate: 0.05 },
     },
+{
+  id: "past_life_memory",
+  title: "前世の記憶",
+  desc: "シリアルコードで解放する",
+  isDone: (p) =>
+    !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
+  progress: (p) =>
+    (p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory) ? "1/1" : "0/1",
+  // 経験値 +10%
+  bonus: { expRate: 0.1 },
+},
     {
       id: "named_hunter",
       title: "二つ名狩り",

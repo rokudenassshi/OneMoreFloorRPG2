@@ -36,6 +36,16 @@
 
     <div class="log" id="log"></div>
 
+
+    <div id="rareEnemyPopup" class="rare-popup" aria-live="assertive" aria-hidden="true">
+      <div class="rare-popup-content" role="alert">
+        <div class="rare-popup-title" id="rareEnemyPopupTitle">レアモンスター出現！</div>
+        <div class="rare-popup-name" id="rareEnemyPopupName"></div>
+        <div class="rare-popup-hint" id="rareEnemyPopupHint">タップで閉じる</div>
+        <button class="rare-popup-close" id="rareEnemyPopupClose" type="button" hidden>閉じる</button>
+      </div>
+    </div>
+
     <!-- 探索ボタン -->
     <div id="exploreButtons">
       <div class="row">
@@ -123,7 +133,7 @@
       <div class="status-tabs">
         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
-        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
+        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</span></button>
       </div>
 
       <div id="tabStatus">
@@ -203,7 +213,7 @@
 
       <div id="tabRecords" style="display:none;">
         <div class="status-section">
-          <h4>記録</h4>
+          <h4>記録 <span id="recordsGameVersion" class="status-version"></span></h4>
           <div class="record-list">
             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
@@ -239,23 +249,16 @@
         <button class="back-button" onclick="closeOptions()">戻る</button>
       </div>
 
-      <div class="status-section">
+      <!-- <div class="status-section">
         <h4>セーブデータ</h4>
         <div class="options-row">
-          <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
-          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
-        </div>
-        <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
-          onchange="handleSaveDataImport(event)">
-        <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
-      </div>
-      <div class="status-section">
-        <h4>設定</h4>
-        <label class="option-check">
-          <input type="checkbox" id="optAutosave" onchange="toggleAutosave(this.checked)">
-          オートセーブを有効にする
-        </label>
-      </div>
+          <!-- <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
+          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button> -->
+      <!-- </div>
+    <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
+      onchange="handleSaveDataImport(event)">
+    <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+  </div> -->
 
       <div class="status-section">
         <h4>シリアルコード</h4>
@@ -326,6 +329,44 @@
     </div>
 
   </div>
+
+  <!-- =====================
+       Firebase（シリアルコード検証用）
+       - Method2: Firebase Functions（verifySerialCode）で検証する
+       - Firebaseコンソールの設定に合わせてください
+  ===================== -->
+  <script>
+    // Firebase コンソール > プロジェクト設定 > マイアプリ（Web）の設定値に合わせてください
+    // すでに同じ Firebase プロジェクトを使う場合は、このままでも動きます（必要なら差し替え）。
+    window.FIREBASE_CONFIG = window.FIREBASE_CONFIG || {
+      apiKey: "AIzaSyDVqb1zHONQouQMmUZR6K0LuqeMiPD2dCA",
+      authDomain: "one-more-floor-rpg-6.firebaseapp.com",
+      projectId: "one-more-floor-rpg-6",
+      storageBucket: "one-more-floor-rpg-6.firebasestorage.app",
+      messagingSenderId: "334316999025",
+      appId: "1:334316999025:web:d63e9e0a9d85562a7766d0",
+    };
+    window.FIREBASE_FUNCTIONS_REGION = "us-central1";
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
+
+    try {
+      const cfg = window.FIREBASE_CONFIG || null;
+      const region = window.FIREBASE_FUNCTIONS_REGION || "us-central1";
+      if (!cfg || !cfg.projectId) {
+        console.warn("[Firebase] 設定が未入力のため初期化をスキップしました。シリアルコード検証は無効です。");
+      } else {
+        const app = initializeApp(cfg);
+        window.firebaseFunctions = getFunctions(app, region);
+        window.firebaseHttpsCallable = httpsCallable;
+      }
+    } catch (e) {
+      console.warn("[Firebase] 初期化に失敗しました。", e);
+    }
+  </script>
 
   <!--
     version.json にバージョンを置き、JS読み込みURLへ ?v= を付けてキャッシュを回避する。

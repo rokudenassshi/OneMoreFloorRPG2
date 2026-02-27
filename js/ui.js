@@ -48,6 +48,21 @@
   // -------------------
   // UI更新
   // -------------------
+
+  // -------------------
+  // バージョン表示（ステータス画面）
+  // -------------------
+  function applyGameVersionBadges() {
+    const v =
+      typeof window.GAME_VERSION === "string" ? window.GAME_VERSION : "";
+    if (!v) return;
+    const text = `v${v}`;
+    const tabEl = document.getElementById("statusGameVersion");
+    if (tabEl) tabEl.textContent = text;
+    const recEl = document.getElementById("recordsGameVersion");
+    if (recEl) recEl.textContent = text;
+  }
+
   function updateUI() {
     const p = gameData.player;
 
@@ -82,7 +97,12 @@
       const qiMax = typeof getMaxQi === "function" ? Math.floor(getMaxQi()) : 0;
       const isQiJob = p.job === "monk" || p.job === "asura";
       const hideAtMax = p.job === "monk";
-      if (inBattle && isQiJob && qi > 0 && (!hideAtMax || qiMax <= 0 || qi < qiMax)) {
+      if (
+        inBattle &&
+        isQiJob &&
+        qi > 0 &&
+        (!hideAtMax || qiMax <= 0 || qi < qiMax)
+      ) {
         parts.push(`気：${qi}${qiMax > 0 ? `/${qiMax}` : ""}`);
       }
 
@@ -99,13 +119,14 @@
         parts.push(`構え：${stance}${stanceMax > 0 ? `/${stanceMax}` : ""}`);
       }
 
-
       // 勢い（騎士）：戦闘中のみ表示（0 は非表示）
       const momentum = Math.max(0, Math.floor(Number(bs.momentum) || 0));
       const momentumMax =
         typeof getMaxMomentum === "function" ? Math.floor(getMaxMomentum()) : 0;
       if (inBattle && p.job === "warlord" && momentum > 0) {
-        parts.push(`勢い：${momentum}${momentumMax > 0 ? `/${momentumMax}` : ""}`);
+        parts.push(
+          `勢い：${momentum}${momentumMax > 0 ? `/${momentumMax}` : ""}`,
+        );
       }
 
       if (parts.length > 0) {
@@ -321,6 +342,111 @@
   function clearLog() {
     const logEl = document.getElementById("log");
     if (logEl) logEl.innerHTML = "";
+  }
+
+  // -------------------
+  // ポップアップ（光り輝く装飾品ドロップと同じUI）
+  // -------------------
+  let rareEnemyPopupEl = null;
+  let rareEnemyPopupTitleEl = null;
+  let rareEnemyPopupNameEl = null;
+  let rareEnemyPopupHintEl = null;
+  let rareEnemyPopupCloseEl = null;
+
+  let rareEnemyPopupTimer = null;
+  let allowRarePopupOverlayClose = true;
+  let rareEnemyPopupBound = false;
+
+  function ensureRareEnemyPopupBound() {
+    // 遅延取得（DOMがまだでも落ちない）
+    if (!rareEnemyPopupEl)
+      rareEnemyPopupEl = document.getElementById("rareEnemyPopup");
+    if (!rareEnemyPopupTitleEl)
+      rareEnemyPopupTitleEl = document.getElementById("rareEnemyPopupTitle");
+    if (!rareEnemyPopupNameEl)
+      rareEnemyPopupNameEl = document.getElementById("rareEnemyPopupName");
+    if (!rareEnemyPopupHintEl)
+      rareEnemyPopupHintEl = document.getElementById("rareEnemyPopupHint");
+    if (!rareEnemyPopupCloseEl)
+      rareEnemyPopupCloseEl = document.getElementById("rareEnemyPopupClose");
+
+    if (!rareEnemyPopupEl) return false;
+
+    if (!rareEnemyPopupBound) {
+      rareEnemyPopupEl.addEventListener("click", () => {
+        if (!allowRarePopupOverlayClose) return;
+        if (rareEnemyPopupTimer) {
+          clearTimeout(rareEnemyPopupTimer);
+          rareEnemyPopupTimer = null;
+        }
+        hideRareEnemyPopup();
+      });
+
+      if (rareEnemyPopupCloseEl) {
+        rareEnemyPopupCloseEl.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (rareEnemyPopupTimer) {
+            clearTimeout(rareEnemyPopupTimer);
+            rareEnemyPopupTimer = null;
+          }
+          hideRareEnemyPopup();
+        });
+      }
+
+      rareEnemyPopupBound = true;
+    }
+
+    return true;
+  }
+
+  function hideRareEnemyPopup() {
+    if (!ensureRareEnemyPopupBound()) return;
+    rareEnemyPopupEl.classList.remove("is-visible");
+    rareEnemyPopupEl.setAttribute("aria-hidden", "true");
+  }
+
+  function showRareEnemyPopup(
+    nameText,
+    titleText = "レアモンスター出現！",
+    {
+      autoClose = true,
+      allowOverlayClose = true,
+      showCloseButton = false,
+      hintText = "タップで閉じる",
+    } = {},
+  ) {
+    if (!ensureRareEnemyPopupBound()) return;
+
+    if (rareEnemyPopupTitleEl) rareEnemyPopupTitleEl.textContent = titleText;
+    if (rareEnemyPopupNameEl) rareEnemyPopupNameEl.textContent = nameText;
+    if (rareEnemyPopupHintEl) rareEnemyPopupHintEl.textContent = hintText;
+    if (rareEnemyPopupCloseEl) rareEnemyPopupCloseEl.hidden = !showCloseButton;
+
+    allowRarePopupOverlayClose = !!allowOverlayClose;
+
+    rareEnemyPopupEl.classList.add("is-visible");
+    rareEnemyPopupEl.setAttribute("aria-hidden", "false");
+
+    if (rareEnemyPopupTimer) {
+      clearTimeout(rareEnemyPopupTimer);
+    }
+
+    if (autoClose) {
+      rareEnemyPopupTimer = setTimeout(() => {
+        hideRareEnemyPopup();
+      }, 2200);
+    } else {
+      rareEnemyPopupTimer = null;
+    }
+  }
+
+  function showEventPopup(message, titleText = "イベント発生") {
+    showRareEnemyPopup(message, titleText, {
+      autoClose: false,
+      allowOverlayClose: false,
+      showCloseButton: true,
+      hintText: "閉じるボタンで閉じる",
+    });
   }
 
   // core.js の関数を参照するための薄いラッパ（UI側で必要）
@@ -648,6 +774,48 @@
     return equippedSlotsFor(item).length > 0;
   }
 
+  /**
+   * アイテム欄での「文字色」用レア度を解決する。
+   * - 特殊接頭語がある場合のみ、その接頭語レア度（rare/epic/legendary）を返す
+   * - 通常装備は白文字のままにしたいので空文字を返す
+   * - 旧データ（_specialPrefixName はあるが _specialPrefixRarity が無い）にも対応
+   * @param {any} item
+   * @returns {string}
+   */
+  function resolveBagDisplayRarity(item) {
+    if (!item || typeof item !== "object") return "";
+
+    const spRarity =
+      typeof item._specialPrefixRarity === "string"
+        ? item._specialPrefixRarity
+        : "";
+    if (spRarity) return spRarity;
+
+    const spName =
+      typeof item._specialPrefixName === "string"
+        ? item._specialPrefixName
+        : "";
+    if (spName) {
+      // 旧データ向け：名前からテーブルを引いてレア度を推定
+      const pools = [
+        window.SPECIAL_PREFIXES_COMMON,
+        window.SPECIAL_PREFIXES_WEAPON,
+        window.SPECIAL_PREFIXES_ARMOR,
+      ];
+      for (const pool of pools) {
+        if (!Array.isArray(pool)) continue;
+        for (const p of pool) {
+          if (p && p.name === spName && typeof p.rarity === "string") {
+            return p.rarity;
+          }
+        }
+      }
+    }
+
+    // 通常装備は色付けしない（白文字のまま）
+    return "";
+  }
+
   function updateBagUI() {
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
@@ -673,17 +841,32 @@
               ? "cat-accessory"
               : "";
 
+      const rarityText = resolveBagDisplayRarity(item);
+      const rarityClass =
+        rarityText === "rare" ||
+        rarityText === "epic" ||
+        rarityText === "legendary"
+          ? `rarity-${rarityText}`
+          : "";
+
       const fixedTexts = getFixedEffectTexts(item);
       const randomTexts = getRandomOptionTexts(item);
       const randomCount = randomTexts.length;
+
+      // 固有能力がない場合、アイテム欄では「固有能力」欄自体を非表示にする
+      const fixedSectionHtml =
+        Array.isArray(fixedTexts) && fixedTexts.length > 0
+          ? `
+                <div class="effect-section">
+                  <div class="effect-title">装備固有能力</div>
+                  ${renderEffectListHtml(fixedTexts)}
+                </div>
+              `
+          : "";
       // アイテム欄では「両手武器」を明示する
       // 例: 破邪の弓（両手） +2
       const twoHandSuffix =
-        item && Number(item.hands || 0) === 2
-          ? item.category === "weapon"
-            ? "（両手）"
-            : "（2枠）"
-          : "";
+        item && Number(item.hands || 0) === 2 ? "（両手）" : "";
       const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
 
       const baseStatsText = [
@@ -701,14 +884,11 @@
         <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${categoryClass}" onclick="toggleEquip(${idx})">
           <div class="item-row">
             <div class="item-main">
-              <div class="item-name">${displayName}</div>
+              <div class="item-name ${rarityClass}">${displayName}</div>
               ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
 
               <div class="item-effects">
-                <div class="effect-section">
-                  <div class="effect-title">装備固有能力</div>
-                  ${renderEffectListHtml(fixedTexts)}
-                </div>
+                ${fixedSectionHtml}
                 <div class="effect-section">
                   <div class="effect-title">ランダムオプション</div>
                   ${renderEffectListHtml(randomTexts, "なし")}
@@ -862,9 +1042,8 @@
     // 職業制限：武器を装備できない職（拳聖/修羅など）
     {
       const jobKey = gameData.player?.job;
-      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits)
-        ? jobs[jobKey].traits
-        : {};
+      const jt =
+        jobs && jobs[jobKey] && jobs[jobKey].traits ? jobs[jobKey].traits : {};
       if (jt && jt.cannotEquipWeapon && item.category === "weapon") {
         log("この職業では武器を装備できない");
         return;
@@ -887,8 +1066,10 @@
     const canEquipTo = (slotNo) => {
       // 職業制限：武器を装備できない職（拳聖/修羅など）
       const jobKey = gameData.player?.job;
-      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits) ? jobs[jobKey].traits : {};
-      if (jt && jt.cannotEquipWeapon && item && item.category === "weapon") return false;
+      const jt =
+        jobs && jobs[jobKey] && jobs[jobKey].traits ? jobs[jobKey].traits : {};
+      if (jt && jt.cannotEquipWeapon && item && item.category === "weapon")
+        return false;
 
       // 両手武器はどちらでも選べる（もう片方は空になる）
       if (item.hands === 2) return true;
@@ -929,7 +1110,8 @@
     // 職業制限：武器を装備できない職（拳聖/修羅など）
     {
       const jobKey = gameData.player?.job;
-      const jt = (jobs && jobs[jobKey] && jobs[jobKey].traits) ? jobs[jobKey].traits : {};
+      const jt =
+        jobs && jobs[jobKey] && jobs[jobKey].traits ? jobs[jobKey].traits : {};
       if (jt && jt.cannotEquipWeapon && item && item.category === "weapon") {
         log("この職業では武器を装備できない");
         return;
@@ -1069,6 +1251,9 @@
   let currentStatusTab = "status";
 
   function openStatus() {
+    // バージョン表示（記録タブ横）
+    applyGameVersionBadges();
+
     document.getElementById("statusScreen").style.display = "block";
     document.getElementById("optionsScreen").style.display = "none";
     document.getElementById("exploreButtons").style.display = "none";
@@ -1300,22 +1485,18 @@
     handleSerialCodeSubmit();
   }
 
-  function handleSerialCodeSubmit() {
+  async function handleSerialCodeSubmit() {
     if (serialCodePending) return;
     const inputEl = document.getElementById("serialCodeInput");
     const raw = String(inputEl?.value || "").trim();
     if (!raw) return;
 
-    const lookup =
-      window.serialCodeLookup && typeof window.serialCodeLookup === "object"
-        ? window.serialCodeLookup
-        : null;
     const actions =
       window.serialCodeActions && typeof window.serialCodeActions === "object"
         ? window.serialCodeActions
         : null;
 
-    if (!lookup || !actions) {
+    if (!actions) {
       log("⚠️ シリアルコード機能が読み込まれていません");
       return;
     }
@@ -1324,7 +1505,37 @@
     updateOptionsUI();
     try {
       const code = raw.toLowerCase();
-      const unlockKey = String(lookup[code] || "");
+
+      // 1) Firebase（サーバー側）で検証（推奨）
+      let unlockKey = "";
+      const functionsInstance = window.firebaseFunctions || null;
+      const httpsCallableFactory = window.firebaseHttpsCallable || null;
+      if (functionsInstance && typeof httpsCallableFactory === "function") {
+        const verifySerialCode = httpsCallableFactory(
+          functionsInstance,
+          "verifySerialCode",
+        );
+        const response = await verifySerialCode({ code });
+        const payload = response && response.data ? response.data : {};
+        if (payload && payload.ok) {
+          unlockKey = String(payload.unlock || "");
+        } else {
+          log("⚠️ シリアルコードが無効です。");
+          return;
+        }
+      } else {
+        // 2) フォールバック：ローカル検証（開発用）
+        const lookup =
+          window.serialCodeLookup && typeof window.serialCodeLookup === "object"
+            ? window.serialCodeLookup
+            : null;
+        unlockKey = lookup ? String(lookup[code] || "") : "";
+        if (!unlockKey) {
+          log("⚠️ シリアルコードが無効です。");
+          return;
+        }
+      }
+
       const action = unlockKey ? actions[unlockKey] : null;
       if (!unlockKey || !action) {
         log("⚠️ シリアルコードが無効です。");
@@ -1335,11 +1546,13 @@
         return;
       }
       if (typeof action.unlock === "function") action.unlock();
+
       if (inputEl) inputEl.value = "";
       log(action.logMessage || "✨ シリアルコードを確認しました。");
       // ゲーム本体のセーブ（オートセーブONの時のみ）
       if (typeof saveGameNow === "function") saveGameNow();
     } catch (e) {
+      console.error(e);
       log("⚠️ シリアルコードの確認に失敗しました。");
     } finally {
       serialCodePending = false;
@@ -1570,7 +1783,10 @@
           ? `<p class="job-req">✅ 解放済み</p>`
           : "";
 
-      const shownDesc = String(job.desc || \"\").replace(/（上級職）/g, \"\").replace(/\(上級職\)/g, \"\").trim();
+      const shownDesc = String(job.desc || "")
+        .replace(/（上級職）/g, "")
+        .replace(/\(上級職\)/g, "")
+        .trim();
 
       grid.innerHTML += `
         <div class="job-card ${isSelected ? "selected" : ""} ${locked ? "locked" : ""}" onclick="selectJob('${key}')">
@@ -1735,7 +1951,9 @@
     {
       const nt = (jd && jd.traits) || {};
       if (nt && nt.cannotEquipWeapon) {
-        const eq = p.equipment || (p.equipment = { slot1: null, slot2: null, accessory: null });
+        const eq =
+          p.equipment ||
+          (p.equipment = { slot1: null, slot2: null, accessory: null });
         const removed = [];
         if (eq.slot1 && eq.slot1.category === "weapon") {
           removed.push(eq.slot1.name || "武器");
@@ -2326,6 +2544,10 @@
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
+  // ポップアップ
+  window.showRareEnemyPopup = showRareEnemyPopup;
+  window.showEventPopup = showEventPopup;
+
   // -------------------
   // グローバル公開
   // -------------------
@@ -2543,6 +2765,9 @@
   // -------------------
   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
+
+  // ステータス画面の記録タブ横にバージョンを表示
+  applyGameVersionBadges();
 
   // グローバル公開（HTML onclick 用）
   window.exportSaveData = exportSaveData;

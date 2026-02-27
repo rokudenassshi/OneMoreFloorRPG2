@@ -80,7 +80,14 @@ body {
 }
 
 .player-hp {
-  font-weight: bold;
+  /* 敵HP表示と同じ見た目にする（太字にしない） */
+  display: block;
+  min-height: 1.2em;
+  line-height: 1.2em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: normal;
 }
 
 .player-gauges {
@@ -119,6 +126,81 @@ body {
   margin-bottom: 12px;
   font-size: 14px;
   border-radius: 8px;
+}
+
+
+
+.rare-popup {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 30;
+}
+
+.rare-popup.is-visible {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rare-popup-content {
+  min-width: 220px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ffde73, #ffb347);
+  color: #1c1c1c;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  border: 2px solid #ffd24d;
+  animation: rare-pop 0.25s ease-out;
+}
+
+.rare-popup-title {
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.rare-popup-name {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.rare-popup-hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.rare-popup-close {
+  margin-top: 10px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: none;
+  background: #1c1c1c;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rare-popup-close:hover {
+  background: #333;
+}
+
+@keyframes rare-pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .log div {
@@ -678,6 +760,18 @@ button.item-action-btn:disabled {
   font-size: 14px;
 }
 
+.item-name.rarity-rare {
+  color: #4aa3ff;
+}
+
+.item-name.rarity-epic {
+  color: #ffd54a;
+}
+
+.item-name.rarity-legendary {
+  color: #ff5a5a;
+}
+
 .item-stats {
   font-size: 12px;
   color: #aaa;
@@ -790,9 +884,34 @@ button.item-action-btn:disabled {
   color:inherit;
   cursor:pointer;
   font-weight:600;
+
+  /* スマホで「ステータス」などが折り返されないようにする */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .status-tab-btn.is-active{
   background:rgba(255,255,255,0.16);
+}
+
+@media (max-width: 420px) {
+  .status-tabs{
+    gap:6px;
+    padding:8px 10px;
+  }
+  .status-tab-btn{
+    padding:8px 6px;
+    font-size: 13px;
+  }
+}
+
+
+/* バージョン表示（記録タブ横など） */
+.status-version{
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.75;
+  font-weight: 500;
 }
 .options-row{
   display:flex;
