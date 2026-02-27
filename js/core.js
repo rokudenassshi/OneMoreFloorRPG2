@@ -710,7 +710,6 @@
     return p.battleState;
   }
 
-
   function getPhysicalDefenseFactor(effect) {
     const bs = ensurePlayerBattleState();
     const base =
@@ -1605,7 +1604,9 @@
 
     const cur = clampFloor(gameData.floor || 1);
     const isAtTestFloorCap =
-      Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0 && cur >= TEST_FLOOR_CAP;
+      Number.isFinite(TEST_FLOOR_CAP) &&
+      TEST_FLOOR_CAP > 0 &&
+      cur >= TEST_FLOOR_CAP;
 
     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
     if (dir > 0 && isAtTestFloorCap) {
@@ -2244,6 +2245,42 @@
     }
   }
 
+  // 敵を倒して enemyTurn() が発生しない場合でも、行動1回分の状態異常ターンを経過させる
+  function advancePlayerStatusTurnsWithoutEnemyTurn() {
+    const st = gameData.player?.status;
+    if (!st || typeof st !== "object") return;
+
+    if (st.poisonTurns > 0) st.poisonTurns--;
+
+    if (st.burnTurns > 0) {
+      st.burnTurns--;
+      if (st.burnTurns <= 0) {
+        log("🔥 火傷が治った");
+      }
+    }
+
+    if (st.accuracyDownTurns > 0) {
+      st.accuracyDownTurns--;
+      if (st.accuracyDownTurns <= 0) {
+        st.accuracyDownRate = 0;
+      }
+    }
+
+    if (st.slowTurns > 0) {
+      st.slowTurns--;
+      if (st.slowTurns <= 0) st.slowRate = 0;
+    }
+
+    if (st.vulnerableTurns > 0) {
+      st.vulnerableTurns--;
+      if (st.vulnerableTurns <= 0) st.vulnerableRate = 0;
+    }
+
+    if (st.silenceTurns > 0) st.silenceTurns--;
+
+    if (st.defendingTurns > 0) st.defendingTurns--;
+  }
+
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
@@ -2364,6 +2401,7 @@
     } else {
       // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
       advancePlayerSkillCooldown();
+      advancePlayerStatusTurnsWithoutEnemyTurn();
     }
   }
 
@@ -3127,6 +3165,7 @@
     } else {
       // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
       advancePlayerSkillCooldown();
+      advancePlayerStatusTurnsWithoutEnemyTurn();
     }
   }
 
