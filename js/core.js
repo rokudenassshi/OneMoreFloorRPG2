@@ -1612,7 +1612,7 @@
     if (dir > 0 && isAtTestFloorCap) {
       gameData.floor = cur;
       // 進行待ちを残さず、現在階層で戦闘開始
-      gameData.pendingFloorAfterWin = null;
+      gameData.pendingFloorAfterWin = cur;
       startBattle(cur);
       return;
     }
