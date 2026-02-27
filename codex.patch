@@ -1,67 +1,241 @@
 diff --git a/js/core.js b/js/core.js
-index ec3d198721d881bd5665ac8d0ebcb421f1d988ce..c10558993bc3e268652030879c0d0dbb45f802b8 100644
+index ec3d198721d881bd5665ac8d0ebcb421f1d988ce..2722fef4afd034338469258ffd2972137b2b9efb 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -1582,58 +1582,56 @@
-         }
+@@ -2211,50 +2211,63 @@
  
-         // 報酬ログ（任意）
-         const r = def.reward;
-         if (
-           r &&
-           typeof r === "object" &&
-           typeof r.text === "string" &&
-           r.text
-         ) {
-           log(`🎁 報酬：${r.text}`);
-         }
-       }
+       // それ以外のスキルも一応予告
+       log(`⚠️ ${enemy.displayName}は【${def.name}】を使おうとしている…！`);
      }
- 
-     return unlockedNow;
    }
  
-   // -------------------
-   // 探索
-   // -------------------
-   function move(dir) {
-     if (gameData.gameState !== "EXPLORE") return;
+   /**
+    * 敵の次行動を確定して、必要なら予告ログを出す。
+    * @param {any} enemy
+    */
+   function planEnemyNextIntent(enemy) {
+     if (!enemy) return;
+     enemy.nextIntent = decideEnemyNextIntent(enemy);
+     logEnemyIntentTelegraph(enemy, enemy.nextIntent);
+   }
  
-     const cur = clampFloor(gameData.floor || 1);
-+    const isAtTestFloorCap =
-+      Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0 && cur >= TEST_FLOOR_CAP;
+   function recordPlayerDamage(dmg) {
+     const n = Number(dmg);
+     if (!Number.isFinite(n)) return;
+     const p = gameData.player;
+     if (!p || typeof p !== "object") return;
+     const cur = Number(p.maxDamage || 0);
+     if (n > cur) p.maxDamage = Math.floor(n);
+   }
  
-     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
--    if (
--      dir > 0 &&
--      Number.isFinite(TEST_FLOOR_CAP) &&
--      TEST_FLOOR_CAP > 0 &&
--      cur >= TEST_FLOOR_CAP
--    ) {
-+    if (dir > 0 && isAtTestFloorCap) {
-+      gameData.floor = cur;
-       // 進行待ちを残さず、現在階層で戦闘開始
-       gameData.pendingFloorAfterWin = null;
-       startBattle(cur);
++  function advancePlayerSkillCooldown() {
++    if (!gameData.player) return;
++    if (
++      !Number.isFinite(gameData.player.skillCooldown) ||
++      gameData.player.skillCooldown < 0
++    ) {
++      gameData.player.skillCooldown = 0;
++    }
++    if (gameData.player.skillCooldown > 0) {
++      gameData.player.skillCooldown--;
++    }
++  }
++
+   function attack() {
+     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
+ 
+     const st = gameData.player.status || (gameData.player.status = {});
+     if (st.stunTurns > 0) {
+       st.stunTurns--;
+       log("⚡ しびれて動けない！");
+       enemyTurn();
        return;
      }
  
-     const target = clampFloor(cur + dir);
+     addJobProgress("attack", 1);
  
-     // 進む（敵と遭遇した場合は、倒してから階層が上がる）
-     if (dir > 0) {
-       // 戦闘開始
-       if (Math.random() < 0.8 || target <= 5) {
-         gameData.pendingFloorAfterWin = target;
-         startBattle(target);
+     // このアクション内の追撃は1回まで
+     beginPlayerAction();
+ 
+     const isAsura = gameData.player?.job === "asura";
+ 
+     const combat = getCombatStats();
+     const enemy = gameData.enemy;
+ 
+     // 命中判定
+     const hitChance = Math.min(95, combat.accuracy - getEnemyAgiForHit(enemy));
+     if (Math.random() * 100 > hitChance) {
+       log("攻撃は外れた！");
+@@ -2328,50 +2341,53 @@
+       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
+       const r = applyPlayerHeal(baseHeal);
+       if (r.healed > 0 && r.barrierGained > 0) {
+         log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+       } else if (r.healed > 0) {
+         log(`🩸 吸血で${r.healed}回復`);
+       } else if (r.barrierGained > 0) {
+         log(`🛡 バリア+${r.barrierGained}`);
+       }
+     }
+     // 職業：追撃（通常攻撃でも）
+     const bs = ensurePlayerBattleState();
+     if (bs.followUpOnAttack) {
+       trySkillFollowUp(enemy, combat);
+     }
+ 
+     // 装飾品：追撃トリガー
+     tryAccessoryPursuit(enemy, combat);
+ 
+     // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
+     if (isAsura) gainQi(1);
+     checkBattleEnd();
+ 
+     if (gameData.gameState === "BATTLE") {
+       enemyTurn();
++    } else {
++      // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
++      advancePlayerSkillCooldown();
+     }
+   }
+ 
+   function defend() {
+     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
+ 
+     const st = gameData.player.status || (gameData.player.status = {});
+     if (st.stunTurns > 0) {
+       st.stunTurns--;
+       log("⚡ しびれて動けない！");
+       enemyTurn();
+       return;
+     }
+ 
+     st.defendingTurns = 1;
+     log("🛡 防御した");
+ 
+     addJobProgress("defend", 1);
+ 
+     enemyTurn();
+   }
+ 
+   function trySkillFollowUp(enemy, combat) {
+     if (!enemy || enemy.hp <= 0) return;
+     const bs = ensurePlayerBattleState();
+@@ -3080,111 +3096,99 @@
+ 
+       // 最低でも1ターンはクールタイムを発生させる（連続使用防止）
+       const cdFinal = Math.max(1, Math.floor(cd));
+       pendingSkillCdFinal = cdFinal;
+     }
+ 
+     // 装飾品：クールタイム踏み倒し（確率でCT0）
+     {
+       const cheatPct = Number(getAccessoryBonus("cooldownCheatChance") || 0);
+       if (
+         pendingSkillCdFinal > 0 &&
+         Number.isFinite(cheatPct) &&
+         cheatPct > 0 &&
+         Math.random() * 100 < Math.min(35, cheatPct)
+       ) {
+         pendingSkillCdFinal = 0;
+         log("⏱ クールタイムを踏み倒した！");
+       }
+     }
+ 
+     // 修羅：攻撃スキルを使用したら気+1（命中に関係なく）
+     if (isAsuraOffenseSkill) gainQi(1);
+ 
+     checkBattleEnd();
+ 
+-    // NOTE: スキルで敵を倒して戦闘が終了すると enemyTurn() が呼ばれない。
+-    // その場合に +1 してしまうとクールタイムが1ターン長くなるため、
+-    // 戦闘継続時のみ +1 を適用する。
++    // NOTE: enemyTurn() 冒頭でCTが1減るため、行動直後はいったん +1 しておく。
++    // 戦闘終了でenemyTurn()が走らない場合は後段で手動で1減らす。
+     if (pendingSkillCdFinal > 0) {
+-      if (gameData.gameState === "BATTLE") {
+-        // enemyTurn() の冒頭で 1 減るので +1 しておく
+-        gameData.player.skillCooldown = pendingSkillCdFinal + 1;
+-      } else {
+-        // 戦闘終了時は enemyTurn() が走らないので +1 しない
+-        gameData.player.skillCooldown = pendingSkillCdFinal;
+-      }
++      gameData.player.skillCooldown = pendingSkillCdFinal + 1;
+     }
+ 
+     if (gameData.gameState === "BATTLE") {
+       enemyTurn();
++    } else {
++      // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
++      advancePlayerSkillCooldown();
+     }
+   }
+ 
+   function escape() {
+     if (gameData.gameState !== "BATTLE") return;
+ 
+     const st = gameData.player.status || (gameData.player.status = {});
+     if (st.stunTurns > 0) {
+       st.stunTurns--;
+       log("⚡ しびれて動けない！");
+       enemyTurn();
+       return;
+     }
+ 
+     const combat = getCombatStats();
+     const rate = Math.min(30 + Math.floor(combat.evasion / 2), 90);
+ 
+     if (Math.random() * 100 < rate) {
+       log("💨 逃走成功！");
+       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+         // まだ階層を上げていない（倒したら上がる方式）ので、逃走しても階層は下げない
+         gameData.pendingFloorAfterWin = null;
        } else {
-         gameData.floor = target;
+         gameData.floor = Math.max(1, gameData.floor - 1);
+       }
+       endBattle(false);
+       requestAutosave();
+     } else {
+       log("❌ 逃走失敗…");
+       enemyTurn();
+     }
+   }
  
-         if (typeof gameData.player.maxReachedFloor !== "number")
-           gameData.player.maxReachedFloor = 1;
-         gameData.player.maxReachedFloor = Math.max(
-           gameData.player.maxReachedFloor,
-           gameData.floor,
-         );
-         gameData.player.maxReachedFloor = clampFloor(
-           gameData.player.maxReachedFloor,
+   function enemyTurn() {
+     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
+ 
+     // クールダウン減少（プレイヤー）
+-    if (
+-      !Number.isFinite(gameData.player.skillCooldown) ||
+-      gameData.player.skillCooldown < 0
+-    ) {
+-      gameData.player.skillCooldown = 0;
+-    }
+-    if (gameData.player.skillCooldown > 0) {
+-      gameData.player.skillCooldown--;
+-    }
++    advancePlayerSkillCooldown();
+ 
+     const enemy = gameData.enemy;
+     const combat = getCombatStats();
+ 
+     // 敵の状態異常ダメージ（敵ターン開始時に1回）
+     tickEnemyDotStatuses(enemy);
+     if (gameData.gameState !== "BATTLE") {
+       return;
+     }
+ 
+     // 状態異常ダメージ（敵ターン開始時に1回）
+     const st = gameData.player.status || (gameData.player.status = {});
+     if (st.poisonTurns > 0) {
+       const maxHp = Math.max(1, gameData.player.maxHp || 1);
+       const pct = Math.round(POISON_MAXHP_RATE * 100);
+       const dmg = Math.max(1, Math.round(maxHp * POISON_MAXHP_RATE));
+       const r = applyPlayerDamage(dmg);
+       st.poisonTurns--;
+       log(
+         `☠ 毒で${r.total}ダメージ（最大HP${pct}%）${r.barrierUsed ? `（🛡-${r.barrierUsed}）` : ""}`,
+       );
+       if (gameData.player.hp <= 0) {
+         updateUI();
+         checkPlayerDeath();
+         requestAutosave();

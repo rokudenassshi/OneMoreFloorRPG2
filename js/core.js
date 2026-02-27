@@ -2231,6 +2231,19 @@
     if (n > cur) p.maxDamage = Math.floor(n);
   }
 
+  function advancePlayerSkillCooldown() {
+    if (!gameData.player) return;
+    if (
+      !Number.isFinite(gameData.player.skillCooldown) ||
+      gameData.player.skillCooldown < 0
+    ) {
+      gameData.player.skillCooldown = 0;
+    }
+    if (gameData.player.skillCooldown > 0) {
+      gameData.player.skillCooldown--;
+    }
+  }
+
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
@@ -2348,6 +2361,9 @@
 
     if (gameData.gameState === "BATTLE") {
       enemyTurn();
+    } else {
+      // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
+      advancePlayerSkillCooldown();
     }
   }
 
@@ -3100,21 +3116,17 @@
 
     checkBattleEnd();
 
-    // NOTE: スキルで敵を倒して戦闘が終了すると enemyTurn() が呼ばれない。
-    // その場合に +1 してしまうとクールタイムが1ターン長くなるため、
-    // 戦闘継続時のみ +1 を適用する。
+    // NOTE: enemyTurn() 冒頭でCTが1減るため、行動直後はいったん +1 しておく。
+    // 戦闘終了でenemyTurn()が走らない場合は後段で手動で1減らす。
     if (pendingSkillCdFinal > 0) {
-      if (gameData.gameState === "BATTLE") {
-        // enemyTurn() の冒頭で 1 減るので +1 しておく
-        gameData.player.skillCooldown = pendingSkillCdFinal + 1;
-      } else {
-        // 戦闘終了時は enemyTurn() が走らないので +1 しない
-        gameData.player.skillCooldown = pendingSkillCdFinal;
-      }
+      gameData.player.skillCooldown = pendingSkillCdFinal + 1;
     }
 
     if (gameData.gameState === "BATTLE") {
       enemyTurn();
+    } else {
+      // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
+      advancePlayerSkillCooldown();
     }
   }
 
@@ -3152,15 +3164,7 @@
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
     // クールダウン減少（プレイヤー）
-    if (
-      !Number.isFinite(gameData.player.skillCooldown) ||
-      gameData.player.skillCooldown < 0
-    ) {
-      gameData.player.skillCooldown = 0;
-    }
-    if (gameData.player.skillCooldown > 0) {
-      gameData.player.skillCooldown--;
-    }
+    advancePlayerSkillCooldown();
 
     const enemy = gameData.enemy;
     const combat = getCombatStats();
