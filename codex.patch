@@ -1,169 +1,147 @@
 diff --git a/js/ui.js b/js/ui.js
-index 54fc75686f7c1f973f787f008cacb57ab7ba2f19..b47e8d8b2d180497bf72dffcd8026441f0d66ad2 100644
+index b47e8d8b2d180497bf72dffcd8026441f0d66ad2..d567f2da40d2d4928fdd5fb66daf4c949a99b72f 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -2208,125 +2208,154 @@
-       const levelOk = !minLevel || level >= minLevel;
-       const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+@@ -1752,57 +1752,64 @@
+         const done = !!p.achievements[def.id];
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
+         return {
+           idx,
+           id: def.id,
+           title: def.title || def.id,
+           desc: def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+       })
+       .sort((a, b) => {
+         if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
+         return a.idx - b.idx;
+       });
  
-       if (!unlocked) {
-         const parts = [];
-         if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
-         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
-         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
-         return;
-       }
-       // 条件達成しているならフラグを立てておく
-       p.unlockedJobs[jobKey] = true;
-     }
- 
-     const prevJob = p.job;
-     if (prevJob === jobKey) {
-       closeJobSelector();
-       return;
-     }
- 
-     const prevJobDef = jobs && jobs[prevJob] ? jobs[prevJob] : null;
-     const prevGroup =
-       prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
-     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
- 
--    // 職業ごとの割り振り保存領域（※スキルグループ単位）
--    if (!p.jobSkillBuilds || typeof p.jobSkillBuilds !== "object")
--      p.jobSkillBuilds = {};
-+    // 職業ごとの状態保存領域（※スキルグループ単位）
-+    // - build: その職で取得していた職専用スキル構成
-+    // - remainingSkillPoints: その職で最後に見た残SP
-+    if (!p.jobSkillStates || typeof p.jobSkillStates !== "object")
-+      p.jobSkillStates = {};
-+
-+    // 旧セーブ互換: 旧形式(jobSkillBuilds)があれば新形式へ移送
-+    if (p.jobSkillBuilds && typeof p.jobSkillBuilds === "object") {
-+      for (const g of Object.keys(p.jobSkillBuilds)) {
-+        if (!p.jobSkillStates[g] || typeof p.jobSkillStates[g] !== "object") {
-+          p.jobSkillStates[g] = {
-+            build: p.jobSkillBuilds[g],
-+            remainingSkillPoints: Math.max(0, Math.floor(Number(p.skillPoints || 0))),
-+          };
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+-        const bonusText =
+-          a.done &&
+-          a.bonus &&
+-          typeof a.bonus.expRate === "number" &&
+-          a.bonus.expRate > 0
+-            ? ` / ボーナス：経験値+${Math.round(a.bonus.expRate * 100)}%`
+-            : "";
++        let bonusText = "";
++        if (a.done && a.bonus) {
++          const parts = [];
++          if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
++            parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
++          }
++          if (
++            typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
++            a.bonus.asuraBaseStatMultiplierBonus > 0
++          ) {
++            parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
++          }
++          if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
 +        }
-+      }
-+      delete p.jobSkillBuilds;
-+    }
- 
-     // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
-     const prevBuild = {};
-     let refund = 0;
-     for (const sk of Object.keys(skills)) {
-       const def = skills[sk];
-       if (!def || def.job !== prevGroup) continue;
-       const lv = Math.max(
-         0,
-         Math.floor(Number((p.skills && p.skills[sk]) || 0)),
-       );
-       if (lv > 0) {
-         prevBuild[sk] = lv;
-         refund += lv * getSkillPointCost(def);
-       }
-       // 旧グループのスキルは外す
-       if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
-         delete p.skills[sk];
-       }
-     }
--    p.jobSkillBuilds[prevGroup] = prevBuild;
-+    const prevRemainingSkillPoints = Math.max(
-+      0,
-+      Math.floor(Number(p.skillPoints || 0)),
-+    );
-+    p.jobSkillStates[prevGroup] = {
-+      build: prevBuild,
-+      remainingSkillPoints: prevRemainingSkillPoints,
-+    };
-     p.skillPoints = Math.max(
-       0,
-       Math.floor(Number(p.skillPoints || 0)) + refund,
-     );
- 
-     // 2) 職業変更：装備中スキルは解除（2枠）
-     p.job = jobKey;
-     p.equippedSkills = [null, null];
-     p.equippedSkill = null;
-     p.skillCooldown = 0;
- 
-     // 2.5) 装備制限：武器を装備できない職（拳聖/修羅など）なら武器を外す
-     {
-       const nt = (jd && jd.traits) || {};
-       if (nt && nt.cannotEquipWeapon) {
-         const eq =
-           p.equipment ||
-           (p.equipment = { slot1: null, slot2: null, accessory: null });
-         const removed = [];
-         if (eq.slot1 && eq.slot1.category === "weapon") {
-           removed.push(eq.slot1.name || "武器");
-           eq.slot1 = null;
-         }
-         if (eq.slot2 && eq.slot2.category === "weapon") {
-           removed.push(eq.slot2.name || "武器");
-           eq.slot2 = null;
-         }
-         if (removed.length) {
-           log(`🧤 武器不可のため外した：${removed.join(" / ")}`);
-         }
-       }
-     }
- 
-     // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
--    const build = p.jobSkillBuilds[newGroup];
-+    const newState = p.jobSkillStates[newGroup];
-+    const build =
-+      newState && typeof newState === "object" && newState.build
-+        ? newState.build
-+        : null;
-     if (build && typeof build === "object") {
-+      // 「戻ったら前回の状態を再現」するため、先に残SPを復元
-+      // （復元後にbuildを適用して矛盾が出ないよう、必要なら下限補正する）
-+      const restoredRemaining = Math.max(
-+        0,
-+        Math.floor(Number(newState.remainingSkillPoints || 0)),
-+      );
-+      p.skillPoints = restoredRemaining;
-+
-       for (const sk of Object.keys(build)) {
-         const def = skills[sk];
-         if (!def || def.job !== newGroup) continue;
-         let lv = Math.max(0, Math.floor(Number(build[sk] || 0)));
-         if (lv <= 0) continue;
-         if (def.maxLevel !== Infinity)
-           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
--        const cost = getSkillPointCost(def);
--        lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0) / cost));
--        if (lv <= 0) break;
-         if (!p.skills || typeof p.skills !== "object") p.skills = {};
-         p.skills[sk] = lv;
--        p.skillPoints -= lv * cost;
-       }
--      p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)));
-     }
- 
-     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
-     getCombatStats();
-     updateStatusUI();
-     closeJobSelector();
-     if (typeof requestAutosave === "function") requestAutosave();
+         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+       })
+       .join("");
    }
  
-   // ステータス振り分け
-   function openStatAllocation() {
-     const list = document.getElementById("statAllocationList");
-     list.innerHTML = "";
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
  
-     const statNames = {
-       strength: "⚔️ 力",
-       vitality: "❤️ 体力",
-       intelligence: "🧙 賢さ",
-       agility: "⚡ 素早さ",
-       dexterity: "🎯 器用さ",
+     // シリアルコード入力の有効/無効
+     const inputEl = document.getElementById("serialCodeInput");
+     const btnEl = document.getElementById("serialCodeSubmitBtn");
+     const disabled = !!serialCodePending;
+     if (inputEl) inputEl.disabled = disabled;
+     if (btnEl) btnEl.disabled = disabled;
+   }
+ 
+   function handleSerialCodeKeydown(event) {
+     if (event?.key !== "Enter") return;
+     handleSerialCodeSubmit();
+   }
+ 
+   async function handleSerialCodeSubmit() {
+     if (serialCodePending) return;
+     const inputEl = document.getElementById("serialCodeInput");
+@@ -1874,52 +1881,68 @@
+       log("⚠️ シリアルコードの確認に失敗しました。");
+     } finally {
+       serialCodePending = false;
+       updateOptionsUI();
+     }
+   }
+ 
+   function updateStatusUI() {
+     const p = gameData.player;
+     const stats = getTotalStats();
+     const combat = getCombatStats();
+ 
+     // 紋章（貴重品）による加算値（0なら表示しない）
+     const emblem =
+       typeof getEmblemBonus === "function" ? getEmblemBonus() : null;
+     const fmtStat = (val, bonus) => {
+       const b = Math.max(0, Math.floor(Number(bonus || 0)));
+       return b > 0 ? `${val}（+${b}）` : `${val}`;
      };
  
-     for (let key in statNames) {
-       const current = gameData.player.allocatedStats[key];
+     const job = jobs[p.job] || { name: "-", favoredType: null };
+     const favoredName = getFavoredTypeLabel(job.favoredType);
+     const jt = (job && job.traits) || {};
+     const extra = [];
+     if (jt && jt.cannotEquipWeapon) extra.push("武器不可");
+-    const bsm = Number(jt && jt.baseStatMultiplier);
+-    if (Number.isFinite(bsm) && bsm > 1) extra.push(`基礎ステータス×${bsm}`);
++    let bsm = Number(jt && jt.baseStatMultiplier);
++    if (Number.isFinite(bsm) && bsm > 1) {
++      if (p.job === "asura") {
++        const defs = Array.isArray(window.achievementDefs)
++          ? window.achievementDefs
++          : [];
++        const doneMap =
++          p && p.achievements && typeof p.achievements === "object"
++            ? p.achievements
++            : {};
++        for (const def of defs) {
++          if (!def || !def.id || !doneMap[def.id]) continue;
++          const v = Number((def.bonus || {}).asuraBaseStatMultiplierBonus || 0);
++          if (Number.isFinite(v) && v > 0) bsm += v;
++        }
++      }
++      extra.push(`基礎ステータス×${bsm}`);
++    }
+     document.getElementById("currentJob").textContent =
+       `${job.name}（得意: ${favoredName}${extra.length ? ` / ${extra.join("・")}` : ""}）`;
+ 
+     document.getElementById("statStr").textContent = fmtStat(
+       stats.strength,
+       emblem && emblem.strength,
+     );
+     document.getElementById("statVit").textContent = fmtStat(
+       stats.vitality,
+       emblem && emblem.vitality,
+     );
+     document.getElementById("statInt").textContent = fmtStat(
+       stats.intelligence,
+       emblem && emblem.intelligence,
+     );
+     document.getElementById("statAgi").textContent = fmtStat(
+       stats.agility,
+       emblem && emblem.agility,
+     );
+     document.getElementById("statDex").textContent = fmtStat(
+       stats.dexterity,
+       emblem && emblem.dexterity,
+     );
+     document.getElementById("statPoints").textContent = p.statPoints;
  

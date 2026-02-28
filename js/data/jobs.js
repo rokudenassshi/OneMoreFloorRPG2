@@ -165,14 +165,14 @@
 
     asura: {
       name: "修羅",
-      desc: "攻撃特化の格闘家（上級職）。武器を装備できない。基礎ステータスが10倍。攻撃を行うたび気が溜まり、気1につき会心率+2%、攻撃力+3%、追撃率+2%（戦闘中）。",
+      desc: "攻撃特化の格闘家（上級職）。武器を装備できない。基礎ステータスが2倍。実績でさらに強化される。攻撃を行うたび気が溜まり、気1につき会心率+2%、攻撃力+3%、追撃率+2%（戦闘中）。",
       tier: "advanced",
       skillGroup: "monk",
       baseJob: "monk",
       favoredType: null,
       unlock: { type: "attackHit", target: 300, text: "格闘家で攻撃を300回命中させる" },
       bonuses: { strength: 6, vitality: 1, intelligence: 0, agility: 3, dexterity: 0 },
-      traits: {"attackMult": 1.18, "critRateBonus": 6, "defenseMult": 0.95, "favoredMultiplier": 1.25, "baseStatMultiplier": 10, "cannotEquipWeapon": true},
+      traits: {"attackMult": 1.18, "critRateBonus": 6, "defenseMult": 0.95, "favoredMultiplier": 1.25, "baseStatMultiplier": 2, "cannotEquipWeapon": true},
     },
     warfiend: {
       name: "狂戦士",

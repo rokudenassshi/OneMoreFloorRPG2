@@ -607,6 +607,10 @@
       const m = Number(jobTraits.baseStatMultiplier);
       if (Number.isFinite(m) && m > 1) {
         mult = m;
+        // 修羅は実績に応じて倍率を追加
+        if (p.job === "asura") {
+          mult += getAchievementAsuraBaseStatMultiplierBonus();
+        }
       } else {
         const isMonkFamily =
           p.job === "monk" || (jobDef && jobDef.baseJob === "monk");
@@ -1528,6 +1532,25 @@
 
   function getAchievementExpBonusPercent() {
     return Math.round(getAchievementExpBonusRate() * 100);
+  }
+
+  function getAchievementAsuraBaseStatMultiplierBonus() {
+    const p = gameData.player;
+    const map =
+      p && p.achievements && typeof p.achievements === "object"
+        ? p.achievements
+        : {};
+    const defs = Array.isArray(window.achievementDefs)
+      ? window.achievementDefs
+      : [];
+    let bonus = 0;
+    for (const def of defs) {
+      if (!def || !def.id || !map[def.id]) continue;
+      const b = def.bonus || {};
+      const v = Number(b.asuraBaseStatMultiplierBonus || 0);
+      if (Number.isFinite(v) && v > 0) bonus += v;
+    }
+    return bonus;
   }
 
   function checkAndUnlockAchievements({ silent = false } = {}) {

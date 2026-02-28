@@ -56,6 +56,66 @@
 
   ];
 
+  // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
+  // - 境地2以降は段階解放（1クリア後に2、2クリア後に3）
+  // - 必要数は段階ごとの追加撃破数（2は+1500、3は+2000）
+  {
+    const getAsuraKills = (p) => {
+      const map =
+        p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+      const v = Number(map.asura || 0);
+      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+    };
+
+    const asuraMilestones = [
+      {
+        id: "asura_slayer_1000",
+        title: "修羅の境地 1",
+        unlockAfterId: null,
+        baseKills: 0,
+        needKills: 1000,
+      },
+      {
+        id: "asura_slayer_1500",
+        title: "修羅の境地 2",
+        unlockAfterId: "asura_slayer_1000",
+        unlockAfterLabel: "修羅の境地1",
+        baseKills: 1000,
+        needKills: 1500,
+      },
+      {
+        id: "asura_slayer_2000",
+        title: "修羅の境地 3",
+        unlockAfterId: "asura_slayer_1500",
+        unlockAfterLabel: "修羅の境地2",
+        baseKills: 2500,
+        needKills: 2000,
+      },
+    ];
+
+    asuraMilestones.forEach((ms) => {
+      achievementDefs.push({
+        id: ms.id,
+        title: ms.title,
+        desc: ms.unlockAfterId
+          ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
+          : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
+        isDone: (p) => {
+          const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          if (!unlocked) return false;
+          return getAsuraKills(p) >= ms.baseKills + ms.needKills;
+        },
+        progress: (p) => {
+          const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          if (!unlocked) return "未解放";
+          const v = Math.max(0, getAsuraKills(p) - ms.baseKills);
+          return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
+        },
+        bonus: { asuraBaseStatMultiplierBonus: 1 },
+      });
+    });
+  }
+
   // -----------------
 // 上級職 実績
 // - 各上級職で 10000 体撃破（個別）

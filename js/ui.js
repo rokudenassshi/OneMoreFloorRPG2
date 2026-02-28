@@ -1774,13 +1774,20 @@
     el.innerHTML = list
       .map((a) => {
         const mark = a.done ? "✅" : "⬜";
-        const bonusText =
-          a.done &&
-          a.bonus &&
-          typeof a.bonus.expRate === "number" &&
-          a.bonus.expRate > 0
-            ? ` / ボーナス：経験値+${Math.round(a.bonus.expRate * 100)}%`
-            : "";
+        let bonusText = "";
+        if (a.done && a.bonus) {
+          const parts = [];
+          if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+            parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+          }
+          if (
+            typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+            a.bonus.asuraBaseStatMultiplierBonus > 0
+          ) {
+            parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+          }
+          if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
+        }
         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
       })
       .join("");
@@ -1896,8 +1903,24 @@
     const jt = (job && job.traits) || {};
     const extra = [];
     if (jt && jt.cannotEquipWeapon) extra.push("武器不可");
-    const bsm = Number(jt && jt.baseStatMultiplier);
-    if (Number.isFinite(bsm) && bsm > 1) extra.push(`基礎ステータス×${bsm}`);
+    let bsm = Number(jt && jt.baseStatMultiplier);
+    if (Number.isFinite(bsm) && bsm > 1) {
+      if (p.job === "asura") {
+        const defs = Array.isArray(window.achievementDefs)
+          ? window.achievementDefs
+          : [];
+        const doneMap =
+          p && p.achievements && typeof p.achievements === "object"
+            ? p.achievements
+            : {};
+        for (const def of defs) {
+          if (!def || !def.id || !doneMap[def.id]) continue;
+          const v = Number((def.bonus || {}).asuraBaseStatMultiplierBonus || 0);
+          if (Number.isFinite(v) && v > 0) bsm += v;
+        }
+      }
+      extra.push(`基礎ステータス×${bsm}`);
+    }
     document.getElementById("currentJob").textContent =
       `${job.name}（得意: ${favoredName}${extra.length ? ` / ${extra.join("・")}` : ""}）`;
 
