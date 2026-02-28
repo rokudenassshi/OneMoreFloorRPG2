@@ -1,13 +1,8 @@
 diff --git a/style_new.css b/style_new.css
-index 3619903596d6985ad77facc0243a3670dd7d8d23..6ee760e30df9b2663919f1855f038e801f0f2fb6 100644
+index 6ee760e30df9b2663919f1855f038e801f0f2fb6..a584e1fb2b2907fbc0a1c3df6913b3df49310d53 100644
 --- a/style_new.css
 +++ b/style_new.css
-@@ -308,50 +308,86 @@ button:active {
-   background: #666;
- }
- 
- .inventory-tabs {
-   display: flex;
+@@ -313,55 +313,52 @@ button:active {
    gap: 8px;
    margin-bottom: 12px;
  }
@@ -28,64 +23,40 @@ index 3619903596d6985ad77facc0243a3670dd7d8d23..6ee760e30df9b2663919f1855f038e80
    background: #7a3333;
  }
  
-+.bag-actions-stack {
-+  flex-direction: column;
-+  align-items: stretch;
-+}
-+
-+.auto-sell-config {
-+  padding: 10px;
-+  border: 1px solid rgba(255,255,255,0.12);
-+  border-radius: 10px;
-+  background: rgba(255,255,255,0.03);
-+}
-+
-+.auto-sell-grid {
-+  margin-top: 8px;
-+  display: grid;
-+  grid-template-columns: repeat(2, minmax(0, 1fr));
-+  gap: 8px;
-+}
-+
-+.auto-sell-grid label {
-+  display: flex;
-+  justify-content: space-between;
-+  align-items: center;
-+  gap: 8px;
-+  font-size: 12px;
-+}
-+
-+.auto-sell-grid input {
-+  width: 72px;
-+  padding: 4px 6px;
-+  border-radius: 6px;
-+  border: 1px solid rgba(255,255,255,0.15);
-+  background: rgba(0,0,0,0.25);
-+  color: inherit;
-+}
-+
- .inventory-tab {
-   flex: 1;
-   padding: 10px;
-   font-size: 14px;
-   background: #444;
-   border-radius: 6px;
+ .bag-actions-stack {
+   flex-direction: column;
+   align-items: stretch;
  }
  
- .inventory-tab.is-active {
-   background: #4a6cf7;
+-.auto-sell-config {
+-  padding: 10px;
+-  border: 1px solid rgba(255,255,255,0.12);
+-  border-radius: 10px;
+-  background: rgba(255,255,255,0.03);
++.auto-sell-modal-content {
++  max-width: 560px;
  }
  
- .sub-tabs {
-   display: flex;
+ .auto-sell-grid {
+   margin-top: 8px;
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
    gap: 8px;
-   margin-bottom: 12px;
  }
  
- .sub-tab {
-   flex: 1;
-   padding: 8px;
-   font-size: 13px;
-   background: #444;
+ .auto-sell-grid label {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 8px;
+   font-size: 12px;
+ }
+ 
+ .auto-sell-grid input {
+   width: 72px;
+   padding: 4px 6px;
    border-radius: 6px;
+   border: 1px solid rgba(255,255,255,0.15);
+   background: rgba(0,0,0,0.25);
+   color: inherit;
  }

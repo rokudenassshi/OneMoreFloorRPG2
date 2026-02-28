@@ -569,6 +569,21 @@
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
+  function openAutoSellConfigModal() {
+    syncAutoSellConfigUi();
+    const modal = document.getElementById("autoSellConfigModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeAutoSellConfigModal() {
+    const modal = document.getElementById("autoSellConfigModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
   // -------------------
   function fmtSigned(n) {
     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
@@ -880,7 +895,6 @@
   }
 
   function updateBagUI() {
-    syncAutoSellConfigUi();
 
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
@@ -2646,6 +2660,8 @@
   window.discardEquipment = discardEquipment;
   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
   window.onAutoSellConfigChange = onAutoSellConfigChange;
+  window.openAutoSellConfigModal = openAutoSellConfigModal;
+  window.closeAutoSellConfigModal = closeAutoSellConfigModal;
   window.openEquipSlotPicker = openEquipSlotPicker;
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
@@ -2840,6 +2856,7 @@
   // -------------------
   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
+  bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
 
   // ステータス画面の記録タブ横にバージョンを表示
   applyGameVersionBadges();
