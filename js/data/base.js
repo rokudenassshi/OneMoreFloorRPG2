@@ -83,6 +83,14 @@ stunTurns: 0,
       inventory: [],
       items: [],
 
+      // 自動売却設定
+      autoSell: {
+        armorDefenseMax: 0,
+        weaponAttackMax: 0,
+        weaponHealPowerMax: 0,
+        weaponMagicAttackMax: 0,
+      },
+
       // 貴重品（秘宝）
       valuables: [],
     },

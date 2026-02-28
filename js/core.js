@@ -62,6 +62,26 @@
     if (!Array.isArray(p.valuables)) p.valuables = [];
   }
 
+  function ensureAutoSellConfig(p) {
+    if (!p || typeof p !== "object") return;
+    const base = {
+      armorDefenseMax: 0,
+      weaponAttackMax: 0,
+      weaponHealPowerMax: 0,
+      weaponMagicAttackMax: 0,
+    };
+    const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
+    p.autoSell = {
+      armorDefenseMax: Math.max(0, Math.floor(Number(src.armorDefenseMax || 0))),
+      weaponAttackMax: Math.max(0, Math.floor(Number(src.weaponAttackMax || 0))),
+      weaponHealPowerMax: Math.max(0, Math.floor(Number(src.weaponHealPowerMax || 0))),
+      weaponMagicAttackMax: Math.max(0, Math.floor(Number(src.weaponMagicAttackMax || 0))),
+    };
+    for (const k of Object.keys(base)) {
+      if (!(k in p.autoSell)) p.autoSell[k] = base[k];
+    }
+  }
+
   function normalizeValuables(p) {
     ensureValuables(p);
     p.valuables = p.valuables
@@ -456,6 +476,8 @@
 
     applyPendingImportIfAny();
     autosaveEnabled = isAutosaveEnabled();
+
+    ensureAutoSellConfig(gameData.player);
 
     const loaded = loadGameIfExists();
     getCombatStats();
@@ -3746,6 +3768,44 @@
     tryCounterAttack();
   }
 
+  function evaluateAutoSellDropItem(item) {
+    if (!item) return { sold: false, reason: "" };
+    const p = gameData && gameData.player ? gameData.player : null;
+    ensureAutoSellConfig(p);
+    const cfg = p && p.autoSell ? p.autoSell : null;
+    if (!cfg) return { sold: false, reason: "" };
+
+    const v = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
+
+    if (item.category === "armor") {
+      const defense = v(item.defense);
+      if (defense <= Number(cfg.armorDefenseMax || 0)) {
+        return { sold: true, reason: `防御${defense} <= ${cfg.armorDefenseMax}` };
+      }
+      return { sold: false, reason: "" };
+    }
+
+    if (item.category === "weapon") {
+      const attack = v(item.attack);
+      const healPower = v(item.healPower);
+      const magicAttack = v(item.magicAttack);
+      if (
+        attack <= Number(cfg.weaponAttackMax || 0) &&
+        healPower <= Number(cfg.weaponHealPowerMax || 0) &&
+        magicAttack <= Number(cfg.weaponMagicAttackMax || 0)
+      ) {
+        return {
+          sold: true,
+          reason:
+            `攻撃${attack}/回復${healPower}/魔法攻撃${magicAttack} <= ` +
+            `${cfg.weaponAttackMax}/${cfg.weaponHealPowerMax}/${cfg.weaponMagicAttackMax}`,
+        };
+      }
+    }
+
+    return { sold: false, reason: "" };
+  }
+
   function checkBattleEnd() {
     const enemy = gameData.enemy;
     if (!enemy) return;
@@ -3813,11 +3873,18 @@
       // ボスは装備が必ず1つドロップ
       if (willDrop || isBoss) {
         const item = generateEquipment();
-        gameData.player.inventory.push(item);
-        log(`${item.name}を手に入れた！`);
+        const autoSellResult = evaluateAutoSellDropItem(item);
+
+        if (autoSellResult.sold) {
+          log(`💸 ${item.name}を自動売却した（${autoSellResult.reason}）`);
+        } else {
+          gameData.player.inventory.push(item);
+          log(`${item.name}を手に入れた！`);
+        }
 
         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
         if (
+          !autoSellResult.sold &&
           item &&
           typeof item._specialPrefixName === "string" &&
           item._specialPrefixName &&

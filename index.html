@@ -98,7 +98,16 @@
           <button class="sub-tab" onclick="setEquipmentSubTab('accessories')">装飾品</button>
         </div>
 
-        <div class="bag-actions">
+        <div class="bag-actions bag-actions-stack">
+          <div class="auto-sell-config">
+            <div class="small">装備ドロップ時に、下記閾値以下の装備を自動売却します。</div>
+            <div class="auto-sell-grid">
+              <label>防具 防御≦<input id="autoSellArmorDefenseMax" type="number" min="0" step="1" onchange="onAutoSellConfigChange()" /></label>
+              <label>武器 攻撃≦<input id="autoSellWeaponAttackMax" type="number" min="0" step="1" onchange="onAutoSellConfigChange()" /></label>
+              <label>武器 回復力≦<input id="autoSellWeaponHealPowerMax" type="number" min="0" step="1" onchange="onAutoSellConfigChange()" /></label>
+              <label>武器 魔法攻撃≦<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1" onchange="onAutoSellConfigChange()" /></label>
+            </div>
+          </div>
           <button type="button" class="small-btn danger-btn"
             onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
         </div>
