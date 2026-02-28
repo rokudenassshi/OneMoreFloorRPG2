@@ -1,260 +1,86 @@
-diff --git a/js/ui.js b/js/ui.js
-index 488f395774f67193a1cba581f15d51d48da5ebb0..887ae639ce1e8042145c9fd59ffdf8584b4c3060 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -24,50 +24,51 @@
-           : k,
-       )
-       .filter((v) => !!v);
-     return names.length > 0 ? names.join(" / ") : "なし";
-   }
+diff --git a/index.html b/index.html
+index bb39c37c880654e486c86a9f383b7a8cbd03e9cb..e89539623e6012d80a8f50db9f6fd150891746c4 100644
+--- a/index.html
++++ b/index.html
+@@ -352,50 +352,81 @@
  
-   function isEquippedFavored(slot1, slot2, favoredType) {
-     const keys = normalizeFavoredTypes(favoredType);
-     if (keys.length === 0) return false;
-     const isFav = (it) =>
-       !!(
-         it &&
-         it.category !== "accessory" &&
-         typeof it.type === "string" &&
-         keys.includes(it.type)
-       );
-     return isFav(slot1) || isFav(slot2);
-   }
+     <!-- 自動売却設定モーダル -->
+     <div id="autoSellConfigModal" class="modal hidden" aria-hidden="true">
+       <div class="modal-content auto-sell-modal-content">
+         <h2>自動売却設定</h2>
+         <div class="small">設定値以下の装備を自動売却します。</div>
+         <div class="auto-sell-grid">
+           <label>防具 防御<input id="autoSellArmorDefenseMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 攻撃<input id="autoSellWeaponAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 回復力<input id="autoSellWeaponHealPowerMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+         </div>
+         <div class="modal-actions">
+           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>
+         </div>
+       </div>
+     </div>
  
-   // -------------------
-   // シリアルコード（オプション画面）
-   // -------------------
-   let serialCodePending = false;
-   let bagSortMode = "effect";
-   let bagAcquireOrderSeed = 1;
-+  let currentWeaponHandsTab = "oneHand";
+   </div>
  
-   // -------------------
-   // UI更新
-   // -------------------
- 
-   // -------------------
-   // バージョン表示（ステータス画面）
-   // -------------------
-   function applyGameVersionBadges() {
-     const v =
-       typeof window.GAME_VERSION === "string" ? window.GAME_VERSION : "";
-     if (!v) return;
-     const text = `v${v}`;
-     const tabEl = document.getElementById("statusGameVersion");
-     if (tabEl) tabEl.textContent = text;
-     const recEl = document.getElementById("recordsGameVersion");
-     if (recEl) recEl.textContent = text;
-   }
- 
-   function updateUI() {
-     const p = gameData.player;
- 
-     // 初期化前でも安全に動くように、必要なDOM参照は都度確保する
-     if (!gameData.battleButtons)
-       gameData.battleButtons = document.getElementById("battleButtons");
-@@ -475,65 +476,81 @@
-     document.getElementById("bagScreen").style.display = "none";
-     updateUI();
-   }
- 
-   function setBagTab(tab) {
-     const ev = window.event;
-     document
-       .querySelectorAll(".inventory-tab")
-       .forEach((t) => t.classList.remove("is-active"));
-     if (ev && ev.target) ev.target.classList.add("is-active");
- 
-     if (tab === "equipment") {
-       document.getElementById("equipmentTab").style.display = "block";
-       document.getElementById("itemsTab").style.display = "none";
-     } else {
-       document.getElementById("equipmentTab").style.display = "none";
-       document.getElementById("itemsTab").style.display = "block";
-     }
- 
-     updateBagUI();
-   }
- 
-   function setEquipmentSubTab(tab) {
-     const ev = window.event;
-     document
--      .querySelectorAll(".sub-tab")
-+      .querySelectorAll("#equipmentTab > .sub-tabs .sub-tab")
-       .forEach((t) => t.classList.remove("is-active"));
-     if (ev && ev.target) ev.target.classList.add("is-active");
- 
-     if (tab === "weapons") {
-       document.getElementById("weaponsSubTab").style.display = "block";
-       document.getElementById("accessoriesSubTab").style.display = "none";
-     } else {
-       document.getElementById("weaponsSubTab").style.display = "none";
-       document.getElementById("accessoriesSubTab").style.display = "block";
-     }
- 
-     updateBagUI();
-   }
- 
-+  function setWeaponHandsTab(tab) {
-+    const nextTab = tab === "twoHand" ? "twoHand" : "oneHand";
-+    currentWeaponHandsTab = nextTab;
+   <script>
++    // モバイルでのピンチ/ダブルタップ拡大を抑止し、常に固定倍率で表示する
++    (function () {
++      const preventZoom = (event) => {
++        event.preventDefault();
++      };
 +
-+    document
-+      .querySelectorAll(".weapon-hands-tab")
-+      .forEach((t) =>
-+        t.classList.toggle(
-+          "is-active",
-+          t.dataset.weaponHandsTab === currentWeaponHandsTab,
-+        ),
++      document.addEventListener("gesturestart", preventZoom, { passive: false });
++      document.addEventListener("gesturechange", preventZoom, { passive: false });
++      document.addEventListener("gestureend", preventZoom, { passive: false });
++
++      document.addEventListener(
++        "touchmove",
++        (event) => {
++          if (event.scale && event.scale !== 1) {
++            event.preventDefault();
++          }
++        },
++        { passive: false }
 +      );
 +
-+    updateBagUI();
-+  }
++      document.addEventListener(
++        "wheel",
++        (event) => {
++          if (event.ctrlKey) {
++            event.preventDefault();
++          }
++        },
++        { passive: false }
++      );
++    })();
 +
-   function ensureAutoSellConfig() {
-     const p = gameData && gameData.player ? gameData.player : null;
-     if (!p) return null;
-     if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
-     p.autoSell.armorDefenseMax = Math.max(
-       0,
-       Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
-     );
-     p.autoSell.weaponAttackMax = Math.max(
-       0,
-       Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
-     );
-     p.autoSell.weaponHealPowerMax = Math.max(
-       0,
-       Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
-     );
-     p.autoSell.weaponMagicAttackMax = Math.max(
-       0,
-       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
-     );
-     return p.autoSell;
-   }
+     // Firebase コンソール > プロジェクト設定 > マイアプリ（Web）の設定値に合わせてください
+     // すでに同じ Firebase プロジェクトを使う場合は、このままでも動きます（必要なら差し替え）。
+     window.FIREBASE_CONFIG = window.FIREBASE_CONFIG || {
+       apiKey: "AIzaSyDVqb1zHONQouQMmUZR6K0LuqeMiPD2dCA",
+       authDomain: "one-more-floor-rpg-6.firebaseapp.com",
+       projectId: "one-more-floor-rpg-6",
+       storageBucket: "one-more-floor-rpg-6.firebasestorage.app",
+       messagingSenderId: "334316999025",
+       appId: "1:334316999025:web:d63e9e0a9d85562a7766d0",
+     };
+     window.FIREBASE_FUNCTIONS_REGION = "us-central1";
+   </script>
  
-   function syncAutoSellConfigUi() {
-     const cfg = ensureAutoSellConfig();
-@@ -1203,54 +1220,67 @@
-               <div class="item-name ${rarityClass}">${displayName}</div>
-               ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
+   <script type="module">
+     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
  
-               <div class="item-effects">
-                 ${fixedSectionHtml}
-                 <div class="effect-section">
-                   <div class="effect-title">ランダムオプション</div>
-                   ${renderEffectListHtml(randomTexts, "なし")}
-                 </div>
-               </div>
- 
-               ${equipped ? `<div class="equipped-label">${equippedSlotsFor(item).join(" /  ")}に装備中</div>` : ""}
-               ${!equipped && locked ? `<div class="locked-label">ロック中</div>` : ""}
-             </div>
-             <div class="item-actions">
-               <button type="button" class="item-action-btn" onclick="toggleItemLock(event, ${idx})">${lockIcon}</button>
-               <button type="button" class="item-action-btn discard" onclick="discardEquipment(event, ${idx})" ${canDiscard ? "" : "disabled"}>🗑</button>
-             </div>
-           </div>
-         </div>
-       `;
- 
-       if (item.category === "accessory") {
-         accessoriesList.innerHTML += card;
+     try {
+       const cfg = window.FIREBASE_CONFIG || null;
+       const region = window.FIREBASE_FUNCTIONS_REGION || "us-central1";
+       if (!cfg || !cfg.projectId) {
+         console.warn("[Firebase] 設定が未入力のため初期化をスキップしました。シリアルコード検証は無効です。");
        } else {
--        weaponsList.innerHTML += card;
-+        const isTwoHandWeapon =
-+          item.category === "weapon" && Number(item.hands || 0) === 2;
-+        const shouldShowInHandsTab =
-+          currentWeaponHandsTab === "twoHand"
-+            ? isTwoHandWeapon
-+            : !isTwoHandWeapon;
-+        if (shouldShowInHandsTab) {
-+          weaponsList.innerHTML += card;
-+        }
-       }
-     });
- 
-+    if (weaponsList && weaponsList.innerHTML.trim() === "") {
-+      const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
-+      weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
-+    }
-+
-     // アイテム（貴重品）
-     if (valuablesList) {
-       const vals = Array.isArray(gameData.player.valuables)
-         ? gameData.player.valuables
-         : [];
-       if (vals.length === 0) {
-         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
-       } else {
-         const statName = {
-           strength: "⚔️ 力",
-           vitality: "❤️ 体力",
-           intelligence: "🧙 賢さ",
-           agility: "⚡ 素早さ",
-           dexterity: "🎯 器用さ",
-         };
-         vals.forEach((v) => {
-           const cnt = Number(v.count || 0);
-           if (!Number.isFinite(cnt) || cnt <= 0) return;
-           const key = String(v.statKey || "");
-           const sname = statName[key] || "ステータス";
-           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
-           valuablesList.innerHTML += `
-             <div class="item-card">
-               <div class="item-name">✨ ${v.name} x${cnt}</div>
-               <div class="item-stats">所持効果：${effect}</div>
-@@ -2938,50 +2968,51 @@
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   // ポップアップ
-   window.showRareEnemyPopup = showRareEnemyPopup;
-   window.showEventPopup = showEventPopup;
- 
-   // -------------------
-   // グローバル公開
-   // -------------------
-   window.updateUI = updateUI;
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
- 
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-+  window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
- 
-   // =====================
-   // Save Data Import / Export (参考実装に準拠)
-   // =====================
-   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
-   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
-   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
-   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
-   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
-   const SAVE_EXPORT_ITERATIONS = 100000;
- 
+         const app = initializeApp(cfg);
+         window.firebaseFunctions = getFunctions(app, region);
