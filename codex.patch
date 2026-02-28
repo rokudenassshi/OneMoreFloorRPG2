@@ -1,61 +1,169 @@
 diff --git a/js/ui.js b/js/ui.js
-index b6cc5e6c6da194fddc844ef8ed04e023a1ecb798..54fc75686f7c1f973f787f008cacb57ab7ba2f19 100644
+index 54fc75686f7c1f973f787f008cacb57ab7ba2f19..b47e8d8b2d180497bf72dffcd8026441f0d66ad2 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1065,53 +1065,53 @@
-       return Number.isFinite(v) ? v : 0;
+@@ -2208,125 +2208,154 @@
+       const levelOk = !minLevel || level >= minLevel;
+       const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+ 
+       if (!unlocked) {
+         const parts = [];
+         if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
+         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
+         return;
+       }
+       // 条件達成しているならフラグを立てておく
+       p.unlockedJobs[jobKey] = true;
      }
  
-     if (item.category === "weapon") {
-       const attack = Number(item.attack);
-       const magicAttack = Number(item.magicAttack);
-       const healPower = Number(item.healPower);
-       return Math.max(
-         Number.isFinite(attack) ? attack : 0,
-         Number.isFinite(magicAttack) ? magicAttack : 0,
-         Number.isFinite(healPower) ? healPower : 0,
-       );
-     }
- 
-     if (item.category === "accessory") {
-       return getAccessorySortValue(item);
-     }
- 
-     return 0;
-   }
- 
-   function sortInventoryByAcquireOrder(inv) {
-     inv.sort((a, b) => {
-       const ao = Math.floor(Number(a?._bagAcquireOrder));
-       const bo = Math.floor(Number(b?._bagAcquireOrder));
--      const aOrder = Number.isFinite(ao) ? ao : Number.MAX_SAFE_INTEGER;
--      const bOrder = Number.isFinite(bo) ? bo : Number.MAX_SAFE_INTEGER;
--      const diff = aOrder - bOrder;
-+      const aOrder = Number.isFinite(ao) ? ao : -1;
-+      const bOrder = Number.isFinite(bo) ? bo : -1;
-+      const diff = bOrder - aOrder;
-       if (diff !== 0) return diff;
-       const an = String(a?.name || "");
-       const bn = String(b?.name || "");
-       return an.localeCompare(bn, "ja");
-     });
-   }
- 
-   function sortInventoryByEffectValue() {
-     const inv = gameData?.player?.inventory;
-     if (!Array.isArray(inv) || inv.length <= 1) {
-       log("ソート対象の装備がない");
+     const prevJob = p.job;
+     if (prevJob === jobKey) {
+       closeJobSelector();
        return;
      }
  
-     ensureInventoryAcquireOrder(inv);
+     const prevJobDef = jobs && jobs[prevJob] ? jobs[prevJob] : null;
+     const prevGroup =
+       prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
+     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
  
-     if (bagSortMode === "effect") {
-       inv.sort((a, b) => {
-         const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
-         if (diff !== 0) return diff;
-         const an = String(a?.name || "");
-         const bn = String(b?.name || "");
-         return an.localeCompare(bn, "ja");
-       });
-       bagSortMode = "acquire";
+-    // 職業ごとの割り振り保存領域（※スキルグループ単位）
+-    if (!p.jobSkillBuilds || typeof p.jobSkillBuilds !== "object")
+-      p.jobSkillBuilds = {};
++    // 職業ごとの状態保存領域（※スキルグループ単位）
++    // - build: その職で取得していた職専用スキル構成
++    // - remainingSkillPoints: その職で最後に見た残SP
++    if (!p.jobSkillStates || typeof p.jobSkillStates !== "object")
++      p.jobSkillStates = {};
++
++    // 旧セーブ互換: 旧形式(jobSkillBuilds)があれば新形式へ移送
++    if (p.jobSkillBuilds && typeof p.jobSkillBuilds === "object") {
++      for (const g of Object.keys(p.jobSkillBuilds)) {
++        if (!p.jobSkillStates[g] || typeof p.jobSkillStates[g] !== "object") {
++          p.jobSkillStates[g] = {
++            build: p.jobSkillBuilds[g],
++            remainingSkillPoints: Math.max(0, Math.floor(Number(p.skillPoints || 0))),
++          };
++        }
++      }
++      delete p.jobSkillBuilds;
++    }
+ 
+     // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
+     const prevBuild = {};
+     let refund = 0;
+     for (const sk of Object.keys(skills)) {
+       const def = skills[sk];
+       if (!def || def.job !== prevGroup) continue;
+       const lv = Math.max(
+         0,
+         Math.floor(Number((p.skills && p.skills[sk]) || 0)),
+       );
+       if (lv > 0) {
+         prevBuild[sk] = lv;
+         refund += lv * getSkillPointCost(def);
+       }
+       // 旧グループのスキルは外す
+       if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
+         delete p.skills[sk];
+       }
+     }
+-    p.jobSkillBuilds[prevGroup] = prevBuild;
++    const prevRemainingSkillPoints = Math.max(
++      0,
++      Math.floor(Number(p.skillPoints || 0)),
++    );
++    p.jobSkillStates[prevGroup] = {
++      build: prevBuild,
++      remainingSkillPoints: prevRemainingSkillPoints,
++    };
+     p.skillPoints = Math.max(
+       0,
+       Math.floor(Number(p.skillPoints || 0)) + refund,
+     );
+ 
+     // 2) 職業変更：装備中スキルは解除（2枠）
+     p.job = jobKey;
+     p.equippedSkills = [null, null];
+     p.equippedSkill = null;
+     p.skillCooldown = 0;
+ 
+     // 2.5) 装備制限：武器を装備できない職（拳聖/修羅など）なら武器を外す
+     {
+       const nt = (jd && jd.traits) || {};
+       if (nt && nt.cannotEquipWeapon) {
+         const eq =
+           p.equipment ||
+           (p.equipment = { slot1: null, slot2: null, accessory: null });
+         const removed = [];
+         if (eq.slot1 && eq.slot1.category === "weapon") {
+           removed.push(eq.slot1.name || "武器");
+           eq.slot1 = null;
+         }
+         if (eq.slot2 && eq.slot2.category === "weapon") {
+           removed.push(eq.slot2.name || "武器");
+           eq.slot2 = null;
+         }
+         if (removed.length) {
+           log(`🧤 武器不可のため外した：${removed.join(" / ")}`);
+         }
+       }
+     }
+ 
+     // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
+-    const build = p.jobSkillBuilds[newGroup];
++    const newState = p.jobSkillStates[newGroup];
++    const build =
++      newState && typeof newState === "object" && newState.build
++        ? newState.build
++        : null;
+     if (build && typeof build === "object") {
++      // 「戻ったら前回の状態を再現」するため、先に残SPを復元
++      // （復元後にbuildを適用して矛盾が出ないよう、必要なら下限補正する）
++      const restoredRemaining = Math.max(
++        0,
++        Math.floor(Number(newState.remainingSkillPoints || 0)),
++      );
++      p.skillPoints = restoredRemaining;
++
+       for (const sk of Object.keys(build)) {
+         const def = skills[sk];
+         if (!def || def.job !== newGroup) continue;
+         let lv = Math.max(0, Math.floor(Number(build[sk] || 0)));
+         if (lv <= 0) continue;
+         if (def.maxLevel !== Infinity)
+           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
+-        const cost = getSkillPointCost(def);
+-        lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0) / cost));
+-        if (lv <= 0) break;
+         if (!p.skills || typeof p.skills !== "object") p.skills = {};
+         p.skills[sk] = lv;
+-        p.skillPoints -= lv * cost;
+       }
+-      p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)));
+     }
+ 
+     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
+     getCombatStats();
+     updateStatusUI();
+     closeJobSelector();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // ステータス振り分け
+   function openStatAllocation() {
+     const list = document.getElementById("statAllocationList");
+     list.innerHTML = "";
+ 
+     const statNames = {
+       strength: "⚔️ 力",
+       vitality: "❤️ 体力",
+       intelligence: "🧙 賢さ",
+       agility: "⚡ 素早さ",
+       dexterity: "🎯 器用さ",
+     };
+ 
+     for (let key in statNames) {
+       const current = gameData.player.allocatedStats[key];
+ 

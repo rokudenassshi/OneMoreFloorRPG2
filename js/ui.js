@@ -2230,9 +2230,24 @@
       prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
 
-    // 職業ごとの割り振り保存領域（※スキルグループ単位）
-    if (!p.jobSkillBuilds || typeof p.jobSkillBuilds !== "object")
-      p.jobSkillBuilds = {};
+    // 職業ごとの状態保存領域（※スキルグループ単位）
+    // - build: その職で取得していた職専用スキル構成
+    // - remainingSkillPoints: その職で最後に見た残SP
+    if (!p.jobSkillStates || typeof p.jobSkillStates !== "object")
+      p.jobSkillStates = {};
+
+    // 旧セーブ互換: 旧形式(jobSkillBuilds)があれば新形式へ移送
+    if (p.jobSkillBuilds && typeof p.jobSkillBuilds === "object") {
+      for (const g of Object.keys(p.jobSkillBuilds)) {
+        if (!p.jobSkillStates[g] || typeof p.jobSkillStates[g] !== "object") {
+          p.jobSkillStates[g] = {
+            build: p.jobSkillBuilds[g],
+            remainingSkillPoints: Math.max(0, Math.floor(Number(p.skillPoints || 0))),
+          };
+        }
+      }
+      delete p.jobSkillBuilds;
+    }
 
     // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
     const prevBuild = {};
@@ -2253,7 +2268,14 @@
         delete p.skills[sk];
       }
     }
-    p.jobSkillBuilds[prevGroup] = prevBuild;
+    const prevRemainingSkillPoints = Math.max(
+      0,
+      Math.floor(Number(p.skillPoints || 0)),
+    );
+    p.jobSkillStates[prevGroup] = {
+      build: prevBuild,
+      remainingSkillPoints: prevRemainingSkillPoints,
+    };
     p.skillPoints = Math.max(
       0,
       Math.floor(Number(p.skillPoints || 0)) + refund,
@@ -2288,8 +2310,20 @@
     }
 
     // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
-    const build = p.jobSkillBuilds[newGroup];
+    const newState = p.jobSkillStates[newGroup];
+    const build =
+      newState && typeof newState === "object" && newState.build
+        ? newState.build
+        : null;
     if (build && typeof build === "object") {
+      // 「戻ったら前回の状態を再現」するため、先に残SPを復元
+      // （復元後にbuildを適用して矛盾が出ないよう、必要なら下限補正する）
+      const restoredRemaining = Math.max(
+        0,
+        Math.floor(Number(newState.remainingSkillPoints || 0)),
+      );
+      p.skillPoints = restoredRemaining;
+
       for (const sk of Object.keys(build)) {
         const def = skills[sk];
         if (!def || def.job !== newGroup) continue;
@@ -2297,14 +2331,9 @@
         if (lv <= 0) continue;
         if (def.maxLevel !== Infinity)
           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
-        const cost = getSkillPointCost(def);
-        lv = Math.min(lv, Math.floor(Number(p.skillPoints || 0) / cost));
-        if (lv <= 0) break;
         if (!p.skills || typeof p.skills !== "object") p.skills = {};
         p.skills[sk] = lv;
-        p.skillPoints -= lv * cost;
       }
-      p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)));
     }
 
     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
