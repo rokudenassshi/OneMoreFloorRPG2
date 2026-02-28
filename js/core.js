@@ -107,6 +107,11 @@
     }
   }
 
+  function ensureAutoAllocateExpUpConfig(p) {
+    if (!p || typeof p !== "object") return;
+    p.autoAllocateExpUp = !!p.autoAllocateExpUp;
+  }
+
   function normalizeValuables(p) {
     ensureValuables(p);
     p.valuables = p.valuables
@@ -350,6 +355,9 @@
         ? payload.pendingFloorAfterWin
         : null;
 
+    ensureAutoSellConfig(gameData.player);
+    ensureAutoAllocateExpUpConfig(gameData.player);
+
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
       if (gameData && gameData.player) {
@@ -503,6 +511,7 @@
     autosaveEnabled = isAutosaveEnabled();
 
     ensureAutoSellConfig(gameData.player);
+    ensureAutoAllocateExpUpConfig(gameData.player);
 
     const loaded = loadGameIfExists();
     getCombatStats();
@@ -4036,6 +4045,30 @@
 
   function checkLevelUp() {
     let leveled = false;
+    const p = gameData.player;
+
+    const canAutoAllocateExpUp = () => {
+      if (!p || !p.autoAllocateExpUp) return false;
+      const def = skills && skills.exp_up;
+      if (!def) return false;
+      const curLv = Math.max(0, Math.floor(Number((p.skills && p.skills.exp_up) || 0)));
+      if (def.maxLevel !== Infinity && curLv >= Number(def.maxLevel || 0)) return false;
+      const costRaw = Number(def.requiredPoints);
+      const cost = !Number.isFinite(costRaw) || costRaw <= 0 ? 1 : Math.max(1, Math.floor(costRaw));
+      return Math.floor(Number(p.skillPoints || 0)) >= cost;
+    };
+
+    const doAutoAllocateExpUp = () => {
+      const def = skills.exp_up;
+      const costRaw = Number(def.requiredPoints);
+      const cost = !Number.isFinite(costRaw) || costRaw <= 0 ? 1 : Math.max(1, Math.floor(costRaw));
+      if (!p.skills || typeof p.skills !== "object") p.skills = {};
+      const curLv = Math.max(0, Math.floor(Number(p.skills.exp_up || 0)));
+      p.skills.exp_up = curLv + 1;
+      p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);
+      log(`⚙️ 経験値増加に自動割り振り（Lv.${p.skills.exp_up} / ポイント-${cost}）`);
+    };
+
     while (gameData.player.exp >= getExpNeeded()) {
       const needed = getExpNeeded();
 
@@ -4052,6 +4085,10 @@
 
       log(`レベルアップ！ Lv.${gameData.player.level}`);
       log("ステータスポイントとスキルポイントを獲得！");
+
+      if (canAutoAllocateExpUp()) {
+        doAutoAllocateExpUp();
+      }
     }
 
     // レベル到達で上級職の条件を満たすことがあるためチェック

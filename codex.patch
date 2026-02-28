@@ -1,77 +1,169 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index ef50361e8255dd4877ff36a978e51714194e58ca..13db0af410bdebe23d0fef931259b5a894ed7929 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -45,50 +45,72 @@
-         const s = loadStore();
-         s.stayBattle = true;
-         saveStore(s);
-       },
-       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-     },
-     accessorySynthesis: {
-       isUnlocked: () => !!loadStore().accessorySynthesis,
-       unlock: () => {
-         const s = loadStore();
-         s.accessorySynthesis = true;
-         saveStore(s);
-       },
-       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-     },
-     doubleEffectBonus: {
-       isUnlocked: () => !!loadStore().doubleEffectBonus,
-       unlock: () => {
-         const s = loadStore();
-         s.doubleEffectBonus = true;
-         saveStore(s);
-       },
-       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-     },
+diff --git a/js/ui.js b/js/ui.js
+index d567f2da40d2d4928fdd5fb66daf4c949a99b72f..18e63e83762a4cf500e41f10a3aa4f0ff08786a5 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2417,50 +2417,59 @@
+     document.getElementById(`alloc-${stat}`).textContent = newValue;
+     document.getElementById("remainingPoints").textContent =
+       gameData.player.statPoints;
+   }
  
-+    floorCapLift250: {
-+      isUnlocked: () => {
-+        const s = loadStore();
-+        if (s.floorCapLift250) return true;
-+        const p = getPlayer();
-+        return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
-+      },
-+      unlock: () => {
-+        const s = loadStore();
-+        s.floorCapLift250 = true;
-+        saveStore(s);
+   function resetStatAllocation() {
+     let total = 0;
+     for (let stat in gameData.player.allocatedStats) {
+       total += gameData.player.allocatedStats[stat];
+       gameData.player.allocatedStats[stat] = 0;
+     }
+     gameData.player.statPoints += total;
+ 
+     openStatAllocation();
+   }
+ 
+   // -------------------
+   // UI - スキル
+   // -------------------
+   function openSkillScreen() {
+     document.getElementById("skillScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
+     updateSkillUI();
+   }
+ 
++  function toggleAutoAllocateExpUp(enabled) {
++    const p = gameData && gameData.player ? gameData.player : null;
++    if (!p) return;
++    p.autoAllocateExpUp = !!enabled;
++    log(`⚙️ 経験値増加への自動割り振り: ${p.autoAllocateExpUp ? "ON" : "OFF"}`);
++    updateSkillUI();
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
 +
-+        const p = getPlayer();
-+        if (p) {
-+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-+            p.serialUnlocks = {};
-+          p.serialUnlocks.floorCapLift250 = true;
-+        }
-+      },
-+      logMessage: "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
-+    },
-+
-     // 前世の記憶（実績解除：経験値+10%）
-     pastLifeMemory: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.pastLifeMemory) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
-       },
-       unlock: () => {
-         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
-         const s = loadStore();
-         s.pastLifeMemory = true;
-         saveStore(s);
+   function closeSkillScreen() {
+     document.getElementById("skillScreen").style.display = "none";
+     document.getElementById("statusScreen").style.display = "block";
+   }
  
-         // 2) セーブデータ側にも保存（実績用）
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.pastLifeMemory = true;
-         }
+   function getSkillPointCost(skillDef) {
+     const c = Number(skillDef?.requiredPoints);
+     if (!Number.isFinite(c) || c <= 0) return 1;
+     return Math.max(1, Math.floor(c));
+   }
  
-         // 3) 実績解除チェック（ログもここで出る）
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
+   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
+     const ps =
+       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     // 明示的な衝突指定
+     if (Array.isArray(skillDef?.exclusiveWith)) {
+       for (const k of skillDef.exclusiveWith) {
+         if (!k) continue;
+         if (Number(ps[k] || 0) > 0) return String(k);
+       }
+     }
+     // グループ衝突
+     const group = skillDef?.exclusiveGroup;
+     if (group) {
+       for (const k in skills) {
+@@ -2496,50 +2505,52 @@
+     }
+ 
+     return names;
+   }
+   function isSkillPrereqMet(skillDef, playerSkills) {
+     const reqs = skillDef?.requires;
+     if (!Array.isArray(reqs) || reqs.length === 0) return true;
+     const ps =
+       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     return reqs.every((r) => {
+       if (!r) return true;
+       const k = String(r.key || "");
+       if (!k) return true;
+       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
+       return Math.floor(Number(ps[k] || 0)) >= needLv;
+     });
+   }
+ 
+   function updateSkillUI() {
+     const p = gameData.player;
+     const currentJob = p.job;
+     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
+     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
+ 
+     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
++    const autoToggle = document.getElementById("autoAllocateExpUpToggle");
++    if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
+ 
+     const commonList = document.getElementById("commonSkillsList");
+     const passiveList = document.getElementById("passiveSkillsList");
+     const activeList = document.getElementById("activeSkillsList");
+ 
+     if (commonList) commonList.innerHTML = "";
+     passiveList.innerHTML = "";
+     activeList.innerHTML = "";
+ 
+     // スキル説明文の {xxx} を実際の数値で埋める
+     // （未習得なら Lv1 相当をプレビュー表示）
+     // 例: "命中+{accuracyBonus}%（会心+{critBonus}%）"
+     const formatSkillDesc = (skill, level) => {
+       const raw = String(skill?.desc || "");
+       if (!raw.includes("{")) return raw;
+ 
+       const shownLv = level > 0 ? level : 1;
+       let eff = {};
+       try {
+         if (typeof skill.effect === "function")
+           eff = skill.effect(shownLv) || {};
+       } catch (_e) {
+         eff = {};
+       }
+ 
+@@ -2936,50 +2947,51 @@
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
++  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+ 
+   // =====================
+   // Save Data Import / Export (参考実装に準拠)
+   // =====================
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
+   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
+   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
+   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
+   const SAVE_EXPORT_ITERATIONS = 100000;
+ 
+   function buildSaveDataSnapshot() {
+     const now = new Date();
+     const storage = {};
+     try {
+       for (let i = 0; i < localStorage.length; i++) {
+         const k = localStorage.key(i);
+         if (!k) continue;
+         storage[k] = localStorage.getItem(k);
+       }
+     } catch (e) {}
+     return {
+       schema: SAVE_EXPORT_SCHEMA_V1,
+       gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : null,
+       exportedAt: now.toISOString(),

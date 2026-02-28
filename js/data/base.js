@@ -50,6 +50,7 @@
 
       statPoints: 0,
       skillPoints: 0,
+      autoAllocateExpUp: false,
 
       skills: {},
       equippedSkill: null,

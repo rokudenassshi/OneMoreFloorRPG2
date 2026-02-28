@@ -2439,6 +2439,15 @@
     updateSkillUI();
   }
 
+  function toggleAutoAllocateExpUp(enabled) {
+    const p = gameData && gameData.player ? gameData.player : null;
+    if (!p) return;
+    p.autoAllocateExpUp = !!enabled;
+    log(`⚙️ 経験値増加への自動割り振り: ${p.autoAllocateExpUp ? "ON" : "OFF"}`);
+    updateSkillUI();
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
   function closeSkillScreen() {
     document.getElementById("skillScreen").style.display = "none";
     document.getElementById("statusScreen").style.display = "block";
@@ -2518,6 +2527,8 @@
     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
 
     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
+    const autoToggle = document.getElementById("autoAllocateExpUpToggle");
+    if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
 
     const commonList = document.getElementById("commonSkillsList");
     const passiveList = document.getElementById("passiveSkillsList");
@@ -2958,6 +2969,7 @@
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
   window.useItem = useItem;
+  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
 
   // =====================
   // Save Data Import / Export (参考実装に準拠)

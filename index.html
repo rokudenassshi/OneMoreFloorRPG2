@@ -233,6 +233,8 @@
       <div id="skillContent">
         <div class="skill-points-display">
           <div>スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
+          <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
+              onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
           <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
         </div>
         <h4>共通スキル</h4>
