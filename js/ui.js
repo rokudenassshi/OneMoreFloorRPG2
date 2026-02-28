@@ -46,6 +46,7 @@
   let serialCodePending = false;
   let bagSortMode = "effect";
   let bagAcquireOrderSeed = 1;
+  let currentWeaponHandsTab = "oneHand";
 
   // -------------------
   // UI更新
@@ -497,7 +498,7 @@
   function setEquipmentSubTab(tab) {
     const ev = window.event;
     document
-      .querySelectorAll(".sub-tab")
+      .querySelectorAll("#equipmentTab > .sub-tabs .sub-tab")
       .forEach((t) => t.classList.remove("is-active"));
     if (ev && ev.target) ev.target.classList.add("is-active");
 
@@ -508,6 +509,22 @@
       document.getElementById("weaponsSubTab").style.display = "none";
       document.getElementById("accessoriesSubTab").style.display = "block";
     }
+
+    updateBagUI();
+  }
+
+  function setWeaponHandsTab(tab) {
+    const nextTab = tab === "twoHand" ? "twoHand" : "oneHand";
+    currentWeaponHandsTab = nextTab;
+
+    document
+      .querySelectorAll(".weapon-hands-tab")
+      .forEach((t) =>
+        t.classList.toggle(
+          "is-active",
+          t.dataset.weaponHandsTab === currentWeaponHandsTab,
+        ),
+      );
 
     updateBagUI();
   }
@@ -1225,9 +1242,22 @@
       if (item.category === "accessory") {
         accessoriesList.innerHTML += card;
       } else {
-        weaponsList.innerHTML += card;
+        const isTwoHandWeapon =
+          item.category === "weapon" && Number(item.hands || 0) === 2;
+        const shouldShowInHandsTab =
+          currentWeaponHandsTab === "twoHand"
+            ? isTwoHandWeapon
+            : !isTwoHandWeapon;
+        if (shouldShowInHandsTab) {
+          weaponsList.innerHTML += card;
+        }
       }
     });
+
+    if (weaponsList && weaponsList.innerHTML.trim() === "") {
+      const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
+      weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
+    }
 
     // アイテム（貴重品）
     if (valuablesList) {
@@ -2960,6 +2990,7 @@
   window.confirmTeleport = confirmTeleport;
   window.setBagTab = setBagTab;
   window.setEquipmentSubTab = setEquipmentSubTab;
+  window.setWeaponHandsTab = setWeaponHandsTab;
   window.updateBagUI = updateBagUI;
   window.toggleEquip = toggleEquip;
   window.toggleItemLock = toggleItemLock;

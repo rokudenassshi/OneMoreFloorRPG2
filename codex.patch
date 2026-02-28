@@ -1,53 +1,60 @@
 diff --git a/js/ui.js b/js/ui.js
-index 18e63e83762a4cf500e41f10a3aa4f0ff08786a5..488f395774f67193a1cba581f15d51d48da5ebb0 100644
+index 488f395774f67193a1cba581f15d51d48da5ebb0..887ae639ce1e8042145c9fd59ffdf8584b4c3060 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -431,51 +431,55 @@
- 
-     if (rareEnemyPopupTimer) {
-       clearTimeout(rareEnemyPopupTimer);
-     }
- 
-     if (autoClose) {
-       rareEnemyPopupTimer = setTimeout(() => {
-         hideRareEnemyPopup();
-       }, 2200);
-     } else {
-       rareEnemyPopupTimer = null;
-     }
+@@ -24,50 +24,51 @@
+           : k,
+       )
+       .filter((v) => !!v);
+     return names.length > 0 ? names.join(" / ") : "なし";
    }
  
-   function showEventPopup(message, titleText = "イベント発生") {
-     showRareEnemyPopup(message, titleText, {
-       autoClose: false,
-       allowOverlayClose: false,
-       showCloseButton: true,
-       hintText: "閉じるボタンで閉じる",
-     });
-   }
- 
-   // core.js の関数を参照するための薄いラッパ（UI側で必要）
-   function getExpNeeded() {
--    return Math.floor(100 * Math.pow(1.2, gameData.player.level - 1));
-+    const lv = Number(gameData.player.level || 1);
-+    const extra = Math.max(0, lv - 1);
-+
-+    // 全レベル共通：線形 + 緩やかな曲線
-+    return Math.floor(50 + extra * 220 + Math.pow(extra, 1.5) * 70);
+   function isEquippedFavored(slot1, slot2, favoredType) {
+     const keys = normalizeFavoredTypes(favoredType);
+     if (keys.length === 0) return false;
+     const isFav = (it) =>
+       !!(
+         it &&
+         it.category !== "accessory" &&
+         typeof it.type === "string" &&
+         keys.includes(it.type)
+       );
+     return isFav(slot1) || isFav(slot2);
    }
  
    // -------------------
-   // UI - バッグ
+   // シリアルコード（オプション画面）
    // -------------------
-   function openBag() {
-     document.getElementById("bagScreen").style.display = "block";
-     document.getElementById("optionsScreen").style.display = "none";
-     document.getElementById("exploreButtons").style.display = "none";
-     document.getElementById("battleButtons").style.display = "none";
-     updateBagUI();
+   let serialCodePending = false;
+   let bagSortMode = "effect";
+   let bagAcquireOrderSeed = 1;
++  let currentWeaponHandsTab = "oneHand";
+ 
+   // -------------------
+   // UI更新
+   // -------------------
+ 
+   // -------------------
+   // バージョン表示（ステータス画面）
+   // -------------------
+   function applyGameVersionBadges() {
+     const v =
+       typeof window.GAME_VERSION === "string" ? window.GAME_VERSION : "";
+     if (!v) return;
+     const text = `v${v}`;
+     const tabEl = document.getElementById("statusGameVersion");
+     if (tabEl) tabEl.textContent = text;
+     const recEl = document.getElementById("recordsGameVersion");
+     if (recEl) recEl.textContent = text;
    }
  
-   function closeBag() {
+   function updateUI() {
+     const p = gameData.player;
+ 
+     // 初期化前でも安全に動くように、必要なDOM参照は都度確保する
+     if (!gameData.battleButtons)
+       gameData.battleButtons = document.getElementById("battleButtons");
+@@ -475,65 +476,81 @@
      document.getElementById("bagScreen").style.display = "none";
      updateUI();
    }
@@ -58,4 +65,196 @@ index 18e63e83762a4cf500e41f10a3aa4f0ff08786a5..488f395774f67193a1cba581f15d51d4
        .querySelectorAll(".inventory-tab")
        .forEach((t) => t.classList.remove("is-active"));
      if (ev && ev.target) ev.target.classList.add("is-active");
+ 
+     if (tab === "equipment") {
+       document.getElementById("equipmentTab").style.display = "block";
+       document.getElementById("itemsTab").style.display = "none";
+     } else {
+       document.getElementById("equipmentTab").style.display = "none";
+       document.getElementById("itemsTab").style.display = "block";
+     }
+ 
+     updateBagUI();
+   }
+ 
+   function setEquipmentSubTab(tab) {
+     const ev = window.event;
+     document
+-      .querySelectorAll(".sub-tab")
++      .querySelectorAll("#equipmentTab > .sub-tabs .sub-tab")
+       .forEach((t) => t.classList.remove("is-active"));
+     if (ev && ev.target) ev.target.classList.add("is-active");
+ 
+     if (tab === "weapons") {
+       document.getElementById("weaponsSubTab").style.display = "block";
+       document.getElementById("accessoriesSubTab").style.display = "none";
+     } else {
+       document.getElementById("weaponsSubTab").style.display = "none";
+       document.getElementById("accessoriesSubTab").style.display = "block";
+     }
+ 
+     updateBagUI();
+   }
+ 
++  function setWeaponHandsTab(tab) {
++    const nextTab = tab === "twoHand" ? "twoHand" : "oneHand";
++    currentWeaponHandsTab = nextTab;
++
++    document
++      .querySelectorAll(".weapon-hands-tab")
++      .forEach((t) =>
++        t.classList.toggle(
++          "is-active",
++          t.dataset.weaponHandsTab === currentWeaponHandsTab,
++        ),
++      );
++
++    updateBagUI();
++  }
++
+   function ensureAutoSellConfig() {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return null;
+     if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
+     p.autoSell.armorDefenseMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
+     );
+     p.autoSell.weaponAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
+     );
+     p.autoSell.weaponHealPowerMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
+     );
+     p.autoSell.weaponMagicAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
+     );
+     return p.autoSell;
+   }
+ 
+   function syncAutoSellConfigUi() {
+     const cfg = ensureAutoSellConfig();
+@@ -1203,54 +1220,67 @@
+               <div class="item-name ${rarityClass}">${displayName}</div>
+               ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
+ 
+               <div class="item-effects">
+                 ${fixedSectionHtml}
+                 <div class="effect-section">
+                   <div class="effect-title">ランダムオプション</div>
+                   ${renderEffectListHtml(randomTexts, "なし")}
+                 </div>
+               </div>
+ 
+               ${equipped ? `<div class="equipped-label">${equippedSlotsFor(item).join(" /  ")}に装備中</div>` : ""}
+               ${!equipped && locked ? `<div class="locked-label">ロック中</div>` : ""}
+             </div>
+             <div class="item-actions">
+               <button type="button" class="item-action-btn" onclick="toggleItemLock(event, ${idx})">${lockIcon}</button>
+               <button type="button" class="item-action-btn discard" onclick="discardEquipment(event, ${idx})" ${canDiscard ? "" : "disabled"}>🗑</button>
+             </div>
+           </div>
+         </div>
+       `;
+ 
+       if (item.category === "accessory") {
+         accessoriesList.innerHTML += card;
+       } else {
+-        weaponsList.innerHTML += card;
++        const isTwoHandWeapon =
++          item.category === "weapon" && Number(item.hands || 0) === 2;
++        const shouldShowInHandsTab =
++          currentWeaponHandsTab === "twoHand"
++            ? isTwoHandWeapon
++            : !isTwoHandWeapon;
++        if (shouldShowInHandsTab) {
++          weaponsList.innerHTML += card;
++        }
+       }
+     });
+ 
++    if (weaponsList && weaponsList.innerHTML.trim() === "") {
++      const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
++      weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
++    }
++
+     // アイテム（貴重品）
+     if (valuablesList) {
+       const vals = Array.isArray(gameData.player.valuables)
+         ? gameData.player.valuables
+         : [];
+       if (vals.length === 0) {
+         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
+       } else {
+         const statName = {
+           strength: "⚔️ 力",
+           vitality: "❤️ 体力",
+           intelligence: "🧙 賢さ",
+           agility: "⚡ 素早さ",
+           dexterity: "🎯 器用さ",
+         };
+         vals.forEach((v) => {
+           const cnt = Number(v.count || 0);
+           if (!Number.isFinite(cnt) || cnt <= 0) return;
+           const key = String(v.statKey || "");
+           const sname = statName[key] || "ステータス";
+           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
+           valuablesList.innerHTML += `
+             <div class="item-card">
+               <div class="item-name">✨ ${v.name} x${cnt}</div>
+               <div class="item-stats">所持効果：${effect}</div>
+@@ -2938,50 +2968,51 @@
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // ポップアップ
+   window.showRareEnemyPopup = showRareEnemyPopup;
+   window.showEventPopup = showEventPopup;
+ 
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
++  window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+   window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+ 
+   // =====================
+   // Save Data Import / Export (参考実装に準拠)
+   // =====================
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
+   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
+   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
+   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
+   const SAVE_EXPORT_ITERATIONS = 100000;
  

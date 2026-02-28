@@ -105,6 +105,10 @@
             onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
         </div>
         <div id="weaponsSubTab">
+          <div class="sub-tabs">
+            <button class="sub-tab weapon-hands-tab is-active" data-weapon-hands-tab="oneHand" onclick="setWeaponHandsTab('oneHand')">片手</button>
+            <button class="sub-tab weapon-hands-tab" data-weapon-hands-tab="twoHand" onclick="setWeaponHandsTab('twoHand')">両手</button>
+          </div>
           <div id="weaponsList"></div>
         </div>
         <div id="accessoriesSubTab" style="display:none;">
