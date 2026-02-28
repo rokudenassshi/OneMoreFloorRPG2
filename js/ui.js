@@ -833,6 +833,136 @@
     return `<ul class="effect-list">${li}</ul>`;
   }
 
+  function getComparisonDeltaEntries(currentItem, nextItem) {
+    const calcDiff = (key) =>
+      Math.round(Number(nextItem?.[key]) || 0) -
+      Math.round(Number(currentItem?.[key]) || 0);
+
+    const entries = [];
+    const push = (label, key) => {
+      const value = calcDiff(key);
+      if (value === 0) return;
+      entries.push({
+        label,
+        value,
+        className: value > 0 ? "equip-stat-up" : "equip-stat-down",
+      });
+    };
+
+    push("攻撃", "attack");
+    push("防御", "defense");
+    push("魔法", "magicAttack");
+    push("回復", "healPower");
+
+    return entries;
+  }
+
+  function buildTwoHandCompareBase(slot1, slot2) {
+    const val = (item, key) => Math.round(Number(item?.[key]) || 0);
+    const parts = [];
+    if (slot1) parts.push(`装備1:${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}`);
+    if (slot2) parts.push(`装備2:${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}`);
+    return {
+      name: parts.length > 0 ? parts.join(" / ") : "空",
+      attack: val(slot1, "attack") + val(slot2, "attack"),
+      defense: val(slot1, "defense") + val(slot2, "defense"),
+      magicAttack: val(slot1, "magicAttack") + val(slot2, "magicAttack"),
+      healPower: val(slot1, "healPower") + val(slot2, "healPower"),
+      fixedEffects: [...getFixedEffectTexts(slot1), ...getFixedEffectTexts(slot2)],
+      randomOptionDetails: [
+        ...getRandomOptionTexts(slot1).map((text) => ({ text })),
+        ...getRandomOptionTexts(slot2).map((text) => ({ text })),
+      ],
+    };
+  }
+
+  function updateEquipCompareLayout(nextItem) {
+    const isTwoHandTarget = Number(nextItem?.hands) === 2;
+    const wrap = document.getElementById("equipCompareWrap");
+    const card2 = document.getElementById("equipCompareCard2");
+    const title1 = document.getElementById("equipCompareTitle1");
+
+    if (wrap) {
+      wrap.classList.toggle("single", isTwoHandTarget);
+    }
+    if (card2) {
+      card2.classList.toggle("hidden", isTwoHandTarget);
+    }
+    if (title1) {
+      title1.textContent = isTwoHandTarget
+        ? "装備1+装備2との比較"
+        : "装備1との比較";
+    }
+  }
+
+  function renderEquipSlotComparison(slotNo, nextItem) {
+    const eq = gameData?.player?.equipment || {};
+    const isTwoHandTarget = Number(nextItem?.hands) === 2;
+
+    const currentItem = isTwoHandTarget
+      ? buildTwoHandCompareBase(eq.slot1, eq.slot2)
+      : slotNo === 1
+        ? eq.slot1
+        : eq.slot2;
+
+    const currentEl = document.getElementById(
+      slotNo === 1 ? "equipCompareSlot1Current" : "equipCompareSlot2Current",
+    );
+    const statEl = document.getElementById(
+      slotNo === 1 ? "equipCompareSlot1Stats" : "equipCompareSlot2Stats",
+    );
+    const effectsEl = document.getElementById(
+      slotNo === 1 ? "equipCompareSlot1Effects" : "equipCompareSlot2Effects",
+    );
+
+    if (currentEl) {
+      if (isTwoHandTarget) {
+        currentEl.textContent = `現在(装備1+装備2): ${currentItem?.name || "空"}`;
+      } else {
+        currentEl.textContent = currentItem
+          ? `現在: ${currentItem.name}${currentItem.hands === 2 ? "（両手）" : ""}`
+          : "現在: 空";
+      }
+    }
+
+    if (statEl) {
+      const entries = getComparisonDeltaEntries(currentItem, nextItem);
+      if (entries.length === 0) {
+        statEl.textContent = "変化なし";
+      } else {
+        const html = entries
+          .map(
+            (ent) =>
+              `<span class="${ent.className}">${escapeHtml(ent.label)}${ent.value > 0 ? "+" : ""}${ent.value}</span>`,
+          )
+          .join(" / ");
+        statEl.innerHTML = html;
+      }
+    }
+
+    if (effectsEl) {
+      const currentEffects = isTwoHandTarget
+        ? [
+            ...getFixedEffectTexts(eq.slot1),
+            ...getRandomOptionTexts(eq.slot1),
+            ...getFixedEffectTexts(eq.slot2),
+            ...getRandomOptionTexts(eq.slot2),
+          ]
+        : [
+            ...getFixedEffectTexts(currentItem),
+            ...getRandomOptionTexts(currentItem),
+          ];
+      const nextEffects = [
+        ...getFixedEffectTexts(nextItem),
+        ...getRandomOptionTexts(nextItem),
+      ];
+      const currentText =
+        currentEffects.length > 0 ? currentEffects.join(" / ") : "なし";
+      const nextText = nextEffects.length > 0 ? nextEffects.join(" / ") : "なし";
+      effectsEl.textContent = `効果: ${currentText} → ${nextText}`;
+    }
+  }
+
   function sameItem(a, b) {
     if (!a || !b) return false;
     if (a.uid && b.uid) return a.uid === b.uid;
@@ -1263,6 +1393,12 @@
 
     if (btn1) btn1.disabled = !canEquipTo(1);
     if (btn2) btn2.disabled = !canEquipTo(2);
+
+    updateEquipCompareLayout(item);
+    renderEquipSlotComparison(1, item);
+    if (Number(item?.hands) !== 2) {
+      renderEquipSlotComparison(2, item);
+    }
 
     if (modal) modal.classList.remove("hidden");
   }

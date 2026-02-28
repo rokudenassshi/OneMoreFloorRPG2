@@ -653,6 +653,58 @@ button:active {
   margin: 0;
 }
 
+.equip-compare-wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.equip-compare-wrap.single {
+  grid-template-columns: 1fr;
+}
+
+.equip-compare-card {
+  background: #262626;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.equip-compare-card.hidden {
+  display: none;
+}
+
+.equip-compare-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.equip-compare-current {
+  color: #d7d7d7;
+}
+
+.equip-compare-stats {
+  margin-top: 6px;
+}
+
+.equip-stat-up {
+  color: #7fb9ff;
+  font-weight: 700;
+}
+
+.equip-stat-down {
+  color: #ff8c8c;
+  font-weight: 700;
+}
+
+.equip-compare-effects {
+  margin-top: 6px;
+  color: #9ad3ff;
+}
+
 /* 転移モーダル */
 .teleport-row {
   display: flex;
