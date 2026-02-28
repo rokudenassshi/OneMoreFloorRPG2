@@ -453,7 +453,11 @@
 
   // core.js の関数を参照するための薄いラッパ（UI側で必要）
   function getExpNeeded() {
-    return Math.floor(100 * Math.pow(1.2, gameData.player.level - 1));
+    const lv = Number(gameData.player.level || 1);
+    const extra = Math.max(0, lv - 1);
+
+    // 全レベル共通：線形 + 緩やかな曲線
+    return Math.floor(50 + extra * 220 + Math.pow(extra, 1.5) * 70);
   }
 
   // -------------------
