@@ -1,67 +1,91 @@
-diff --git a/js/core.js b/js/core.js
-index ec3d198721d881bd5665ac8d0ebcb421f1d988ce..c10558993bc3e268652030879c0d0dbb45f802b8 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -1582,58 +1582,56 @@
-         }
+diff --git a/style_new.css b/style_new.css
+index 3619903596d6985ad77facc0243a3670dd7d8d23..6ee760e30df9b2663919f1855f038e801f0f2fb6 100644
+--- a/style_new.css
++++ b/style_new.css
+@@ -308,50 +308,86 @@ button:active {
+   background: #666;
+ }
  
-         // 報酬ログ（任意）
-         const r = def.reward;
-         if (
-           r &&
-           typeof r === "object" &&
-           typeof r.text === "string" &&
-           r.text
-         ) {
-           log(`🎁 報酬：${r.text}`);
-         }
-       }
-     }
+ .inventory-tabs {
+   display: flex;
+   gap: 8px;
+   margin-bottom: 12px;
+ }
  
-     return unlockedNow;
-   }
+ /* バッグ（装備品タブ）上部の操作ボタン */
+ .bag-actions {
+   display: flex;
+   justify-content: flex-end;
+   gap: 8px;
+   margin: 6px 0 10px;
+ }
  
-   // -------------------
-   // 探索
-   // -------------------
-   function move(dir) {
-     if (gameData.gameState !== "EXPLORE") return;
+ .danger-btn {
+   background: #6b2b2b;
+ }
  
-     const cur = clampFloor(gameData.floor || 1);
-+    const isAtTestFloorCap =
-+      Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0 && cur >= TEST_FLOOR_CAP;
+ .danger-btn:hover {
+   background: #7a3333;
+ }
  
-     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
--    if (
--      dir > 0 &&
--      Number.isFinite(TEST_FLOOR_CAP) &&
--      TEST_FLOOR_CAP > 0 &&
--      cur >= TEST_FLOOR_CAP
--    ) {
-+    if (dir > 0 && isAtTestFloorCap) {
-+      gameData.floor = cur;
-       // 進行待ちを残さず、現在階層で戦闘開始
-       gameData.pendingFloorAfterWin = null;
-       startBattle(cur);
-       return;
-     }
++.bag-actions-stack {
++  flex-direction: column;
++  align-items: stretch;
++}
++
++.auto-sell-config {
++  padding: 10px;
++  border: 1px solid rgba(255,255,255,0.12);
++  border-radius: 10px;
++  background: rgba(255,255,255,0.03);
++}
++
++.auto-sell-grid {
++  margin-top: 8px;
++  display: grid;
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++  gap: 8px;
++}
++
++.auto-sell-grid label {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: 8px;
++  font-size: 12px;
++}
++
++.auto-sell-grid input {
++  width: 72px;
++  padding: 4px 6px;
++  border-radius: 6px;
++  border: 1px solid rgba(255,255,255,0.15);
++  background: rgba(0,0,0,0.25);
++  color: inherit;
++}
++
+ .inventory-tab {
+   flex: 1;
+   padding: 10px;
+   font-size: 14px;
+   background: #444;
+   border-radius: 6px;
+ }
  
-     const target = clampFloor(cur + dir);
+ .inventory-tab.is-active {
+   background: #4a6cf7;
+ }
  
-     // 進む（敵と遭遇した場合は、倒してから階層が上がる）
-     if (dir > 0) {
-       // 戦闘開始
-       if (Math.random() < 0.8 || target <= 5) {
-         gameData.pendingFloorAfterWin = target;
-         startBattle(target);
-       } else {
-         gameData.floor = target;
+ .sub-tabs {
+   display: flex;
+   gap: 8px;
+   margin-bottom: 12px;
+ }
  
-         if (typeof gameData.player.maxReachedFloor !== "number")
-           gameData.player.maxReachedFloor = 1;
-         gameData.player.maxReachedFloor = Math.max(
-           gameData.player.maxReachedFloor,
-           gameData.floor,
-         );
-         gameData.player.maxReachedFloor = clampFloor(
-           gameData.player.maxReachedFloor,
+ .sub-tab {
+   flex: 1;
+   padding: 8px;
+   font-size: 13px;
+   background: #444;
+   border-radius: 6px;
+ }

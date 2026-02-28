@@ -506,6 +506,69 @@
     updateBagUI();
   }
 
+  function ensureAutoSellConfig() {
+    const p = gameData && gameData.player ? gameData.player : null;
+    if (!p) return null;
+    if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
+    p.autoSell.armorDefenseMax = Math.max(
+      0,
+      Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
+    );
+    p.autoSell.weaponAttackMax = Math.max(
+      0,
+      Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
+    );
+    p.autoSell.weaponHealPowerMax = Math.max(
+      0,
+      Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
+    );
+    p.autoSell.weaponMagicAttackMax = Math.max(
+      0,
+      Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
+    );
+    return p.autoSell;
+  }
+
+  function syncAutoSellConfigUi() {
+    const cfg = ensureAutoSellConfig();
+    const armorEl = document.getElementById("autoSellArmorDefenseMax");
+    const atkEl = document.getElementById("autoSellWeaponAttackMax");
+    const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+    const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl) return;
+
+    armorEl.value = String(cfg.armorDefenseMax || 0);
+    atkEl.value = String(cfg.weaponAttackMax || 0);
+    healEl.value = String(cfg.weaponHealPowerMax || 0);
+    matkEl.value = String(cfg.weaponMagicAttackMax || 0);
+  }
+
+  function onAutoSellConfigChange() {
+    const cfg = ensureAutoSellConfig();
+    if (!cfg) return;
+
+    const armorEl = document.getElementById("autoSellArmorDefenseMax");
+    const atkEl = document.getElementById("autoSellWeaponAttackMax");
+    const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+    const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+
+    const toInt = (el) => {
+      const n = Math.floor(Number(el && el.value != null ? el.value : 0));
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    };
+
+    cfg.armorDefenseMax = toInt(armorEl);
+    cfg.weaponAttackMax = toInt(atkEl);
+    cfg.weaponHealPowerMax = toInt(healEl);
+    cfg.weaponMagicAttackMax = toInt(matkEl);
+
+    syncAutoSellConfigUi();
+    log(
+      `⚙️ 自動売却閾値を更新（防具 防御<=${cfg.armorDefenseMax} / 武器 攻撃<=${cfg.weaponAttackMax} 回復<=${cfg.weaponHealPowerMax} 魔攻<=${cfg.weaponMagicAttackMax}）`,
+    );
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
   // -------------------
   function fmtSigned(n) {
     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
@@ -817,6 +880,8 @@
   }
 
   function updateBagUI() {
+    syncAutoSellConfigUi();
+
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
     const valuablesList = document.getElementById("valuablesList");
@@ -2580,6 +2645,7 @@
   window.toggleItemLock = toggleItemLock;
   window.discardEquipment = discardEquipment;
   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+  window.onAutoSellConfigChange = onAutoSellConfigChange;
   window.openEquipSlotPicker = openEquipSlotPicker;
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
