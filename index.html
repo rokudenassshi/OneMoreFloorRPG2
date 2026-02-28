@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>OneMoreFloorRPG - Enhanced</title>
   <link rel="stylesheet" href="style_new.css">
 </head>
@@ -369,28 +368,6 @@
     </div>
 
   </div>
-
-  <!-- =====================
-       Firebase（シリアルコード検証用）
-       - Method2: Firebase Functions（verifySerialCode）で検証する
-       - Firebaseコンソールの設定に合わせてください
-  ===================== -->
-  <script>
-    (function () {
-      "use strict";
-
-      // iOS Safari でのダブルタップ拡大を防ぐ
-      let lastTouchEndTime = 0;
-      document.addEventListener("touchend", function (event) {
-        const now = Date.now();
-        if (now - lastTouchEndTime <= 300) {
-          event.preventDefault();
-        }
-        lastTouchEndTime = now;
-      }, { passive: false });
-    })();
-
-  </script>
 
   <script>
     // Firebase コンソール > プロジェクト設定 > マイアプリ（Web）の設定値に合わせてください
