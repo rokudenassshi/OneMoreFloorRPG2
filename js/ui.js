@@ -44,6 +44,8 @@
   // シリアルコード（オプション画面）
   // -------------------
   let serialCodePending = false;
+  let bagSortMode = "effect";
+  let bagAcquireOrderSeed = 1;
 
   // -------------------
   // UI更新
@@ -563,9 +565,7 @@
     cfg.weaponMagicAttackMax = toInt(matkEl);
 
     syncAutoSellConfigUi();
-    log(
-      `⚙️ 自動売却閾値を更新（防具 防御<=${cfg.armorDefenseMax} / 武器 攻撃<=${cfg.weaponAttackMax} 回復<=${cfg.weaponHealPowerMax} 魔攻<=${cfg.weaponMagicAttackMax}）`,
-    );
+    log(`⚙️ 自動売却閾値を更新`);
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
@@ -894,7 +894,110 @@
     return "";
   }
 
+  function ensureInventoryAcquireOrder(inv) {
+    if (!Array.isArray(inv) || inv.length === 0) return;
+
+    let maxOrder = 0;
+    for (const item of inv) {
+      const n = Math.floor(Number(item?._bagAcquireOrder));
+      if (Number.isFinite(n) && n > maxOrder) maxOrder = n;
+    }
+
+    let next = Math.max(1, bagAcquireOrderSeed, maxOrder + 1);
+    for (const item of inv) {
+      if (!item || typeof item !== "object") continue;
+      const n = Math.floor(Number(item._bagAcquireOrder));
+      if (Number.isFinite(n) && n > 0) continue;
+      item._bagAcquireOrder = next;
+      next += 1;
+    }
+
+    bagAcquireOrderSeed = next;
+  }
+
+  function getAccessorySortValue(item) {
+    const effects = Array.isArray(item?.effects) ? item.effects : [];
+    let best = 0;
+    for (const eff of effects) {
+      const v = Number(eff && eff.value);
+      if (!Number.isFinite(v)) continue;
+      const absV = Math.abs(v);
+      if (absV > best) best = absV;
+    }
+    return best;
+  }
+
+  function getEquipmentSortValue(item) {
+    if (!item || typeof item !== "object") return 0;
+
+    if (item.category === "armor") {
+      const v = Number(item.defense);
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    if (item.category === "weapon") {
+      const attack = Number(item.attack);
+      const magicAttack = Number(item.magicAttack);
+      const healPower = Number(item.healPower);
+      return Math.max(
+        Number.isFinite(attack) ? attack : 0,
+        Number.isFinite(magicAttack) ? magicAttack : 0,
+        Number.isFinite(healPower) ? healPower : 0,
+      );
+    }
+
+    if (item.category === "accessory") {
+      return getAccessorySortValue(item);
+    }
+
+    return 0;
+  }
+
+  function sortInventoryByAcquireOrder(inv) {
+    inv.sort((a, b) => {
+      const ao = Math.floor(Number(a?._bagAcquireOrder));
+      const bo = Math.floor(Number(b?._bagAcquireOrder));
+      const aOrder = Number.isFinite(ao) ? ao : Number.MAX_SAFE_INTEGER;
+      const bOrder = Number.isFinite(bo) ? bo : Number.MAX_SAFE_INTEGER;
+      const diff = aOrder - bOrder;
+      if (diff !== 0) return diff;
+      const an = String(a?.name || "");
+      const bn = String(b?.name || "");
+      return an.localeCompare(bn, "ja");
+    });
+  }
+
+  function sortInventoryByEffectValue() {
+    const inv = gameData?.player?.inventory;
+    if (!Array.isArray(inv) || inv.length <= 1) {
+      log("ソート対象の装備がない");
+      return;
+    }
+
+    ensureInventoryAcquireOrder(inv);
+
+    if (bagSortMode === "effect") {
+      inv.sort((a, b) => {
+        const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
+        if (diff !== 0) return diff;
+        const an = String(a?.name || "");
+        const bn = String(b?.name || "");
+        return an.localeCompare(bn, "ja");
+      });
+      bagSortMode = "acquire";
+      log("🧮 効果値の高い順でソートした");
+    } else {
+      sortInventoryByAcquireOrder(inv);
+      bagSortMode = "effect";
+      log("📦 入手順でソートした");
+    }
+
+    updateBagUI();
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
   function updateBagUI() {
+    ensureInventoryAcquireOrder(gameData.player.inventory);
 
     const weaponsList = document.getElementById("weaponsList");
     const accessoriesList = document.getElementById("accessoriesList");
@@ -2303,7 +2406,7 @@
         const base = String(str || raw);
         const nextChar = base.charAt(offset + tokenLength);
         const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
-          String(key || "")
+          String(key || ""),
         );
         const shouldPercentize =
           nextChar === "%" || nextChar === "％" || keyLooksPercent;
@@ -2325,7 +2428,7 @@
         if (!Number.isFinite(v)) return "-";
 
         let rep = formatNumber(
-          maybePercent(v, actualKey, offset, String(_m).length, str)
+          maybePercent(v, actualKey, offset, String(_m).length, str),
         );
         if (!rep) return "-";
 
@@ -2659,6 +2762,7 @@
   window.toggleItemLock = toggleItemLock;
   window.discardEquipment = discardEquipment;
   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+  window.sortInventoryByEffectValue = sortInventoryByEffectValue;
   window.onAutoSellConfigChange = onAutoSellConfigChange;
   window.openAutoSellConfigModal = openAutoSellConfigModal;
   window.closeAutoSellConfigModal = closeAutoSellConfigModal;

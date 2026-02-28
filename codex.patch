@@ -1,62 +1,266 @@
-diff --git a/style_new.css b/style_new.css
-index 6ee760e30df9b2663919f1855f038e801f0f2fb6..a584e1fb2b2907fbc0a1c3df6913b3df49310d53 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -313,55 +313,52 @@ button:active {
-   gap: 8px;
-   margin-bottom: 12px;
- }
+diff --git a/js/ui.js b/js/ui.js
+index 09927040a83f13b3437ac9a4ac969e60d5c7de6c..e8a96970ad6a1c006d33a33ff07be4abc6d4745f 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -22,50 +22,52 @@
+         equipTypes && equipTypes[k] && equipTypes[k].name
+           ? equipTypes[k].name
+           : k,
+       )
+       .filter((v) => !!v);
+     return names.length > 0 ? names.join(" / ") : "なし";
+   }
  
- /* バッグ（装備品タブ）上部の操作ボタン */
- .bag-actions {
-   display: flex;
-   justify-content: flex-end;
-   gap: 8px;
-   margin: 6px 0 10px;
- }
+   function isEquippedFavored(slot1, slot2, favoredType) {
+     const keys = normalizeFavoredTypes(favoredType);
+     if (keys.length === 0) return false;
+     const isFav = (it) =>
+       !!(
+         it &&
+         it.category !== "accessory" &&
+         typeof it.type === "string" &&
+         keys.includes(it.type)
+       );
+     return isFav(slot1) || isFav(slot2);
+   }
  
- .danger-btn {
-   background: #6b2b2b;
- }
+   // -------------------
+   // シリアルコード（オプション画面）
+   // -------------------
+   let serialCodePending = false;
++  let bagSortMode = "effect";
++  let bagAcquireOrderSeed = 1;
  
- .danger-btn:hover {
-   background: #7a3333;
- }
+   // -------------------
+   // UI更新
+   // -------------------
  
- .bag-actions-stack {
-   flex-direction: column;
-   align-items: stretch;
- }
+   // -------------------
+   // バージョン表示（ステータス画面）
+   // -------------------
+   function applyGameVersionBadges() {
+     const v =
+       typeof window.GAME_VERSION === "string" ? window.GAME_VERSION : "";
+     if (!v) return;
+     const text = `v${v}`;
+     const tabEl = document.getElementById("statusGameVersion");
+     if (tabEl) tabEl.textContent = text;
+     const recEl = document.getElementById("recordsGameVersion");
+     if (recEl) recEl.textContent = text;
+   }
  
--.auto-sell-config {
--  padding: 10px;
--  border: 1px solid rgba(255,255,255,0.12);
--  border-radius: 10px;
--  background: rgba(255,255,255,0.03);
-+.auto-sell-modal-content {
-+  max-width: 560px;
- }
+   function updateUI() {
+     const p = gameData.player;
  
- .auto-sell-grid {
-   margin-top: 8px;
-   display: grid;
-   grid-template-columns: repeat(2, minmax(0, 1fr));
-   gap: 8px;
- }
+     // 初期化前でも安全に動くように、必要なDOM参照は都度確保する
+     if (!gameData.battleButtons)
+       gameData.battleButtons = document.getElementById("battleButtons");
+@@ -872,52 +874,156 @@
+     const spName =
+       typeof item._specialPrefixName === "string"
+         ? item._specialPrefixName
+         : "";
+     if (spName) {
+       // 旧データ向け：名前からテーブルを引いてレア度を推定
+       const pools = [
+         window.SPECIAL_PREFIXES_COMMON,
+         window.SPECIAL_PREFIXES_WEAPON,
+         window.SPECIAL_PREFIXES_ARMOR,
+       ];
+       for (const pool of pools) {
+         if (!Array.isArray(pool)) continue;
+         for (const p of pool) {
+           if (p && p.name === spName && typeof p.rarity === "string") {
+             return p.rarity;
+           }
+         }
+       }
+     }
  
- .auto-sell-grid label {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   gap: 8px;
-   font-size: 12px;
- }
+     // 通常装備は色付けしない（白文字のまま）
+     return "";
+   }
  
- .auto-sell-grid input {
-   width: 72px;
-   padding: 4px 6px;
-   border-radius: 6px;
-   border: 1px solid rgba(255,255,255,0.15);
-   background: rgba(0,0,0,0.25);
-   color: inherit;
- }
++  function ensureInventoryAcquireOrder(inv) {
++    if (!Array.isArray(inv) || inv.length === 0) return;
++
++    let maxOrder = 0;
++    for (const item of inv) {
++      const n = Math.floor(Number(item?._bagAcquireOrder));
++      if (Number.isFinite(n) && n > maxOrder) maxOrder = n;
++    }
++
++    let next = Math.max(1, bagAcquireOrderSeed, maxOrder + 1);
++    for (const item of inv) {
++      if (!item || typeof item !== "object") continue;
++      const n = Math.floor(Number(item._bagAcquireOrder));
++      if (Number.isFinite(n) && n > 0) continue;
++      item._bagAcquireOrder = next;
++      next += 1;
++    }
++
++    bagAcquireOrderSeed = next;
++  }
++
++  function getAccessorySortValue(item) {
++    const effects = Array.isArray(item?.effects) ? item.effects : [];
++    let best = 0;
++    for (const eff of effects) {
++      const v = Number(eff && eff.value);
++      if (!Number.isFinite(v)) continue;
++      const absV = Math.abs(v);
++      if (absV > best) best = absV;
++    }
++    return best;
++  }
++
++  function getEquipmentSortValue(item) {
++    if (!item || typeof item !== "object") return 0;
++
++    if (item.category === "armor") {
++      const v = Number(item.defense);
++      return Number.isFinite(v) ? v : 0;
++    }
++
++    if (item.category === "weapon") {
++      const attack = Number(item.attack);
++      const magicAttack = Number(item.magicAttack);
++      const healPower = Number(item.healPower);
++      return Math.max(
++        Number.isFinite(attack) ? attack : 0,
++        Number.isFinite(magicAttack) ? magicAttack : 0,
++        Number.isFinite(healPower) ? healPower : 0,
++      );
++    }
++
++    if (item.category === "accessory") {
++      return getAccessorySortValue(item);
++    }
++
++    return 0;
++  }
++
++  function sortInventoryByAcquireOrder(inv) {
++    inv.sort((a, b) => {
++      const ao = Math.floor(Number(a?._bagAcquireOrder));
++      const bo = Math.floor(Number(b?._bagAcquireOrder));
++      const aOrder = Number.isFinite(ao) ? ao : Number.MAX_SAFE_INTEGER;
++      const bOrder = Number.isFinite(bo) ? bo : Number.MAX_SAFE_INTEGER;
++      const diff = aOrder - bOrder;
++      if (diff !== 0) return diff;
++      const an = String(a?.name || "");
++      const bn = String(b?.name || "");
++      return an.localeCompare(bn, "ja");
++    });
++  }
++
++  function sortInventoryByEffectValue() {
++    const inv = gameData?.player?.inventory;
++    if (!Array.isArray(inv) || inv.length <= 1) {
++      log("ソート対象の装備がない");
++      return;
++    }
++
++    ensureInventoryAcquireOrder(inv);
++
++    if (bagSortMode === "effect") {
++      inv.sort((a, b) => {
++        const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
++        if (diff !== 0) return diff;
++        const an = String(a?.name || "");
++        const bn = String(b?.name || "");
++        return an.localeCompare(bn, "ja");
++      });
++      bagSortMode = "acquire";
++      log("🧮 効果値の高い順でソートした（次回は入手順）");
++    } else {
++      sortInventoryByAcquireOrder(inv);
++      bagSortMode = "effect";
++      log("📦 入手順でソートした（次回は効果値順）");
++    }
++
++    updateBagUI();
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
++
+   function updateBagUI() {
+ 
++    ensureInventoryAcquireOrder(gameData.player.inventory);
++
+     const weaponsList = document.getElementById("weaponsList");
+     const accessoriesList = document.getElementById("accessoriesList");
+     const valuablesList = document.getElementById("valuablesList");
+ 
+     weaponsList.innerHTML = "";
+     accessoriesList.innerHTML = "";
+     if (valuablesList) valuablesList.innerHTML = "";
+ 
+     // 装備品
+     gameData.player.inventory.forEach((item, idx) => {
+       const equipped = isEquipped(item);
+       const locked = !!item.locked;
+       const lockIcon = locked ? "🔒" : "🔓";
+       const canDiscard = !locked && !equipped;
+ 
+       const categoryClass =
+         item.category === "weapon"
+           ? "cat-weapon"
+           : item.category === "armor"
+             ? "cat-armor"
+             : item.category === "accessory"
+               ? "cat-accessory"
+               : "";
+ 
+       const rarityText = resolveBagDisplayRarity(item);
+@@ -2637,50 +2743,51 @@
+   window.showEventPopup = showEventPopup;
+ 
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
++  window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+ 
+   // =====================
+   // Save Data Import / Export (参考実装に準拠)
+   // =====================
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
+   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
+   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
+   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
+   const SAVE_EXPORT_ITERATIONS = 100000;
+ 
+   function buildSaveDataSnapshot() {
+     const now = new Date();
+     const storage = {};
+     try {
+       for (let i = 0; i < localStorage.length; i++) {
+         const k = localStorage.key(i);
+         if (!k) continue;
