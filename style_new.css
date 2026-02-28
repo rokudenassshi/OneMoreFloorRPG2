@@ -335,6 +335,17 @@ button:active {
   align-items: stretch;
 }
 
+
+.effect-sort-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.effect-sort-btn.is-active {
+  background: #4a6fa5;
+}
+
 .auto-sell-modal-content {
   max-width: 560px;
 }

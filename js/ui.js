@@ -45,6 +45,7 @@
   // -------------------
   let serialCodePending = false;
   let bagSortMode = "effect";
+  let bagEffectSortKey = "attack";
   let bagAcquireOrderSeed = 1;
   let currentWeaponHandsTab = "oneHand";
 
@@ -1081,27 +1082,28 @@
   function getEquipmentSortValue(item) {
     if (!item || typeof item !== "object") return 0;
 
-    if (item.category === "armor") {
-      const v = Number(item.defense);
-      return Number.isFinite(v) ? v : 0;
-    }
-
-    if (item.category === "weapon") {
-      const attack = Number(item.attack);
-      const magicAttack = Number(item.magicAttack);
-      const healPower = Number(item.healPower);
-      return Math.max(
-        Number.isFinite(attack) ? attack : 0,
-        Number.isFinite(magicAttack) ? magicAttack : 0,
-        Number.isFinite(healPower) ? healPower : 0,
-      );
-    }
-
     if (item.category === "accessory") {
       return getAccessorySortValue(item);
     }
 
-    return 0;
+    if (bagEffectSortKey === "acquire") {
+      const order = Math.floor(Number(item?._bagAcquireOrder));
+      return Number.isFinite(order) ? order : -1;
+    }
+
+    const value = Number(item?.[bagEffectSortKey]);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  function updateEffectSortButtonsUI() {
+    const controlsEl = document.getElementById("effectSortControls");
+    if (!controlsEl) return;
+    controlsEl
+      .querySelectorAll(".effect-sort-btn")
+      .forEach((btn) => {
+        const isActive = btn?.dataset?.effectSort === bagEffectSortKey;
+        btn.classList.toggle("is-active", isActive);
+      });
   }
 
   function sortInventoryByAcquireOrder(inv) {
@@ -1118,7 +1120,70 @@
     });
   }
 
+  function sortInventoryBySelectedKey(inv) {
+    if (bagEffectSortKey === "acquire") {
+      sortInventoryByAcquireOrder(inv);
+      return;
+    }
+
+    inv.sort((a, b) => {
+      const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
+      if (diff !== 0) return diff;
+      const an = String(a?.name || "");
+      const bn = String(b?.name || "");
+      return an.localeCompare(bn, "ja");
+    });
+  }
+
   function sortInventoryByEffectValue() {
+    const inv = gameData?.player?.inventory;
+    const controlsEl = document.getElementById("effectSortControls");
+    if (bagSortMode === "effect") {
+      bagSortMode = "acquire";
+      if (controlsEl) controlsEl.style.display = "grid";
+      updateEffectSortButtonsUI();
+      log("🧮 効果ソートの項目を選択してください");
+      return;
+    }
+
+    if (!Array.isArray(inv) || inv.length <= 1) {
+      log("ソート対象の装備がない");
+      return;
+    }
+
+    ensureInventoryAcquireOrder(inv);
+    sortInventoryBySelectedKey(inv);
+
+    bagSortMode = "effect";
+    if (controlsEl) controlsEl.style.display = "none";
+    updateBagUI();
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
+  function getEffectSortLabel(key) {
+    switch (key) {
+      case "attack":
+        return "攻撃";
+      case "healPower":
+        return "回復力";
+      case "magicAttack":
+        return "魔法攻撃";
+      case "defense":
+        return "防御";
+      case "acquire":
+        return "入手順";
+      default:
+        return "効果";
+    }
+  }
+
+  function setBagEffectSortKey(key) {
+    const sortKeys = new Set(["attack", "healPower", "magicAttack", "defense", "acquire"]);
+    if (!sortKeys.has(key)) return;
+
+    bagEffectSortKey = key;
+    updateEffectSortButtonsUI();
+
     const inv = gameData?.player?.inventory;
     if (!Array.isArray(inv) || inv.length <= 1) {
       log("ソート対象の装備がない");
@@ -1126,23 +1191,13 @@
     }
 
     ensureInventoryAcquireOrder(inv);
+    sortInventoryBySelectedKey(inv);
 
-    if (bagSortMode === "effect") {
-      inv.sort((a, b) => {
-        const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
-        if (diff !== 0) return diff;
-        const an = String(a?.name || "");
-        const bn = String(b?.name || "");
-        return an.localeCompare(bn, "ja");
-      });
-      bagSortMode = "acquire";
-      log("🧮 効果値の高い順でソートした");
-    } else {
-      sortInventoryByAcquireOrder(inv);
-      bagSortMode = "effect";
-      log("📦 入手順でソートした");
-    }
+    const controlsEl = document.getElementById("effectSortControls");
+    if (controlsEl) controlsEl.style.display = "none";
+    bagSortMode = "effect";
 
+    log(`🧮 ${getEffectSortLabel(key)}の高い順でソートした`);
     updateBagUI();
     if (typeof requestAutosave === "function") requestAutosave();
   }
@@ -2997,6 +3052,7 @@
   window.discardEquipment = discardEquipment;
   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+  window.setBagEffectSortKey = setBagEffectSortKey;
   window.onAutoSellConfigChange = onAutoSellConfigChange;
   window.openAutoSellConfigModal = openAutoSellConfigModal;
   window.closeAutoSellConfigModal = closeAutoSellConfigModal;

@@ -100,6 +100,18 @@
 
         <div class="bag-actions bag-actions-stack">
           <button type="button" class="small-btn" onclick="sortInventoryByEffectValue()">ソート</button>
+          <div id="effectSortControls" class="effect-sort-controls" style="display:none;">
+            <button type="button" class="small-btn effect-sort-btn" data-effect-sort="attack"
+              onclick="setBagEffectSortKey('attack')">攻撃</button>
+            <button type="button" class="small-btn effect-sort-btn" data-effect-sort="healPower"
+              onclick="setBagEffectSortKey('healPower')">回復力</button>
+            <button type="button" class="small-btn effect-sort-btn" data-effect-sort="magicAttack"
+              onclick="setBagEffectSortKey('magicAttack')">魔法攻撃</button>
+            <button type="button" class="small-btn effect-sort-btn" data-effect-sort="defense"
+              onclick="setBagEffectSortKey('defense')">防御</button>
+            <button type="button" class="small-btn effect-sort-btn" data-effect-sort="acquire"
+              onclick="setBagEffectSortKey('acquire')">入手順</button>
+          </div>
           <button type="button" class="small-btn" onclick="openAutoSellConfigModal()">自動売却設定</button>
           <button type="button" class="small-btn danger-btn"
             onclick="discardAllUnprotectedEquipment()">ロック/装備中以外をまとめて捨てる</button>
