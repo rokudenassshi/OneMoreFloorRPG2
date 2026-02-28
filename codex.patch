@@ -1,169 +1,135 @@
-diff --git a/js/ui.js b/js/ui.js
-index d567f2da40d2d4928fdd5fb66daf4c949a99b72f..18e63e83762a4cf500e41f10a3aa4f0ff08786a5 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2417,50 +2417,59 @@
-     document.getElementById(`alloc-${stat}`).textContent = newValue;
-     document.getElementById("remainingPoints").textContent =
-       gameData.player.statPoints;
-   }
+diff --git a/index.html b/index.html
+index 6739784be885639c5c59564022369970a893934d..b8059fc5d7f8f52a7636aba1dc86dbd808568539 100644
+--- a/index.html
++++ b/index.html
+@@ -1,32 +1,33 @@
+ <!DOCTYPE html>
+ <html lang="ja">
  
-   function resetStatAllocation() {
-     let total = 0;
-     for (let stat in gameData.player.allocatedStats) {
-       total += gameData.player.allocatedStats[stat];
-       gameData.player.allocatedStats[stat] = 0;
-     }
-     gameData.player.statPoints += total;
+ <head>
+   <meta charset="UTF-8">
+   <meta name="viewport"
+     content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
++  <meta name="apple-mobile-web-app-capable" content="yes">
+   <title>OneMoreFloorRPG - Enhanced</title>
+   <link rel="stylesheet" href="style_new.css">
+ </head>
  
-     openStatAllocation();
-   }
+ <body>
+   <div class="game">
+     <div class="status">
+       <div class="header-row">
+         <div>Lv：<span id="playerLevel"></span></div>
+         <div class="floor-info">階層：<span id="floor"></span> <button id="teleportBtn" type="button"
+             onclick="openTeleportModal()">転移</button></div>
+       </div>
+       <div class="exp-bar">
+         <div class="exp-bar-fill" id="expBarFill"></div>
+       </div>
+       <div class="battle-status">
+         <div class="player-info">
+           <div class="player-hp">HP：<span id="playerHp"></span></div>
+           <div id="playerGauges" class="player-gauges"></div>
+           <div id="playerStatusEffects" class="status-effects"></div>
+         </div>
+         <div class="enemy-info">
+           <div class="enemy-name"><span id="enemyName"></span></div>
+           <div class="enemy-hp"><span id="enemyHp">---</span></div>
+           <div id="enemyStatusEffects" class="status-effects"></div>
+@@ -352,50 +353,67 @@
+         <h2>自動売却設定</h2>
+         <div class="small">設定値以下の装備を自動売却します。</div>
+         <div class="auto-sell-grid">
+           <label>防具 防御<input id="autoSellArmorDefenseMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 攻撃<input id="autoSellWeaponAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 回復力<input id="autoSellWeaponHealPowerMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+         </div>
+         <div class="modal-actions">
+           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>
+         </div>
+       </div>
+     </div>
  
-   // -------------------
-   // UI - スキル
-   // -------------------
-   function openSkillScreen() {
-     document.getElementById("skillScreen").style.display = "block";
-     document.getElementById("statusScreen").style.display = "none";
-     updateSkillUI();
-   }
+   </div>
  
-+  function toggleAutoAllocateExpUp(enabled) {
-+    const p = gameData && gameData.player ? gameData.player : null;
-+    if (!p) return;
-+    p.autoAllocateExpUp = !!enabled;
-+    log(`⚙️ 経験値増加への自動割り振り: ${p.autoAllocateExpUp ? "ON" : "OFF"}`);
-+    updateSkillUI();
-+    if (typeof requestAutosave === "function") requestAutosave();
-+  }
+   <!-- =====================
+        Firebase（シリアルコード検証用）
+        - Method2: Firebase Functions（verifySerialCode）で検証する
+        - Firebaseコンソールの設定に合わせてください
+   ===================== -->
++  <script>
++    (function () {
++      "use strict";
 +
-   function closeSkillScreen() {
-     document.getElementById("skillScreen").style.display = "none";
-     document.getElementById("statusScreen").style.display = "block";
-   }
++      // iOS Safari でのダブルタップ拡大を防ぐ
++      let lastTouchEndTime = 0;
++      document.addEventListener("touchend", function (event) {
++        const now = Date.now();
++        if (now - lastTouchEndTime <= 300) {
++          event.preventDefault();
++        }
++        lastTouchEndTime = now;
++      }, { passive: false });
++    })();
++
++  </script>
++
+   <script>
+     // Firebase コンソール > プロジェクト設定 > マイアプリ（Web）の設定値に合わせてください
+     // すでに同じ Firebase プロジェクトを使う場合は、このままでも動きます（必要なら差し替え）。
+     window.FIREBASE_CONFIG = window.FIREBASE_CONFIG || {
+       apiKey: "AIzaSyDVqb1zHONQouQMmUZR6K0LuqeMiPD2dCA",
+       authDomain: "one-more-floor-rpg-6.firebaseapp.com",
+       projectId: "one-more-floor-rpg-6",
+       storageBucket: "one-more-floor-rpg-6.firebasestorage.app",
+       messagingSenderId: "334316999025",
+       appId: "1:334316999025:web:d63e9e0a9d85562a7766d0",
+     };
+     window.FIREBASE_FUNCTIONS_REGION = "us-central1";
+   </script>
  
-   function getSkillPointCost(skillDef) {
-     const c = Number(skillDef?.requiredPoints);
-     if (!Number.isFinite(c) || c <= 0) return 1;
-     return Math.max(1, Math.floor(c));
-   }
+   <script type="module">
+     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
  
-   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
-     const ps =
-       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
-     // 明示的な衝突指定
-     if (Array.isArray(skillDef?.exclusiveWith)) {
-       for (const k of skillDef.exclusiveWith) {
-         if (!k) continue;
-         if (Number(ps[k] || 0) > 0) return String(k);
-       }
-     }
-     // グループ衝突
-     const group = skillDef?.exclusiveGroup;
-     if (group) {
-       for (const k in skills) {
-@@ -2496,50 +2505,52 @@
-     }
- 
-     return names;
-   }
-   function isSkillPrereqMet(skillDef, playerSkills) {
-     const reqs = skillDef?.requires;
-     if (!Array.isArray(reqs) || reqs.length === 0) return true;
-     const ps =
-       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
-     return reqs.every((r) => {
-       if (!r) return true;
-       const k = String(r.key || "");
-       if (!k) return true;
-       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
-       return Math.floor(Number(ps[k] || 0)) >= needLv;
-     });
-   }
- 
-   function updateSkillUI() {
-     const p = gameData.player;
-     const currentJob = p.job;
-     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
-     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
- 
-     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
-+    const autoToggle = document.getElementById("autoAllocateExpUpToggle");
-+    if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
- 
-     const commonList = document.getElementById("commonSkillsList");
-     const passiveList = document.getElementById("passiveSkillsList");
-     const activeList = document.getElementById("activeSkillsList");
- 
-     if (commonList) commonList.innerHTML = "";
-     passiveList.innerHTML = "";
-     activeList.innerHTML = "";
- 
-     // スキル説明文の {xxx} を実際の数値で埋める
-     // （未習得なら Lv1 相当をプレビュー表示）
-     // 例: "命中+{accuracyBonus}%（会心+{critBonus}%）"
-     const formatSkillDesc = (skill, level) => {
-       const raw = String(skill?.desc || "");
-       if (!raw.includes("{")) return raw;
- 
-       const shownLv = level > 0 ? level : 1;
-       let eff = {};
-       try {
-         if (typeof skill.effect === "function")
-           eff = skill.effect(shownLv) || {};
-       } catch (_e) {
-         eff = {};
-       }
- 
-@@ -2936,50 +2947,51 @@
-   window.log = log;
-   window.clearLog = clearLog;
- 
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-+  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
- 
-   // =====================
-   // Save Data Import / Export (参考実装に準拠)
-   // =====================
-   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
-   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
-   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
-   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
-   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
-   const SAVE_EXPORT_ITERATIONS = 100000;
- 
-   function buildSaveDataSnapshot() {
-     const now = new Date();
-     const storage = {};
      try {
-       for (let i = 0; i < localStorage.length; i++) {
-         const k = localStorage.key(i);
-         if (!k) continue;
-         storage[k] = localStorage.getItem(k);
+       const cfg = window.FIREBASE_CONFIG || null;
+       const region = window.FIREBASE_FUNCTIONS_REGION || "us-central1";
+       if (!cfg || !cfg.projectId) {
+         console.warn("[Firebase] 設定が未入力のため初期化をスキップしました。シリアルコード検証は無効です。");
+       } else {
+         const app = initializeApp(cfg);
+@@ -450,26 +468,26 @@
+           })
+           .catch(() => "dev");
        }
-     } catch (e) {}
-     return {
-       schema: SAVE_EXPORT_SCHEMA_V1,
-       gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : null,
-       exportedAt: now.toISOString(),
+ 
+       getVersion()
+         .then((version) => {
+           // 他のJS（セーブ出力など）でも使えるように window に乗せる
+           window.GAME_VERSION = version;
+ 
+           // 順番に読み込む（依存関係を壊さない）
+           let chain = Promise.resolve();
+           for (const p of scriptList) {
+             const src = p + "?v=" + encodeURIComponent(version);
+             chain = chain.then(() => loadScript(src));
+           }
+           return chain;
+         })
+         .catch((err) => {
+           console.error(err);
+           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
+         });
+     })();
+   </script>
+ </body>
+ 
+-</html>
+\ No newline at end of file
++</html>
