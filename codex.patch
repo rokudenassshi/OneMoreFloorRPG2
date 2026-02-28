@@ -1,147 +1,77 @@
-diff --git a/js/ui.js b/js/ui.js
-index b47e8d8b2d180497bf72dffcd8026441f0d66ad2..d567f2da40d2d4928fdd5fb66daf4c949a99b72f 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1752,57 +1752,64 @@
-         const done = !!p.achievements[def.id];
-         let progress = "";
-         try {
-           progress = typeof def.progress === "function" ? def.progress(p) : "";
-         } catch (e) {
-           progress = "";
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index ef50361e8255dd4877ff36a978e51714194e58ca..13db0af410bdebe23d0fef931259b5a894ed7929 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -45,50 +45,72 @@
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
+       },
+       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
+     },
+     accessorySynthesis: {
+       isUnlocked: () => !!loadStore().accessorySynthesis,
+       unlock: () => {
+         const s = loadStore();
+         s.accessorySynthesis = true;
+         saveStore(s);
+       },
+       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
+     },
+     doubleEffectBonus: {
+       isUnlocked: () => !!loadStore().doubleEffectBonus,
+       unlock: () => {
+         const s = loadStore();
+         s.doubleEffectBonus = true;
+         saveStore(s);
+       },
+       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
+     },
+ 
++    floorCapLift250: {
++      isUnlocked: () => {
++        const s = loadStore();
++        if (s.floorCapLift250) return true;
++        const p = getPlayer();
++        return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
++      },
++      unlock: () => {
++        const s = loadStore();
++        s.floorCapLift250 = true;
++        saveStore(s);
++
++        const p = getPlayer();
++        if (p) {
++          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
++            p.serialUnlocks = {};
++          p.serialUnlocks.floorCapLift250 = true;
++        }
++      },
++      logMessage: "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
++    },
++
+     // 前世の記憶（実績解除：経験値+10%）
+     pastLifeMemory: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.pastLifeMemory) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
+       },
+       unlock: () => {
+         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
+         const s = loadStore();
+         s.pastLifeMemory = true;
+         saveStore(s);
+ 
+         // 2) セーブデータ側にも保存（実績用）
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.pastLifeMemory = true;
          }
-         return {
-           idx,
-           id: def.id,
-           title: def.title || def.id,
-           desc: def.desc || "",
-           done,
-           progress,
-           bonus: def.bonus || {},
-         };
-       })
-       .sort((a, b) => {
-         if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
-         return a.idx - b.idx;
-       });
  
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
--        const bonusText =
--          a.done &&
--          a.bonus &&
--          typeof a.bonus.expRate === "number" &&
--          a.bonus.expRate > 0
--            ? ` / ボーナス：経験値+${Math.round(a.bonus.expRate * 100)}%`
--            : "";
-+        let bonusText = "";
-+        if (a.done && a.bonus) {
-+          const parts = [];
-+          if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
-+            parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
-+          }
-+          if (
-+            typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
-+            a.bonus.asuraBaseStatMultiplierBonus > 0
-+          ) {
-+            parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
-+          }
-+          if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
-+        }
-         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
-       })
-       .join("");
-   }
- 
-   function updateOptionsUI() {
-     const cb = document.getElementById("optAutosave");
-     if (cb) cb.checked = isAutosaveEnabled();
- 
-     // シリアルコード入力の有効/無効
-     const inputEl = document.getElementById("serialCodeInput");
-     const btnEl = document.getElementById("serialCodeSubmitBtn");
-     const disabled = !!serialCodePending;
-     if (inputEl) inputEl.disabled = disabled;
-     if (btnEl) btnEl.disabled = disabled;
-   }
- 
-   function handleSerialCodeKeydown(event) {
-     if (event?.key !== "Enter") return;
-     handleSerialCodeSubmit();
-   }
- 
-   async function handleSerialCodeSubmit() {
-     if (serialCodePending) return;
-     const inputEl = document.getElementById("serialCodeInput");
-@@ -1874,52 +1881,68 @@
-       log("⚠️ シリアルコードの確認に失敗しました。");
-     } finally {
-       serialCodePending = false;
-       updateOptionsUI();
-     }
-   }
- 
-   function updateStatusUI() {
-     const p = gameData.player;
-     const stats = getTotalStats();
-     const combat = getCombatStats();
- 
-     // 紋章（貴重品）による加算値（0なら表示しない）
-     const emblem =
-       typeof getEmblemBonus === "function" ? getEmblemBonus() : null;
-     const fmtStat = (val, bonus) => {
-       const b = Math.max(0, Math.floor(Number(bonus || 0)));
-       return b > 0 ? `${val}（+${b}）` : `${val}`;
-     };
- 
-     const job = jobs[p.job] || { name: "-", favoredType: null };
-     const favoredName = getFavoredTypeLabel(job.favoredType);
-     const jt = (job && job.traits) || {};
-     const extra = [];
-     if (jt && jt.cannotEquipWeapon) extra.push("武器不可");
--    const bsm = Number(jt && jt.baseStatMultiplier);
--    if (Number.isFinite(bsm) && bsm > 1) extra.push(`基礎ステータス×${bsm}`);
-+    let bsm = Number(jt && jt.baseStatMultiplier);
-+    if (Number.isFinite(bsm) && bsm > 1) {
-+      if (p.job === "asura") {
-+        const defs = Array.isArray(window.achievementDefs)
-+          ? window.achievementDefs
-+          : [];
-+        const doneMap =
-+          p && p.achievements && typeof p.achievements === "object"
-+            ? p.achievements
-+            : {};
-+        for (const def of defs) {
-+          if (!def || !def.id || !doneMap[def.id]) continue;
-+          const v = Number((def.bonus || {}).asuraBaseStatMultiplierBonus || 0);
-+          if (Number.isFinite(v) && v > 0) bsm += v;
-+        }
-+      }
-+      extra.push(`基礎ステータス×${bsm}`);
-+    }
-     document.getElementById("currentJob").textContent =
-       `${job.name}（得意: ${favoredName}${extra.length ? ` / ${extra.join("・")}` : ""}）`;
- 
-     document.getElementById("statStr").textContent = fmtStat(
-       stats.strength,
-       emblem && emblem.strength,
-     );
-     document.getElementById("statVit").textContent = fmtStat(
-       stats.vitality,
-       emblem && emblem.vitality,
-     );
-     document.getElementById("statInt").textContent = fmtStat(
-       stats.intelligence,
-       emblem && emblem.intelligence,
-     );
-     document.getElementById("statAgi").textContent = fmtStat(
-       stats.agility,
-       emblem && emblem.agility,
-     );
-     document.getElementById("statDex").textContent = fmtStat(
-       stats.dexterity,
-       emblem && emblem.dexterity,
-     );
-     document.getElementById("statPoints").textContent = p.statPoints;
- 
+         // 3) 実績解除チェック（ログもここで出る）
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });

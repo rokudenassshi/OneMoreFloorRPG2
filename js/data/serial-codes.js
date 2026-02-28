@@ -67,6 +67,28 @@
       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
     },
 
+    floorCapLift250: {
+      isUnlocked: () => {
+        const s = loadStore();
+        if (s.floorCapLift250) return true;
+        const p = getPlayer();
+        return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
+      },
+      unlock: () => {
+        const s = loadStore();
+        s.floorCapLift250 = true;
+        saveStore(s);
+
+        const p = getPlayer();
+        if (p) {
+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+            p.serialUnlocks = {};
+          p.serialUnlocks.floorCapLift250 = true;
+        }
+      },
+      logMessage: "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
+    },
+
     // 前世の記憶（実績解除：経験値+10%）
     pastLifeMemory: {
       isUnlocked: () => {

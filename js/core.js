@@ -11,6 +11,27 @@
   // 250階層で頭打ち（テスト用）。
   // 解除したい場合は null にするか、この定義ごと削除してください。
   const TEST_FLOOR_CAP = 250;
+  const SERIAL_UNLOCK_STORE_KEY = "omf_serial_unlocks_v1";
+
+  function isFloorCapLiftUnlocked() {
+    const p = gameData && gameData.player;
+    if (
+      p &&
+      p.serialUnlocks &&
+      typeof p.serialUnlocks === "object" &&
+      p.serialUnlocks.floorCapLift250
+    ) {
+      return true;
+    }
+
+    try {
+      const raw = localStorage.getItem(SERIAL_UNLOCK_STORE_KEY);
+      const obj = raw ? JSON.parse(raw) : null;
+      return !!(obj && typeof obj === "object" && obj.floorCapLift250);
+    } catch (e) {
+      return false;
+    }
+  }
 
   /**
    * 階層を正規化する（1以上、テスト上限があれば上限までに丸める）
@@ -19,7 +40,11 @@
    */
   function clampFloor(n) {
     const f = Math.max(1, Math.floor(Number(n || 1)));
-    if (Number.isFinite(TEST_FLOOR_CAP) && TEST_FLOOR_CAP > 0) {
+    if (
+      Number.isFinite(TEST_FLOOR_CAP) &&
+      TEST_FLOOR_CAP > 0 &&
+      !isFloorCapLiftUnlocked()
+    ) {
       return Math.min(TEST_FLOOR_CAP, f);
     }
     return f;
@@ -1651,7 +1676,8 @@
     const isAtTestFloorCap =
       Number.isFinite(TEST_FLOOR_CAP) &&
       TEST_FLOOR_CAP > 0 &&
-      cur >= TEST_FLOOR_CAP;
+      cur >= TEST_FLOOR_CAP &&
+      !isFloorCapLiftUnlocked();
 
     // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
     if (dir > 0 && isAtTestFloorCap) {
@@ -1734,6 +1760,7 @@
     if (
       Number.isFinite(TEST_FLOOR_CAP) &&
       TEST_FLOOR_CAP > 0 &&
+      !isFloorCapLiftUnlocked() &&
       rawDest > TEST_FLOOR_CAP
     ) {
       if (typeof log === "function")

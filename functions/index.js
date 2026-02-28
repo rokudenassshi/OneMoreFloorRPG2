@@ -7,6 +7,9 @@ const serialCodeLookup = {
   zensenokiokuh30n98jqmojp9amq: "pastLifeMemory",
 };
 
+// `startadventure` + ランダム英数字15文字で、250階層テスト上限を解除
+const floorCapLiftCodePattern = /^startadventure[a-z0-9]{15}$/;
+
 exports.verifySerialCode = functions
   .region("us-central1")
   .https.onCall((data) => {
@@ -16,7 +19,11 @@ exports.verifySerialCode = functions
     if (!code) return { ok: false, message: "empty" };
 
     const unlock = serialCodeLookup[code];
-    if (!unlock) return { ok: false, message: "invalid" };
+    if (unlock) return { ok: true, unlock };
 
-    return { ok: true, unlock };
+    if (floorCapLiftCodePattern.test(code)) {
+      return { ok: true, unlock: "floorCapLift250" };
+    }
+
+    return { ok: false, message: "invalid" };
   });
