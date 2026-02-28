@@ -1087,9 +1087,9 @@
     inv.sort((a, b) => {
       const ao = Math.floor(Number(a?._bagAcquireOrder));
       const bo = Math.floor(Number(b?._bagAcquireOrder));
-      const aOrder = Number.isFinite(ao) ? ao : Number.MAX_SAFE_INTEGER;
-      const bOrder = Number.isFinite(bo) ? bo : Number.MAX_SAFE_INTEGER;
-      const diff = aOrder - bOrder;
+      const aOrder = Number.isFinite(ao) ? ao : -1;
+      const bOrder = Number.isFinite(bo) ? bo : -1;
+      const diff = bOrder - aOrder;
       if (diff !== 0) return diff;
       const an = String(a?.name || "");
       const bn = String(b?.name || "");

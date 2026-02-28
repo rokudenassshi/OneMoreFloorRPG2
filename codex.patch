@@ -1,107 +1,61 @@
-diff --git a/style_new.css b/style_new.css
-index a584e1fb2b2907fbc0a1c3df6913b3df49310d53..77f56751c67d3f61512680c2fdb711091e2de88c 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -631,50 +631,102 @@ button:active {
-   font-size: 11px;
-   color: #bbb;
- }
+diff --git a/js/ui.js b/js/ui.js
+index b6cc5e6c6da194fddc844ef8ed04e023a1ecb798..54fc75686f7c1f973f787f008cacb57ab7ba2f19 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1065,53 +1065,53 @@
+       return Number.isFinite(v) ? v : 0;
+     }
  
- .job-adv-tag {
-   display: inline-block;
-   margin-left: 6px;
-   padding: 1px 6px;
-   font-size: 10px;
-   border-radius: 999px;
-   background: #444;
-   color: #eee;
- }
+     if (item.category === "weapon") {
+       const attack = Number(item.attack);
+       const magicAttack = Number(item.magicAttack);
+       const healPower = Number(item.healPower);
+       return Math.max(
+         Number.isFinite(attack) ? attack : 0,
+         Number.isFinite(magicAttack) ? magicAttack : 0,
+         Number.isFinite(healPower) ? healPower : 0,
+       );
+     }
  
- .modal-actions {
-   display: flex;
-   gap: 10px;
-   margin-top: 16px;
- }
+     if (item.category === "accessory") {
+       return getAccessorySortValue(item);
+     }
  
- .modal-actions button {
-   flex: 1;
-   margin: 0;
- }
+     return 0;
+   }
  
-+.equip-compare-wrap {
-+  display: grid;
-+  grid-template-columns: repeat(2, minmax(0, 1fr));
-+  gap: 8px;
-+  margin-top: 12px;
-+}
-+
-+.equip-compare-wrap.single {
-+  grid-template-columns: 1fr;
-+}
-+
-+.equip-compare-card {
-+  background: #262626;
-+  border: 1px solid #4a4a4a;
-+  border-radius: 8px;
-+  padding: 8px;
-+  font-size: 12px;
-+  line-height: 1.45;
-+}
-+
-+.equip-compare-card.hidden {
-+  display: none;
-+}
-+
-+.equip-compare-title {
-+  font-weight: 700;
-+  margin-bottom: 6px;
-+}
-+
-+.equip-compare-current {
-+  color: #d7d7d7;
-+}
-+
-+.equip-compare-stats {
-+  margin-top: 6px;
-+}
-+
-+.equip-stat-up {
-+  color: #7fb9ff;
-+  font-weight: 700;
-+}
-+
-+.equip-stat-down {
-+  color: #ff8c8c;
-+  font-weight: 700;
-+}
-+
-+.equip-compare-effects {
-+  margin-top: 6px;
-+  color: #9ad3ff;
-+}
-+
- /* 転移モーダル */
- .teleport-row {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   margin: 12px 0;
- }
+   function sortInventoryByAcquireOrder(inv) {
+     inv.sort((a, b) => {
+       const ao = Math.floor(Number(a?._bagAcquireOrder));
+       const bo = Math.floor(Number(b?._bagAcquireOrder));
+-      const aOrder = Number.isFinite(ao) ? ao : Number.MAX_SAFE_INTEGER;
+-      const bOrder = Number.isFinite(bo) ? bo : Number.MAX_SAFE_INTEGER;
+-      const diff = aOrder - bOrder;
++      const aOrder = Number.isFinite(ao) ? ao : -1;
++      const bOrder = Number.isFinite(bo) ? bo : -1;
++      const diff = bOrder - aOrder;
+       if (diff !== 0) return diff;
+       const an = String(a?.name || "");
+       const bn = String(b?.name || "");
+       return an.localeCompare(bn, "ja");
+     });
+   }
  
- .teleport-row label {
-   font-size: 13px;
-   color: #ddd;
-   min-width: 56px;
- }
+   function sortInventoryByEffectValue() {
+     const inv = gameData?.player?.inventory;
+     if (!Array.isArray(inv) || inv.length <= 1) {
+       log("ソート対象の装備がない");
+       return;
+     }
  
- .teleport-select {
-   flex: 1;
-   padding: 10px;
-   font-size: 16px;
-   border-radius: 8px;
-   border: 1px solid #666;
-   background: #222;
-   color: #fff;
- }
+     ensureInventoryAcquireOrder(inv);
  
- .stat-alloc-item {
+     if (bagSortMode === "effect") {
+       inv.sort((a, b) => {
+         const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
+         if (diff !== 0) return diff;
+         const an = String(a?.name || "");
+         const bn = String(b?.name || "");
+         return an.localeCompare(bn, "ja");
+       });
+       bagSortMode = "acquire";
