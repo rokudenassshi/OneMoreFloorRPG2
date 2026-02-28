@@ -3769,41 +3769,31 @@
   }
 
   function evaluateAutoSellDropItem(item) {
-    if (!item) return { sold: false, reason: "" };
+    if (!item) return false;
     const p = gameData && gameData.player ? gameData.player : null;
     ensureAutoSellConfig(p);
     const cfg = p && p.autoSell ? p.autoSell : null;
-    if (!cfg) return { sold: false, reason: "" };
+    if (!cfg) return false;
 
     const v = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
 
     if (item.category === "armor") {
       const defense = v(item.defense);
-      if (defense <= Number(cfg.armorDefenseMax || 0)) {
-        return { sold: true, reason: `防御${defense} <= ${cfg.armorDefenseMax}` };
-      }
-      return { sold: false, reason: "" };
+      return defense <= Number(cfg.armorDefenseMax || 0);
     }
 
     if (item.category === "weapon") {
       const attack = v(item.attack);
       const healPower = v(item.healPower);
       const magicAttack = v(item.magicAttack);
-      if (
+      return (
         attack <= Number(cfg.weaponAttackMax || 0) &&
         healPower <= Number(cfg.weaponHealPowerMax || 0) &&
         magicAttack <= Number(cfg.weaponMagicAttackMax || 0)
-      ) {
-        return {
-          sold: true,
-          reason:
-            `攻撃${attack}/回復${healPower}/魔法攻撃${magicAttack} <= ` +
-            `${cfg.weaponAttackMax}/${cfg.weaponHealPowerMax}/${cfg.weaponMagicAttackMax}`,
-        };
-      }
+      );
     }
 
-    return { sold: false, reason: "" };
+    return false;
   }
 
   function checkBattleEnd() {
@@ -3873,10 +3863,10 @@
       // ボスは装備が必ず1つドロップ
       if (willDrop || isBoss) {
         const item = generateEquipment();
-        const autoSellResult = evaluateAutoSellDropItem(item);
+        const soldByAutoSell = evaluateAutoSellDropItem(item);
 
-        if (autoSellResult.sold) {
-          log(`💸 ${item.name}を自動売却した（${autoSellResult.reason}）`);
+        if (soldByAutoSell) {
+          log(`💸 ${item.name}を自動売却した。`);
         } else {
           gameData.player.inventory.push(item);
           log(`${item.name}を手に入れた！`);
@@ -3884,7 +3874,7 @@
 
         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
         if (
-          !autoSellResult.sold &&
+          !soldByAutoSell &&
           item &&
           typeof item._specialPrefixName === "string" &&
           item._specialPrefixName &&
