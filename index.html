@@ -118,8 +118,10 @@
         </div>
         <div id="weaponsSubTab">
           <div class="sub-tabs">
-            <button class="sub-tab weapon-hands-tab is-active" data-weapon-hands-tab="oneHand" onclick="setWeaponHandsTab('oneHand')">片手</button>
-            <button class="sub-tab weapon-hands-tab" data-weapon-hands-tab="twoHand" onclick="setWeaponHandsTab('twoHand')">両手</button>
+            <button class="sub-tab weapon-hands-tab is-active" data-weapon-hands-tab="oneHand"
+              onclick="setWeaponHandsTab('oneHand')">片手</button>
+            <button class="sub-tab weapon-hands-tab" data-weapon-hands-tab="twoHand"
+              onclick="setWeaponHandsTab('twoHand')">両手</button>
           </div>
           <div id="weaponsList"></div>
         </div>
@@ -273,7 +275,7 @@
         <h4>セーブデータ</h4>
         <div class="options-row">
           <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
-          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button> -->
+          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
         </div>
         <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
           onchange="handleSaveDataImport(event)">

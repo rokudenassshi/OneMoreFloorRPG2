@@ -1,14 +1,14 @@
 const functions = require("firebase-functions");
 
 // ✅ “シリアルコード → 解放キー” をサーバー側に置く（クライアントには公開しない）
-// ※必要に応じてここに追加
+// ランダム文字列部分は固定（外部から推測されにくくするために付与）
 const serialCodeLookup = {
-  // 前世の記憶（実績解除：経験値+10%）
-  zensenokiokuh30n98jqmojp9amq: "pastLifeMemory",
-};
+  // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+10%）
+  omfprg1h30n98jqmo: "pastLifeMemory",
 
-// `startadventure` + ランダム英数字15文字で、250階層テスト上限を解除
-const floorCapLiftCodePattern = /^startadventure[a-z0-9]{15}$/;
+  // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
+  startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
+};
 
 exports.verifySerialCode = functions
   .region("us-central1")
@@ -20,10 +20,6 @@ exports.verifySerialCode = functions
 
     const unlock = serialCodeLookup[code];
     if (unlock) return { ok: true, unlock };
-
-    if (floorCapLiftCodePattern.test(code)) {
-      return { ok: true, unlock: "floorCapLift250" };
-    }
 
     return { ok: false, message: "invalid" };
   });
