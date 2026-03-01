@@ -3,7 +3,7 @@ const functions = require("firebase-functions");
 // ✅ “シリアルコード → 解放キー” をサーバー側に置く（クライアントには公開しない）
 // ランダム文字列部分は固定（外部から推測されにくくするために付与）
 const serialCodeLookup = {
-  // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+10%）
+  // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+20%）
   omfprg1h30n98jqmo: "pastLifeMemory",
 
   // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除

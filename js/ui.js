@@ -1864,7 +1864,7 @@
       .map((a) => {
         const mark = a.done ? "✅" : "⬜";
         let bonusText = "";
-        if (a.done && a.bonus) {
+        if (a.bonus) {
           const parts = [];
           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);

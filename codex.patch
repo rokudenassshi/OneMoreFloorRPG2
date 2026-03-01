@@ -1,40 +1,57 @@
-diff --git a/functions/index.js b/functions/index.js
-index 69b0ffe7ed9055c36667f6cb2ef8a1b80cf8b8f2..c63346d59f9b5928b8b8dd3b9b538ed6eb9531de 100644
---- a/functions/index.js
-+++ b/functions/index.js
-@@ -1,29 +1,25 @@
- const functions = require("firebase-functions");
+diff --git a/js/ui.js b/js/ui.js
+index 04fdbdc136c91588b6939af7681ab67a34500300..9dd7dc60e32b790f27aa0272f6fc6ed14751ef91 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1842,51 +1842,51 @@
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
+         return {
+           idx,
+           id: def.id,
+           title: def.title || def.id,
+           desc: def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+       })
+       .sort((a, b) => {
+         if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
+         return a.idx - b.idx;
+       });
  
- // ✅ “シリアルコード → 解放キー” をサーバー側に置く（クライアントには公開しない）
--// ※必要に応じてここに追加
-+// ランダム文字列部分は固定（外部から推測されにくくするために付与）
- const serialCodeLookup = {
--  // 前世の記憶（実績解除：経験値+10%）
--  zensenokiokuh30n98jqmojp9amq: "pastLifeMemory",
--};
-+  // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+10%）
-+  omfprg1h30n98jqmo: "pastLifeMemory",
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+-        if (a.done && a.bonus) {
++        if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+           }
+           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
+         }
+         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+       })
+       .join("");
+   }
  
--// `startadventure` + ランダム英数字15文字で、250階層テスト上限を解除
--const floorCapLiftCodePattern = /^startadventure[a-z0-9]{15}$/;
-+  // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
-+  startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
-+};
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
  
- exports.verifySerialCode = functions
-   .region("us-central1")
-   .https.onCall((data) => {
-     const code = String(data?.code || "")
-       .trim()
-       .toLowerCase();
-     if (!code) return { ok: false, message: "empty" };
- 
-     const unlock = serialCodeLookup[code];
-     if (unlock) return { ok: true, unlock };
- 
--    if (floorCapLiftCodePattern.test(code)) {
--      return { ok: true, unlock: "floorCapLift250" };
--    }
--
-     return { ok: false, message: "invalid" };
-   });
+     // シリアルコード入力の有効/無効
+     const inputEl = document.getElementById("serialCodeInput");
+     const btnEl = document.getElementById("serialCodeSubmitBtn");
+     const disabled = !!serialCodePending;

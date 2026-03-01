@@ -42,8 +42,8 @@
     !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
   progress: (p) =>
     (p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory) ? "1/1" : "0/1",
-  // 経験値 +10%
-  bonus: { expRate: 0.1 },
+  // 経験値 +20%
+  bonus: { expRate: 0.2 },
 },
     {
       id: "named_hunter",

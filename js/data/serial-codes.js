@@ -86,10 +86,11 @@
           p.serialUnlocks.floorCapLift250 = true;
         }
       },
-      logMessage: "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
+      logMessage:
+        "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
     },
 
-    // 前世の記憶（実績解除：経験値+10%）
+    // 前世の記憶（実績解除：経験値+20%）
     pastLifeMemory: {
       isUnlocked: () => {
         const s = loadStore();
