@@ -49,6 +49,8 @@
       },
 
       statPoints: 0,
+      autoAllocateStatPoints: false,
+      autoAllocateStatTarget: "strength",
       skillPoints: 0,
       autoAllocateExpUp: false,
 

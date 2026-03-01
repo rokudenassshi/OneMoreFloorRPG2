@@ -2537,6 +2537,32 @@
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
+  function toggleAutoAllocateStatPoints(enabled) {
+    const p = gameData && gameData.player ? gameData.player : null;
+    if (!p) return;
+    p.autoAllocateStatPoints = !!enabled;
+    log(`⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`);
+    updateSkillUI();
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
+  function setAutoAllocateStatTarget(target) {
+    const p = gameData && gameData.player ? gameData.player : null;
+    if (!p) return;
+    const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
+    if (!allowed.includes(target)) return;
+    p.autoAllocateStatTarget = target;
+    const labels = {
+      strength: "⚔️ 力",
+      vitality: "❤️ 体力",
+      intelligence: "🧙 賢さ",
+      agility: "⚡ 素早さ",
+      dexterity: "🎯 器用さ",
+    };
+    log(`⚙️ ステータスポイント自動割り振り先: ${labels[target] || target}`);
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
   function closeSkillScreen() {
     document.getElementById("skillScreen").style.display = "none";
     document.getElementById("statusScreen").style.display = "block";
@@ -2618,6 +2644,10 @@
     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
     const autoToggle = document.getElementById("autoAllocateExpUpToggle");
     if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
+    const autoStatToggle = document.getElementById("autoAllocateStatPointsToggle");
+    if (autoStatToggle) autoStatToggle.checked = !!p.autoAllocateStatPoints;
+    const autoStatTarget = document.getElementById("autoAllocateStatTarget");
+    if (autoStatTarget) autoStatTarget.value = p.autoAllocateStatTarget || "strength";
 
     const commonList = document.getElementById("commonSkillsList");
     const passiveList = document.getElementById("passiveSkillsList");
@@ -3060,8 +3090,6 @@
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
   window.useItem = useItem;
-  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
-
   // =====================
   // Save Data Import / Export (参考実装に準拠)
   // =====================
@@ -3284,6 +3312,9 @@
 
   window.openSkillScreen = openSkillScreen;
   window.closeSkillScreen = closeSkillScreen;
+  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+  window.toggleAutoAllocateStatPoints = toggleAutoAllocateStatPoints;
+  window.setAutoAllocateStatTarget = setAutoAllocateStatTarget;
   window.updateSkillUI = updateSkillUI;
   window.levelUpSkill = levelUpSkill;
   window.levelDownSkill = levelDownSkill;

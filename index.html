@@ -354,6 +354,19 @@
         <div class="stat-points-display">
           残りポイント: <strong id="remainingPoints">0</strong>
         </div>
+        <div class="skill-points-display">
+          <label class="skill-auto-allocate-toggle"><input id="autoAllocateStatPointsToggle" type="checkbox"
+              onchange="toggleAutoAllocateStatPoints(this.checked)"> レベルアップ時に自動割り振り</label>
+          <label class="skill-auto-allocate-toggle">割り振り先:
+            <select id="autoAllocateStatTarget" onchange="setAutoAllocateStatTarget(this.value)">
+              <option value="strength">⚔️ 力</option>
+              <option value="vitality">❤️ 体力</option>
+              <option value="intelligence">🧙 賢さ</option>
+              <option value="agility">⚡ 素早さ</option>
+              <option value="dexterity">🎯 器用さ</option>
+            </select>
+          </label>
+        </div>
         <div id="statAllocationList"></div>
         <div class="modal-actions">
           <button onclick="resetStatAllocation()">リセット</button>

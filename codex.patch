@@ -1,66 +1,231 @@
-diff --git a/style_new.css b/style_new.css
-index 77f56751c67d3f61512680c2fdb711091e2de88c..80f83d99a2829c03a410e1688c79d91c96a51f4b 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -313,50 +313,61 @@ button:active {
-   gap: 8px;
-   margin-bottom: 12px;
- }
+diff --git a/js/ui.js b/js/ui.js
+index 9a9f008040dcaf56c0edd316b9ff72a41ab97e74..04fdbdc136c91588b6939af7681ab67a34500300 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2515,50 +2515,76 @@
+       gameData.player.allocatedStats[stat] = 0;
+     }
+     gameData.player.statPoints += total;
  
- /* バッグ（装備品タブ）上部の操作ボタン */
- .bag-actions {
-   display: flex;
-   justify-content: flex-end;
-   gap: 8px;
-   margin: 6px 0 10px;
- }
+     openStatAllocation();
+   }
  
- .danger-btn {
-   background: #6b2b2b;
- }
+   // -------------------
+   // UI - スキル
+   // -------------------
+   function openSkillScreen() {
+     document.getElementById("skillScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
+     updateSkillUI();
+   }
  
- .danger-btn:hover {
-   background: #7a3333;
- }
+   function toggleAutoAllocateExpUp(enabled) {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return;
+     p.autoAllocateExpUp = !!enabled;
+     log(`⚙️ 経験値増加への自動割り振り: ${p.autoAllocateExpUp ? "ON" : "OFF"}`);
+     updateSkillUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
  
- .bag-actions-stack {
-   flex-direction: column;
-   align-items: stretch;
- }
- 
++  function toggleAutoAllocateStatPoints(enabled) {
++    const p = gameData && gameData.player ? gameData.player : null;
++    if (!p) return;
++    p.autoAllocateStatPoints = !!enabled;
++    log(`⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`);
++    updateSkillUI();
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
 +
-+.effect-sort-controls {
-+  display: grid;
-+  grid-template-columns: repeat(2, minmax(0, 1fr));
-+  gap: 6px;
-+}
++  function setAutoAllocateStatTarget(target) {
++    const p = gameData && gameData.player ? gameData.player : null;
++    if (!p) return;
++    const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
++    if (!allowed.includes(target)) return;
++    p.autoAllocateStatTarget = target;
++    const labels = {
++      strength: "⚔️ 力",
++      vitality: "❤️ 体力",
++      intelligence: "🧙 賢さ",
++      agility: "⚡ 素早さ",
++      dexterity: "🎯 器用さ",
++    };
++    log(`⚙️ ステータスポイント自動割り振り先: ${labels[target] || target}`);
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
 +
-+.effect-sort-btn.is-active {
-+  background: #4a6fa5;
-+}
-+
- .auto-sell-modal-content {
-   max-width: 560px;
- }
+   function closeSkillScreen() {
+     document.getElementById("skillScreen").style.display = "none";
+     document.getElementById("statusScreen").style.display = "block";
+   }
  
- .auto-sell-grid {
-   margin-top: 8px;
-   display: grid;
-   grid-template-columns: repeat(2, minmax(0, 1fr));
-   gap: 8px;
- }
+   function getSkillPointCost(skillDef) {
+     const c = Number(skillDef?.requiredPoints);
+     if (!Number.isFinite(c) || c <= 0) return 1;
+     return Math.max(1, Math.floor(c));
+   }
  
- .auto-sell-grid label {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   gap: 8px;
-   font-size: 12px;
- }
+   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
+     const ps =
+       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     // 明示的な衝突指定
+     if (Array.isArray(skillDef?.exclusiveWith)) {
+       for (const k of skillDef.exclusiveWith) {
+         if (!k) continue;
+         if (Number(ps[k] || 0) > 0) return String(k);
+       }
+     }
+     // グループ衝突
+     const group = skillDef?.exclusiveGroup;
+     if (group) {
+       for (const k in skills) {
+@@ -2596,50 +2622,54 @@
+     return names;
+   }
+   function isSkillPrereqMet(skillDef, playerSkills) {
+     const reqs = skillDef?.requires;
+     if (!Array.isArray(reqs) || reqs.length === 0) return true;
+     const ps =
+       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     return reqs.every((r) => {
+       if (!r) return true;
+       const k = String(r.key || "");
+       if (!k) return true;
+       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
+       return Math.floor(Number(ps[k] || 0)) >= needLv;
+     });
+   }
  
- .auto-sell-grid input {
-   width: 72px;
-   padding: 4px 6px;
-   border-radius: 6px;
-   border: 1px solid rgba(255,255,255,0.15);
-   background: rgba(0,0,0,0.25);
+   function updateSkillUI() {
+     const p = gameData.player;
+     const currentJob = p.job;
+     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
+     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
+ 
+     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
+     const autoToggle = document.getElementById("autoAllocateExpUpToggle");
+     if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
++    const autoStatToggle = document.getElementById("autoAllocateStatPointsToggle");
++    if (autoStatToggle) autoStatToggle.checked = !!p.autoAllocateStatPoints;
++    const autoStatTarget = document.getElementById("autoAllocateStatTarget");
++    if (autoStatTarget) autoStatTarget.value = p.autoAllocateStatTarget || "strength";
+ 
+     const commonList = document.getElementById("commonSkillsList");
+     const passiveList = document.getElementById("passiveSkillsList");
+     const activeList = document.getElementById("activeSkillsList");
+ 
+     if (commonList) commonList.innerHTML = "";
+     passiveList.innerHTML = "";
+     activeList.innerHTML = "";
+ 
+     // スキル説明文の {xxx} を実際の数値で埋める
+     // （未習得なら Lv1 相当をプレビュー表示）
+     // 例: "命中+{accuracyBonus}%（会心+{critBonus}%）"
+     const formatSkillDesc = (skill, level) => {
+       const raw = String(skill?.desc || "");
+       if (!raw.includes("{")) return raw;
+ 
+       const shownLv = level > 0 ? level : 1;
+       let eff = {};
+       try {
+         if (typeof skill.effect === "function")
+           eff = skill.effect(shownLv) || {};
+       } catch (_e) {
+         eff = {};
+       }
+ 
+@@ -3038,52 +3068,50 @@
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+-  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+-
+   // =====================
+   // Save Data Import / Export (参考実装に準拠)
+   // =====================
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
+   const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
+   const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
+   const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
+   const SAVE_EXPORT_ITERATIONS = 100000;
+ 
+   function buildSaveDataSnapshot() {
+     const now = new Date();
+     const storage = {};
+     try {
+       for (let i = 0; i < localStorage.length; i++) {
+         const k = localStorage.key(i);
+         if (!k) continue;
+         storage[k] = localStorage.getItem(k);
+       }
+     } catch (e) {}
+     return {
+       schema: SAVE_EXPORT_SCHEMA_V1,
+       gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : null,
+       exportedAt: now.toISOString(),
+       storage,
+@@ -3262,38 +3290,41 @@
+   window.handleSaveDataImport = handleSaveDataImport;
+   window.setStatusTab = setStatusTab;
+   window.toggleAutosave = toggleAutosave;
+ 
+   window.openStatus = openStatus;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeStatus = closeStatus;
+   window.updateStatusUI = updateStatusUI;
+ 
+   // シリアルコード（オプション画面）
+   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
+   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
+ 
+   window.openJobSelector = openJobSelector;
+   window.closeJobSelector = closeJobSelector;
+   window.selectJob = selectJob;
+ 
+   window.openStatAllocation = openStatAllocation;
+   window.closeStatAllocation = closeStatAllocation;
+   window.adjustStat = adjustStat;
+   window.resetStatAllocation = resetStatAllocation;
+ 
+   window.openSkillScreen = openSkillScreen;
+   window.closeSkillScreen = closeSkillScreen;
++  window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
++  window.toggleAutoAllocateStatPoints = toggleAutoAllocateStatPoints;
++  window.setAutoAllocateStatTarget = setAutoAllocateStatTarget;
+   window.updateSkillUI = updateSkillUI;
+   window.levelUpSkill = levelUpSkill;
+   window.levelDownSkill = levelDownSkill;
+   // 新: 2枠スキル
+   window.equipSkillToSlot = equipSkillToSlot;
+   window.unequipSkillSlot = unequipSkillSlot;
+   window.toggleSkillSlot = toggleSkillSlot;
+   // 互換: 旧UIが equipSkill(key) を呼んでも slot1 に装備する
+   window.equipSkill = function (key) {
+     equipSkillToSlot(key, 0);
+   };
+   window.resetSkills = resetSkills;
+ })();

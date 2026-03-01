@@ -112,6 +112,15 @@
     p.autoAllocateExpUp = !!p.autoAllocateExpUp;
   }
 
+  function ensureAutoAllocateStatPointsConfig(p) {
+    if (!p || typeof p !== "object") return;
+    p.autoAllocateStatPoints = !!p.autoAllocateStatPoints;
+
+    const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
+    const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
+    p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
+  }
+
   function normalizeValuables(p) {
     ensureValuables(p);
     p.valuables = p.valuables
@@ -357,6 +366,7 @@
 
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
+    ensureAutoAllocateStatPointsConfig(gameData.player);
 
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
@@ -512,6 +522,7 @@
 
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
+    ensureAutoAllocateStatPointsConfig(gameData.player);
 
     const loaded = loadGameIfExists();
     getCombatStats();
@@ -4069,6 +4080,28 @@
       log(`⚙️ 経験値増加に自動割り振り（Lv.${p.skills.exp_up} / ポイント-${cost}）`);
     };
 
+    const canAutoAllocateStatPoints = () => {
+      if (!p || !p.autoAllocateStatPoints) return false;
+      const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
+      if (!(target in (p.allocatedStats || {}))) return false;
+      return Math.floor(Number(p.statPoints || 0)) > 0;
+    };
+
+    const doAutoAllocateStatPoints = () => {
+      const target = p.autoAllocateStatTarget;
+      if (!p.allocatedStats || typeof p.allocatedStats !== "object") return;
+      p.allocatedStats[target] = Math.max(0, Math.floor(Number(p.allocatedStats[target] || 0))) + 1;
+      p.statPoints = Math.max(0, Math.floor(Number(p.statPoints || 0)) - 1);
+      const labels = {
+        strength: "⚔️ 力",
+        vitality: "❤️ 体力",
+        intelligence: "🧙 賢さ",
+        agility: "⚡ 素早さ",
+        dexterity: "🎯 器用さ",
+      };
+      log(`⚙️ ステータス自動割り振り: ${labels[target] || target} +1`);
+    };
+
     while (gameData.player.exp >= getExpNeeded()) {
       const needed = getExpNeeded();
 
@@ -4088,6 +4121,9 @@
 
       if (canAutoAllocateExpUp()) {
         doAutoAllocateExpUp();
+      }
+      while (canAutoAllocateStatPoints()) {
+        doAutoAllocateStatPoints();
       }
     }
 
