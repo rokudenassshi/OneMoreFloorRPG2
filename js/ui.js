@@ -1835,9 +1835,8 @@
       ? window.achievementDefs
       : [];
 
-    // 解除状態と進捗を組み立て（解除済みは下へ）
-    const list = defs
-      .map((def, idx) => {
+    // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
+    const rows = defs.map((def, idx) => {
         const done = !!p.achievements[def.id];
         let progress = "";
         try {
@@ -1854,11 +1853,11 @@
           progress,
           bonus: def.bonus || {},
         };
-      })
-      .sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
-        return a.idx - b.idx;
       });
+
+    const list = rows
+      .filter((row) => !row.done)
+      .concat(rows.filter((row) => row.done));
 
     el.innerHTML = list
       .map((a) => {

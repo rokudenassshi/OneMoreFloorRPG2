@@ -1,83 +1,86 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index 1bbd9bbcf61f2bc290c5fa637a24e63500115fe3..ca3d6b949dd83121fded9a1b562dab88a1325d2b 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -95,72 +95,60 @@
+diff --git a/js/ui.js b/js/ui.js
+index 9dd7dc60e32b790f27aa0272f6fc6ed14751ef91..0d00cee3b3c98c2c73b7e4d1ed213fcaff472a7e 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1813,75 +1813,74 @@
+   function updateRecordsUI() {
+     const elKills = document.getElementById("recordTotalKills");
+     const elMax = document.getElementById("recordMaxDamage");
+     if (!elKills && !elMax) return;
  
-     asuraMilestones.forEach((ms) => {
-       achievementDefs.push({
-         id: ms.id,
-         title: ms.title,
-         desc: ms.unlockAfterId
-           ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
-           : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
-         isDone: (p) => {
-           const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return false;
-           return getAsuraKills(p) >= ms.baseKills + ms.needKills;
-         },
-         progress: (p) => {
-           const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return "未解放";
-           const v = Math.max(0, getAsuraKills(p) - ms.baseKills);
-           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
-         },
-         bonus: { asuraBaseStatMultiplierBonus: 1 },
+     const p = gameData.player;
+     const totalKills = Number(p.totalKills || 0);
+     const maxDamage = Number(p.maxDamage || 0);
+ 
+     if (elKills) elKills.textContent = totalKills;
+     if (elMax) elMax.textContent = maxDamage;
+   }
+ 
+   function updateAchievementsUI() {
+     const el = document.getElementById("achievementsContent");
+     if (!el) return;
+ 
+     const p = gameData.player;
+     if (!p.achievements || typeof p.achievements !== "object")
+       p.achievements = {};
+ 
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
+ 
+-    // 解除状態と進捗を組み立て（解除済みは下へ）
+-    const list = defs
+-      .map((def, idx) => {
++    // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
++    const rows = defs.map((def, idx) => {
+         const done = !!p.achievements[def.id];
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
+         return {
+           idx,
+           id: def.id,
+           title: def.title || def.id,
+           desc: def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+-      })
+-      .sort((a, b) => {
+-        if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
+-        return a.idx - b.idx;
        });
-     });
+ 
++    const list = rows
++      .filter((row) => !row.done)
++      .concat(rows.filter((row) => row.done));
++
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+           }
+           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
+         }
+         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+       })
+       .join("");
    }
  
-   // -----------------
--// 上級職 実績
--// - 各上級職で 10000 体撃破（個別）
--// - 報酬：各紋章 ×1（1実績につき1回）
--// -----------------
-+  // 上級職 実績
-+  // - 各上級職で 10000 体撃破（個別）
-+  // - 報酬：経験値 +10%
-+  // -----------------
- {
-   const jobs = window.jobs || {};
-   const ADV_TARGET = 10000;
-   const advKeys = Object.keys(jobs).filter(
-     (k) => jobs[k] && jobs[k].tier === "advanced",
-   );
- 
-   const getKills = (p, jobKey) => {
-     const map =
-       p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
-     const v = Number(map[jobKey] || 0);
-     return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-   };
- 
--  const reward = {
--    text: "力/体力/賢さ/素早さ/器用さの紋章 ×1",
--    valuables: [
--      "emblem_strength",
--      "emblem_vitality",
--      "emblem_intelligence",
--      "emblem_agility",
--      "emblem_dexterity",
--    ],
--  };
--
-   // 各上級職（個別）
-   for (const k of advKeys) {
-     const jd = jobs[k];
-     const name = jd && jd.name ? jd.name : k;
-     achievementDefs.push({
-       id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
-       title: `${name}の猛者`,
--      desc: `${name}でモンスターを${ADV_TARGET}体倒す（報酬：各紋章×1）`,
-+      desc: `${name}でモンスターを${ADV_TARGET}体倒す（ボーナス：経験値+10%）`,
-       isDone: (p) => getKills(p, k) >= ADV_TARGET,
-       progress: (p) => `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,
--      reward,
--      bonus: {},
-+      bonus: { expRate: 0.1 },
-     });
-   }
- }
- 
-   window.achievementDefs = achievementDefs;
- })();
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
