@@ -5,7 +5,6 @@
 (function () {
   "use strict";
 
-  
   // 実績定義（解除でボーナスが発生）
   // ※解除状態は player.achievements[id] に保存される
   const achievementDefs = [
@@ -34,17 +33,16 @@
       // 経験値 +5%
       bonus: { expRate: 0.05 },
     },
-{
-  id: "past_life_memory",
-  title: "前世の記憶",
-  desc: "シリアルコードで解放する",
-  isDone: (p) =>
-    !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
-  progress: (p) =>
-    (p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory) ? "1/1" : "0/1",
-  // 経験値 +20%
-  bonus: { expRate: 0.2 },
-},
+    {
+      id: "past_life_memory",
+      title: "前世の記憶",
+      desc: "シリアルコードで解放する",
+      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory ? "1/1" : "0/1",
+      // 経験値 +20%
+      bonus: { expRate: 0.2 },
+    },
     {
       id: "named_hunter",
       title: "二つ名狩り",
@@ -53,7 +51,6 @@
       progress: (p) => `${Math.min(Number(p.namedKills || 0), 10)}/10`,
       bonus: {},
     },
-
   ];
 
   // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
@@ -101,12 +98,16 @@
           ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
           : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
         isDone: (p) => {
-          const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          const unlocked =
+            !ms.unlockAfterId ||
+            !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
           if (!unlocked) return false;
           return getAsuraKills(p) >= ms.baseKills + ms.needKills;
         },
         progress: (p) => {
-          const unlocked = !ms.unlockAfterId || !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          const unlocked =
+            !ms.unlockAfterId ||
+            !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
           if (!unlocked) return "未解放";
           const v = Math.max(0, getAsuraKills(p) - ms.baseKills);
           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
@@ -117,50 +118,39 @@
   }
 
   // -----------------
-// 上級職 実績
-// - 各上級職で 10000 体撃破（個別）
-// - 報酬：各紋章 ×1（1実績につき1回）
-// -----------------
-{
-  const jobs = window.jobs || {};
-  const ADV_TARGET = 10000;
-  const advKeys = Object.keys(jobs).filter(
-    (k) => jobs[k] && jobs[k].tier === "advanced",
-  );
+  // 上級職 実績
+  // - 各上級職で 10000 体撃破（個別）
+  // - 報酬：経験値 +10%
+  // -----------------
+  {
+    const jobs = window.jobs || {};
+    const ADV_TARGET = 10000;
+    const advKeys = Object.keys(jobs).filter(
+      (k) => jobs[k] && jobs[k].tier === "advanced",
+    );
 
-  const getKills = (p, jobKey) => {
-    const map =
-      p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
-    const v = Number(map[jobKey] || 0);
-    return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-  };
+    const getKills = (p, jobKey) => {
+      const map =
+        p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+      const v = Number(map[jobKey] || 0);
+      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+    };
 
-  const reward = {
-    text: "力/体力/賢さ/素早さ/器用さの紋章 ×1",
-    valuables: [
-      "emblem_strength",
-      "emblem_vitality",
-      "emblem_intelligence",
-      "emblem_agility",
-      "emblem_dexterity",
-    ],
-  };
-
-  // 各上級職（個別）
-  for (const k of advKeys) {
-    const jd = jobs[k];
-    const name = jd && jd.name ? jd.name : k;
-    achievementDefs.push({
-      id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
-      title: `${name}の猛者`,
-      desc: `${name}でモンスターを${ADV_TARGET}体倒す（報酬：各紋章×1）`,
-      isDone: (p) => getKills(p, k) >= ADV_TARGET,
-      progress: (p) => `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,
-      reward,
-      bonus: {},
-    });
+    // 各上級職（個別）
+    for (const k of advKeys) {
+      const jd = jobs[k];
+      const name = jd && jd.name ? jd.name : k;
+      achievementDefs.push({
+        id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
+        title: `${name}の心得`,
+        desc: `${name}でモンスターを${ADV_TARGET}体倒す（ボーナス：経験値+10%）`,
+        isDone: (p) => getKills(p, k) >= ADV_TARGET,
+        progress: (p) =>
+          `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,
+        bonus: { expRate: 0.1 },
+      });
+    }
   }
-}
 
   window.achievementDefs = achievementDefs;
 })();
