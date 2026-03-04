@@ -48,6 +48,36 @@
       multipliers: { hp: 1.1, str: 1.55, vit: 1.1, agi: 1.0, dex: 1.0, int: 1.0, exp: 1.35 },
       effects: { armorPierceRate: 0.35 },
     },
+    {
+      name: "執念の",
+      multipliers: { hp: 1.25, str: 1.1, vit: 1.2, agi: 1.0, dex: 1.0, int: 1.0, exp: 1.25 },
+      effects: { regenRate: 0.03, enrageBelowHpRate: 0.35, enrageDamageMul: 1.2 },
+    },
+    {
+      name: "雷鳴の",
+      multipliers: { hp: 1.0, str: 1.05, vit: 1.0, agi: 1.35, dex: 1.1, int: 1.15, exp: 1.25 },
+      effects: { extraTurnChance: 0.1, alwaysHit: true },
+    },
+    {
+      name: "堅牢なる",
+      multipliers: { hp: 1.4, str: 1.0, vit: 1.55, agi: 0.9, dex: 1.0, int: 1.0, exp: 1.3 },
+      effects: { damageReduction: 0.22 },
+    },
+    {
+      name: "呪毒の",
+      multipliers: { hp: 1.1, str: 1.05, vit: 1.05, agi: 1.1, dex: 1.2, int: 1.1, exp: 1.3 },
+      effects: { poisonOnHitChance: 0.4, poisonTurns: 4 },
+    },
+    {
+      name: "狂嵐の",
+      multipliers: { hp: 1.05, str: 1.35, vit: 1.0, agi: 1.3, dex: 1.1, int: 1.0, exp: 1.3 },
+      effects: { extraTurnChance: 0.08, armorPierceRate: 0.2 },
+    },
+    {
+      name: "賢者の",
+      multipliers: { hp: 1.1, str: 0.95, vit: 1.05, agi: 1.0, dex: 1.0, int: 1.6, exp: 1.35 },
+      effects: { preferMagic: true, damageReduction: 0.08 },
+    },
   ];
 
   // 敵スキル定義
