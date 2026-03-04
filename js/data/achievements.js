@@ -110,8 +110,9 @@
   }
 
   // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
-  // - 境地2以降は段階解放（1クリア後に2、2クリア後に3）
-  // - 必要数は段階ごとの追加撃破数（2は+1500、3は+2000）
+  // - 境地2以降は段階解放（前段階クリア後に次が解放）
+  // - 各段階は「解放時点」から0カウントで進行する
+  // - 必要撃破数（段階ごと）：2は1500、3は2000、4は2500、5は3000
   {
     const getAsuraKills = (p) => {
       const map =
@@ -125,7 +126,6 @@
         id: "asura_slayer_1000",
         title: "修羅の境地 1",
         unlockAfterId: null,
-        baseKills: 0,
         needKills: 1000,
       },
       {
@@ -133,7 +133,6 @@
         title: "修羅の境地 2",
         unlockAfterId: "asura_slayer_1000",
         unlockAfterLabel: "修羅の境地1",
-        baseKills: 1000,
         needKills: 1500,
       },
       {
@@ -141,10 +140,53 @@
         title: "修羅の境地 3",
         unlockAfterId: "asura_slayer_1500",
         unlockAfterLabel: "修羅の境地2",
-        baseKills: 2500,
         needKills: 2000,
       },
+      {
+        id: "asura_slayer_2500",
+        title: "修羅の境地 4",
+        unlockAfterId: "asura_slayer_2000",
+        unlockAfterLabel: "修羅の境地3",
+        needKills: 2500,
+      },
+      {
+        id: "asura_slayer_3000",
+        title: "修羅の境地 5",
+        unlockAfterId: "asura_slayer_2500",
+        unlockAfterLabel: "修羅の境地4",
+        needKills: 3000,
+      },
     ];
+
+    const ensureAsuraMilestoneStartMap = (p) => {
+      if (!p || typeof p !== "object") return {};
+      if (
+        !p.achievementProgressStarts ||
+        typeof p.achievementProgressStarts !== "object"
+      ) {
+        p.achievementProgressStarts = {};
+      }
+      if (
+        !p.achievementProgressStarts.asuraMilestones ||
+        typeof p.achievementProgressStarts.asuraMilestones !== "object"
+      ) {
+        p.achievementProgressStarts.asuraMilestones = {};
+      }
+      return p.achievementProgressStarts.asuraMilestones;
+    };
+
+    const getAsuraMilestoneStartKills = (p, ms) => {
+      if (!ms.unlockAfterId) return 0;
+      const map =
+        p &&
+        p.achievementProgressStarts &&
+        p.achievementProgressStarts.asuraMilestones &&
+        typeof p.achievementProgressStarts.asuraMilestones === "object"
+          ? p.achievementProgressStarts.asuraMilestones
+          : {};
+      const raw = Number(map[ms.id]);
+      return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
+    };
 
     asuraMilestones.forEach((ms) => {
       achievementDefs.push({
@@ -156,19 +198,31 @@
         isVisible: (p) =>
           !ms.unlockAfterId ||
           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
+        onCheck: (p) => {
+          if (!ms.unlockAfterId) return;
+          const unlocked =
+            !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          if (!unlocked) return;
+          const map = ensureAsuraMilestoneStartMap(p);
+          const cur = Number(map[ms.id]);
+          if (Number.isFinite(cur)) return;
+          map[ms.id] = getAsuraKills(p);
+        },
         isDone: (p) => {
           const unlocked =
             !ms.unlockAfterId ||
             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
           if (!unlocked) return false;
-          return getAsuraKills(p) >= ms.baseKills + ms.needKills;
+          const startKills = getAsuraMilestoneStartKills(p, ms);
+          return Math.max(0, getAsuraKills(p) - startKills) >= ms.needKills;
         },
         progress: (p) => {
           const unlocked =
             !ms.unlockAfterId ||
             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
           if (!unlocked) return "未解放";
-          const v = Math.max(0, getAsuraKills(p) - ms.baseKills);
+          const startKills = getAsuraMilestoneStartKills(p, ms);
+          const v = Math.max(0, getAsuraKills(p) - startKills);
           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
         },
         bonus: { asuraBaseStatMultiplierBonus: 1 },

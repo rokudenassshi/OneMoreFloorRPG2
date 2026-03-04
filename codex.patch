@@ -1,58 +1,58 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index b2f9d596357cf3f1d4cd33ff99d891229b96e12b..2c359e88902ea09cb6513a7bab004c8229d508bc 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -131,50 +131,53 @@
-       {
-         id: "asura_slayer_1500",
-         title: "修羅の境地 2",
-         unlockAfterId: "asura_slayer_1000",
-         unlockAfterLabel: "修羅の境地1",
-         baseKills: 1000,
-         needKills: 1500,
-       },
-       {
-         id: "asura_slayer_2000",
-         title: "修羅の境地 3",
-         unlockAfterId: "asura_slayer_1500",
-         unlockAfterLabel: "修羅の境地2",
-         baseKills: 2500,
-         needKills: 2000,
-       },
-     ];
+diff --git a/js/core.js b/js/core.js
+index 421d2c5273486d162640fa633fdcbba9f702e25f..20b7e20d298729eac7dd2a0aeb1b241cdef188df 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -1676,50 +1676,53 @@
+       if (Array.isArray(r.valuables)) {
+         for (const v of r.valuables) {
+           let id = "";
+           let amount = 1;
+           if (typeof v === "string") {
+             id = v;
+           } else if (v && typeof v === "object") {
+             id = typeof v.id === "string" ? v.id : "";
+             const a = Number(v.amount);
+             if (Number.isFinite(a) && a > 0) amount = Math.floor(a);
+           }
+           if (!id) continue;
+           const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
+           if (!defRelic) continue;
+           addValuableByDef(defRelic, amount);
+         }
  
-     asuraMilestones.forEach((ms) => {
-       achievementDefs.push({
-         id: ms.id,
-         title: ms.title,
-         desc: ms.unlockAfterId
-           ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
-           : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
-+        isVisible: (p) =>
-+          !ms.unlockAfterId ||
-+          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
-         isDone: (p) => {
-           const unlocked =
-             !ms.unlockAfterId ||
-             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return false;
-           return getAsuraKills(p) >= ms.baseKills + ms.needKills;
-         },
-         progress: (p) => {
-           const unlocked =
-             !ms.unlockAfterId ||
-             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return "未解放";
-           const v = Math.max(0, getAsuraKills(p) - ms.baseKills);
-           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
-         },
-         bonus: { asuraBaseStatMultiplierBonus: 1 },
-       });
-     });
-   }
+         // 報酬は1回だけ
+         if (claimedMap && def.id) claimedMap[def.id] = true;
+       }
+     };
  
-   // -----------------
-   // 上級職 実績
-   // - 各上級職で 10000 体撃破（個別）
-   // - 報酬：経験値 +10%
-   // -----------------
+     for (const def of defs) {
+       if (!def || !def.id || typeof def.isDone !== "function") continue;
+       const already = !!p.achievements[def.id];
++      try {
++        if (typeof def.onCheck === "function") def.onCheck(p);
++      } catch (e) {}
+       let done = false;
+       try {
+         done = !!def.isDone(p);
+       } catch (e) {
+         done = false;
+       }
+       if (done && !already) {
+         p.achievements[def.id] = true;
+         unlockedNow.push(def);
+       }
+     }
+ 
+     // 報酬付与（解除済み実績にも一度だけ適用）
+     for (const def of defs) {
+       if (def && def.id && p.achievements[def.id]) grantReward(def);
+     }
+ 
+     if (!silent && unlockedNow.length) {
+       for (const def of unlockedNow) {
+         log(`🏆 実績解除：${def.title}`);
+         const b = def.bonus || {};
+         if (typeof b.expRate === "number" && b.expRate > 0) {
+           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
+         }
+         if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {

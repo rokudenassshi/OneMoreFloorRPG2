@@ -1698,6 +1698,9 @@
     for (const def of defs) {
       if (!def || !def.id || typeof def.isDone !== "function") continue;
       const already = !!p.achievements[def.id];
+      try {
+        if (typeof def.onCheck === "function") def.onCheck(p);
+      } catch (e) {}
       let done = false;
       try {
         done = !!def.isDone(p);
