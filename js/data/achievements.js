@@ -153,6 +153,9 @@
         desc: ms.unlockAfterId
           ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
           : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
+        isVisible: (p) =>
+          !ms.unlockAfterId ||
+          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
         isDone: (p) => {
           const unlocked =
             !ms.unlockAfterId ||
