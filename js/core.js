@@ -2229,6 +2229,13 @@
 
     // 敵スキル
     enemy.skills = Array.isArray(enemy.skills) ? enemy.skills : [];
+    const bonusSkills = Array.isArray(enemy?.effects?.bonusSkills)
+      ? enemy.effects.bonusSkills
+      : [];
+    if (bonusSkills.length > 0) {
+      const merged = enemy.skills.concat(bonusSkills);
+      enemy.skills = merged.filter((id, idx) => merged.indexOf(id) === idx);
+    }
     enemy.skillCooldowns = {};
     enemy.turnCount = 0;
     enemy.skillGlobalCooldown = 0;
