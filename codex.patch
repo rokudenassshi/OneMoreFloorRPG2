@@ -1,19 +1,60 @@
 diff --git a/js/ui.js b/js/ui.js
-index 9dd7dc60e32b790f27aa0272f6fc6ed14751ef91..0d00cee3b3c98c2c73b7e4d1ed213fcaff472a7e 100644
+index 0d00cee3b3c98c2c73b7e4d1ed213fcaff472a7e..2238a52b45d1e57e1aa4b7495f7cd09e2375f8b1 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1813,75 +1813,74 @@
+@@ -1788,61 +1788,76 @@
+     if (!allowed.includes(tab)) tab = "status";
+     currentStatusTab = tab;
+ 
+     const tabStatus = document.getElementById("tabStatus");
+     const tabAch = document.getElementById("tabAchievements");
+     const tabRec = document.getElementById("tabRecords");
+ 
+     if (tabStatus)
+       tabStatus.style.display = tab === "status" ? "block" : "none";
+     if (tabAch)
+       tabAch.style.display = tab === "achievements" ? "block" : "none";
+     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+ 
+     const btnS = document.getElementById("statusTabBtnStatus");
+     const btnA = document.getElementById("statusTabBtnAchievements");
+     const btnR = document.getElementById("statusTabBtnRecords");
+     if (btnS) btnS.classList.toggle("is-active", tab === "status");
+     if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
+     if (btnR) btnR.classList.toggle("is-active", tab === "records");
+ 
+     if (tab === "records") {
+       updateRecordsUI();
+     }
+   }
+ 
++  function formatPlayTime(totalMs) {
++    const ms = Math.max(0, Math.floor(Number(totalMs) || 0));
++    const totalSeconds = Math.floor(ms / 1000);
++    const hours = Math.floor(totalSeconds / 3600);
++    const minutes = Math.floor((totalSeconds % 3600) / 60);
++    const seconds = totalSeconds % 60;
++
++    if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
++    if (minutes > 0) return `${minutes}分${seconds}秒`;
++    return `${seconds}秒`;
++  }
++
    function updateRecordsUI() {
      const elKills = document.getElementById("recordTotalKills");
      const elMax = document.getElementById("recordMaxDamage");
-     if (!elKills && !elMax) return;
+-    if (!elKills && !elMax) return;
++    const elPlayTime = document.getElementById("recordPlayTime");
++    if (!elKills && !elMax && !elPlayTime) return;
  
      const p = gameData.player;
      const totalKills = Number(p.totalKills || 0);
      const maxDamage = Number(p.maxDamage || 0);
++    const totalPlayTimeMs = Number(p.totalPlayTimeMs || 0);
  
      if (elKills) elKills.textContent = totalKills;
      if (elMax) elMax.textContent = maxDamage;
++    if (elPlayTime) elPlayTime.textContent = formatPlayTime(totalPlayTimeMs);
    }
  
    function updateAchievementsUI() {
@@ -28,11 +69,8 @@ index 9dd7dc60e32b790f27aa0272f6fc6ed14751ef91..0d00cee3b3c98c2c73b7e4d1ed213fca
        ? window.achievementDefs
        : [];
  
--    // 解除状態と進捗を組み立て（解除済みは下へ）
--    const list = defs
--      .map((def, idx) => {
-+    // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
-+    const rows = defs.map((def, idx) => {
+     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
+     const rows = defs.map((def, idx) => {
          const done = !!p.achievements[def.id];
          let progress = "";
          try {
@@ -42,45 +80,55 @@ index 9dd7dc60e32b790f27aa0272f6fc6ed14751ef91..0d00cee3b3c98c2c73b7e4d1ed213fca
          }
          return {
            idx,
-           id: def.id,
-           title: def.title || def.id,
-           desc: def.desc || "",
-           done,
-           progress,
-           bonus: def.bonus || {},
-         };
--      })
--      .sort((a, b) => {
--        if (a.done !== b.done) return a.done ? 1 : -1; // 未解除→解除済み
--        return a.idx - b.idx;
-       });
+@@ -3038,50 +3053,51 @@
  
-+    const list = rows
-+      .filter((row) => !row.done)
-+      .concat(rows.filter((row) => row.done));
-+
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
-         let bonusText = "";
-         if (a.bonus) {
-           const parts = [];
-           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
-             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
-           }
-           if (
-             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
-             a.bonus.asuraBaseStatMultiplierBonus > 0
-           ) {
-             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
-           }
-           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
-         }
-         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
-       })
-       .join("");
+     // 装備中スキルを解除
+     p.equippedSkills = [null, null];
+     p.equippedSkill = null;
+     p.skillCooldown = 0;
+ 
+     // 職業ごとの保存割り振りもリセット
+     p.jobSkillBuilds = {};
+ 
+     log("🔄 スキルをリセットした");
+     getCombatStats();
+     updateSkillUI();
+     updateStatusUI();
+     updateSkillButtons();
+     if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   function updateOptionsUI() {
-     const cb = document.getElementById("optAutosave");
-     if (cb) cb.checked = isAutosaveEnabled();
+   // ポップアップ
+   window.showRareEnemyPopup = showRareEnemyPopup;
+   window.showEventPopup = showEventPopup;
+ 
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
++  window.updateRecordsUI = updateRecordsUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;

@@ -121,6 +121,27 @@
     p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
   }
 
+  function ensurePlayTimeConfig(p) {
+    if (!p || typeof p !== "object") return;
+    const ms = Number(p.totalPlayTimeMs || 0);
+    p.totalPlayTimeMs = Number.isFinite(ms) && ms > 0 ? Math.floor(ms) : 0;
+  }
+
+  let lastPlayTimeTickAt = Date.now();
+
+  function tickPlayTime() {
+    const p = gameData && gameData.player;
+    if (!p || typeof p !== "object") return;
+    ensurePlayTimeConfig(p);
+
+    const now = Date.now();
+    const elapsed = now - lastPlayTimeTickAt;
+    lastPlayTimeTickAt = now;
+
+    if (!Number.isFinite(elapsed) || elapsed <= 0) return;
+    p.totalPlayTimeMs += elapsed;
+  }
+
   function normalizeValuables(p) {
     ensureValuables(p);
     p.valuables = p.valuables
@@ -367,6 +388,8 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
+    ensurePlayTimeConfig(gameData.player);
+    lastPlayTimeTickAt = Date.now();
 
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
@@ -523,6 +546,8 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
+    ensurePlayTimeConfig(gameData.player);
+    lastPlayTimeTickAt = Date.now();
 
     const loaded = loadGameIfExists();
     getCombatStats();
@@ -534,7 +559,9 @@
     }
 
     setInterval(() => {
+      tickPlayTime();
       saveGameNow();
+      if (typeof updateRecordsUI === "function") updateRecordsUI();
     }, AUTOSAVE_INTERVAL_MS);
 
     applyUrlActions();

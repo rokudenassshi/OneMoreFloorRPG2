@@ -23,6 +23,7 @@
       jobKills: {},
       totalKills: 0,
       namedKills: 0,
+      totalPlayTimeMs: 0,
       maxReachedFloor: 1,
       achievements: {},
 

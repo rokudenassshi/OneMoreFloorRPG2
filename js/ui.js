@@ -1810,17 +1810,32 @@
     }
   }
 
+  function formatPlayTime(totalMs) {
+    const ms = Math.max(0, Math.floor(Number(totalMs) || 0));
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
+    if (minutes > 0) return `${minutes}分${seconds}秒`;
+    return `${seconds}秒`;
+  }
+
   function updateRecordsUI() {
     const elKills = document.getElementById("recordTotalKills");
     const elMax = document.getElementById("recordMaxDamage");
-    if (!elKills && !elMax) return;
+    const elPlayTime = document.getElementById("recordPlayTime");
+    if (!elKills && !elMax && !elPlayTime) return;
 
     const p = gameData.player;
     const totalKills = Number(p.totalKills || 0);
     const maxDamage = Number(p.maxDamage || 0);
+    const totalPlayTimeMs = Number(p.totalPlayTimeMs || 0);
 
     if (elKills) elKills.textContent = totalKills;
     if (elMax) elMax.textContent = maxDamage;
+    if (elPlayTime) elPlayTime.textContent = formatPlayTime(totalPlayTimeMs);
   }
 
   function updateAchievementsUI() {
@@ -3060,6 +3075,7 @@
   // グローバル公開
   // -------------------
   window.updateUI = updateUI;
+  window.updateRecordsUI = updateRecordsUI;
   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
   window.updateSkillButton = updateSkillButtons;
   window.log = log;
