@@ -101,6 +101,38 @@
         poisonTurns: 5,
       },
     },
+    {
+      name: "天穿つ",
+      minSearch: 150,
+      multipliers: { hp: 2.35, str: 2.0, vit: 1.75, agi: 1.75, dex: 1.8, int: 1.35, exp: 2.9 },
+      effects: {
+        alwaysHit: true,
+        armorPierceRate: 0.4,
+        extraTurnChance: 0.15,
+      },
+    },
+    {
+      name: "奈落の",
+      minSearch: 150,
+      multipliers: { hp: 2.65, str: 1.8, vit: 2.25, agi: 1.25, dex: 1.35, int: 1.85, exp: 3.1 },
+      effects: {
+        damageReduction: 0.25,
+        regenRate: 0.1,
+        poisonOnHitChance: 0.45,
+        poisonTurns: 5,
+      },
+    },
+    {
+      name: "絶界の",
+      minSearch: 150,
+      multipliers: { hp: 2.4, str: 1.6, vit: 1.9, agi: 1.4, dex: 1.55, int: 2.2, exp: 3.0 },
+      effects: {
+        preferMagic: true,
+        extraTurnChance: 0.12,
+        enrageBelowHpRate: 0.55,
+        enrageDamageMul: 1.35,
+      },
+    },
   ];
 
   // 敵スキル定義

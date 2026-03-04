@@ -560,16 +560,21 @@
    * @param {"common"|"uncommon"|"rare"|"epic"|"legendary"} itemRarity
    * @param {"weapon"|"armor"|"accessory"} category
    * @param {string} typeKey
+   * @param {{forceRarity?: "rare"|"epic"|"legendary"}} [options]
    */
-  function rollSpecialPrefix(itemRarity, category, typeKey) {
+  function rollSpecialPrefix(itemRarity, category, typeKey, options) {
     if (category !== "weapon" && category !== "armor") return null;
 
-    if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
+    const forceRarity =
+      options && typeof options.forceRarity === "string"
+        ? options.forceRarity
+        : null;
+
+    if (!forceRarity && Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
 
     // 武器/防具とも「装備レア度に関係なく」接頭語テーブル全体から抽選できる
     // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）
-    // テスト用：legendary を一時的に無効化（必要になったらコメントアウトを外す）
-    const allowed = new Set(["rare", "epic" /*, "legendary" */]);
+    const allowed = new Set(["rare", "epic", "legendary"]);
 
     const poolBase = [
       ...SPECIAL_PREFIXES_COMMON,
@@ -584,13 +589,16 @@
     if (!candidates.length) return null;
 
     // まず rarity を抽選（候補がある rarity のみ）
-    const rarityKeys = ["rare", "epic" /*, "legendary" */].filter((r) =>
+    const rarityKeys = ["rare", "epic", "legendary"].filter((r) =>
       candidates.some((p) => p.rarity === r),
     );
 
-    const pickedRarity = pickWeighted(rarityKeys, (r) => {
-      return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
-    });
+    const pickedRarity =
+      forceRarity && rarityKeys.includes(forceRarity)
+        ? forceRarity
+        : pickWeighted(rarityKeys, (r) => {
+            return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
+          });
 
     if (!pickedRarity) return null;
 

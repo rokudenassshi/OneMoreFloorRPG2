@@ -4022,7 +4022,11 @@
 
       // ボスは装備が必ず1つドロップ
       if (willDrop || isBoss) {
-        const item = generateEquipment();
+        const isHighSearchNamedEnemy =
+          !!enemy.isNamed && Number(enemy?.epithet?.minSearch || 0) >= 150;
+        const item = generateEquipment({
+          forceLegendarySpecialPrefix: isHighSearchNamedEnemy,
+        });
         const soldByAutoSell = evaluateAutoSellDropItem(item);
 
         if (soldByAutoSell) {
@@ -4878,7 +4882,7 @@
     return b;
   }
 
-  function generateEquipment() {
+  function generateEquipment(options = {}) {
     const floor = getScalingFloor();
 
     // カテゴリー選択
@@ -4920,7 +4924,11 @@
       typeof window.applySpecialPrefixEffects === "function"
     ) {
       // 特殊接頭語抽選（rarity / category / typeKey）
-      let sp = window.rollSpecialPrefix(rarity, category, typeKey);
+      const forceSpecialPrefixRarity =
+        options && options.forceLegendarySpecialPrefix ? "legendary" : null;
+      let sp = window.rollSpecialPrefix(rarity, category, typeKey, {
+        forceRarity: forceSpecialPrefixRarity,
+      });
       if (sp) {
         window.applySpecialPrefixEffects(item, sp);
 

@@ -1,117 +1,102 @@
-diff --git a/js/core.js b/js/core.js
-index 2d4d50e8fa5c9bbc738c08e4f6698bbd1950f9de..317d95e24de8233c5cb6e33c9670671be033e0ad 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -1520,52 +1520,52 @@
-       const defPct = Number(getAccessoryBonus("defensePct") || 0);
-       const hpPct = Number(getAccessoryBonus("maxHpPct") || 0);
-       const mpPct = Number(getAccessoryBonus("magicPowerPct") || 0);
-       const healPct = Number(getAccessoryBonus("healPowerPct") || 0);
+diff --git a/js/data/equipment_special_prefix.js b/js/data/equipment_special_prefix.js
+index e5c70fa7e3abd986dafe5d27106665ffe1610af6..26b4f0179b170eb388915b04b5e79e6b329a1994 100644
+--- a/js/data/equipment_special_prefix.js
++++ b/js/data/equipment_special_prefix.js
+@@ -538,81 +538,89 @@
+     {
+       name: "生還者の",
+       rarity: "legendary",
+       effects: [{ type: "bonusPct", key: "deathAvoidOnce", min: 1, max: 1 }],
+       describe: () => `戦闘中1回だけ死亡回避`,
+     },
+   ];
  
-       const mul = (pct) => 1 + clamp(Number(pct) || 0, -80, 500) / 100;
+   // -------------------
+   // 付与確率・レア度補正
+   // -------------------
+   const SPECIAL_PREFIX_ATTACH_CHANCE = 0.01; // 1%（階層無関係）
  
-       if (Number.isFinite(atkPct) && atkPct !== 0) combat.attack *= mul(atkPct);
-       if (Number.isFinite(defPct) && defPct !== 0)
-         combat.defense *= mul(defPct);
-       if (Number.isFinite(hpPct) && hpPct !== 0) combat.maxHp *= mul(hpPct);
-       if (Number.isFinite(mpPct) && mpPct !== 0)
-         combat.magicPower *= mul(mpPct);
-       if (Number.isFinite(healPct) && healPct !== 0)
-         combat.healPower *= mul(healPct);
-     }
+   // 接頭語レア度が高いほど出にくい（weightに掛ける）
+   const PREFIX_RARITY_WEIGHT_MULT = {
+     rare: 1.0,
+     epic: 0.35,
+     legendary: 0.12,
+   };
  
-     // 端数が出ないように丸める
-     combat.attack = Math.round(combat.attack);
-     combat.defense = Math.round(combat.defense);
-     combat.magicPower = Math.round(combat.magicPower);
-     combat.healPower = Math.round(combat.healPower || 0);
-     combat.accuracy = Math.round(combat.accuracy);
-     combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
-     combat.critRate = Math.round(combat.critRate);
--    // 索敵は 0〜200 に丸める（100以上は二つ名確定に使う）
--    combat.search = clamp(combat.search, 0, 200);
-+    // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
-+    combat.search = clamp(combat.search, 0, 150);
+   /**
+    * 特殊接頭語を抽選
+    * @param {"common"|"uncommon"|"rare"|"epic"|"legendary"} itemRarity
+    * @param {"weapon"|"armor"|"accessory"} category
+    * @param {string} typeKey
++   * @param {{forceRarity?: "rare"|"epic"|"legendary"}} [options]
+    */
+-  function rollSpecialPrefix(itemRarity, category, typeKey) {
++  function rollSpecialPrefix(itemRarity, category, typeKey, options) {
+     if (category !== "weapon" && category !== "armor") return null;
  
-     // 最大HP更新
-     // 端数が出ないように丸める
-     combat.maxHp = Math.round(combat.maxHp);
+-    if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
++    const forceRarity =
++      options && typeof options.forceRarity === "string"
++        ? options.forceRarity
++        : null;
++
++    if (!forceRarity && Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
  
-     gameData.player.maxHp = combat.maxHp;
-     if (gameData.player.hp > gameData.player.maxHp) {
-       gameData.player.hp = gameData.player.maxHp;
-     }
+     // 武器/防具とも「装備レア度に関係なく」接頭語テーブル全体から抽選できる
+     // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）
+-    // テスト用：legendary を一時的に無効化（必要になったらコメントアウトを外す）
+-    const allowed = new Set(["rare", "epic" /*, "legendary" */]);
++    const allowed = new Set(["rare", "epic", "legendary"]);
  
-     return combat;
+     const poolBase = [
+       ...SPECIAL_PREFIXES_COMMON,
+       ...(category === "weapon"
+         ? SPECIAL_PREFIXES_WEAPON
+         : SPECIAL_PREFIXES_ARMOR),
+     ];
+ 
+     // レア度で絞る
+     const candidates = poolBase.filter((p) => allowed.has(p.rarity));
+ 
+     if (!candidates.length) return null;
+ 
+     // まず rarity を抽選（候補がある rarity のみ）
+-    const rarityKeys = ["rare", "epic" /*, "legendary" */].filter((r) =>
++    const rarityKeys = ["rare", "epic", "legendary"].filter((r) =>
+       candidates.some((p) => p.rarity === r),
+     );
+ 
+-    const pickedRarity = pickWeighted(rarityKeys, (r) => {
+-      return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
+-    });
++    const pickedRarity =
++      forceRarity && rarityKeys.includes(forceRarity)
++        ? forceRarity
++        : pickWeighted(rarityKeys, (r) => {
++            return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
++          });
+ 
+     if (!pickedRarity) return null;
+ 
+     // 抽選された rarity の中から均等に 1つ選ぶ（各接頭語 weight は使わない）
+     const rarityPool = candidates.filter((p) => p.rarity === pickedRarity);
+     const picked = rarityPool[Math.floor(Math.random() * rarityPool.length)];
+ 
+     if (!picked) return null;
+ 
+     // 返すときはコピー
+     return { ...picked, _category: category, _typeKey: typeKey };
    }
  
-   // 装備効果ボーナス取得（装備1/装備2/装飾品の effects を合算）
-   function getAccessoryBonus(type) {
-     let total = 0;
-     const eq = (gameData.player && gameData.player.equipment) || {};
-     const slot1 = eq.slot1 || null;
-     const slot2 = eq.slot2 || null;
+   /**
+    * 特殊接頭語の効果を装備に適用する
+    * - ランダムオプションと差別化：固有効果は主に「%（乗算）」として適用
+    * @param {object} item
+    * @param {object} specialPrefix
+    */
+   function applySpecialPrefixEffects(item, specialPrefix) {
+     if (!specialPrefix || !Array.isArray(specialPrefix.effects)) return;
  
-     const hasWeapon = !!(
-       (slot1 && slot1.category === "weapon") ||
-       (slot2 && slot2.category === "weapon")
-     );
-     const hasArmor = !!(
-@@ -2161,51 +2161,56 @@
-     const search = combat.search;
+     if (!item.effects) item.effects = [];
+     if (!item.specialEffects) item.specialEffects = [];
  
-     // フロア補正（常に強くなる）
-     const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
-     enemy.hp = Math.round(enemy.hp * floorMul);
-     enemy.str = Math.round(enemy.str * floorMul);
-     enemy.vit = Math.round(enemy.vit * floorMul);
-     enemy.int = Math.round(enemy.int * floorMul);
-     enemy.agi = Math.round(enemy.agi * floorMul);
-     enemy.dex = Math.round(enemy.dex * floorMul);
-     enemy.exp = Math.round(enemy.exp * floorMul);
- 
-     // 二つ名判定（索敵が 0 の場合は出ない）
-     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
-     const epithetChance =
-       enemy && enemy.isBoss
-         ? 0
-         : search >= 100
-           ? 1
-           : search > 0
-             ? clamp(search, 0, 100) * 0.01
-             : 0;
-     let epithet = null;
- 
-     if (Math.random() < epithetChance) {
--      epithet = epithets[Math.floor(Math.random() * epithets.length)];
-+      const availableEpithets = epithets.filter((e) => {
-+        const minSearch = Number(e && e.minSearch);
-+        return Number.isFinite(minSearch) ? search >= minSearch : true;
-+      });
-+      const pool = availableEpithets.length > 0 ? availableEpithets : epithets;
-+      epithet = pool[Math.floor(Math.random() * pool.length)];
-       enemy.isNamed = true;
- 
-       // 倍率適用
-       const mul = epithet.multipliers || {};
-       const mulOf = (k) => (typeof mul[k] === "number" ? mul[k] : 1);
- 
-       enemy.hp = Math.round(enemy.hp * mulOf("hp"));
-       enemy.str = Math.round(enemy.str * mulOf("str"));
-       enemy.vit = Math.round(enemy.vit * mulOf("vit"));
-       enemy.int = Math.round(enemy.int * mulOf("int"));
-       enemy.agi = Math.round(enemy.agi * mulOf("agi"));
-       enemy.dex = Math.round(enemy.dex * mulOf("dex"));
-       enemy.exp = Math.round(enemy.exp * mulOf("exp"));
- 
-       enemy.epithet = epithet;
-       enemy.effects = epithet.effects || {};
-     } else {
-       enemy.epithet = null;
-       enemy.effects = {};
-     }
- 
-     // 事前定義の効果を最後にマージ（ボスなど）
-     if (presetEffects && typeof presetEffects === "object") {
-       const keys = Object.keys(presetEffects);
-       if (keys.length > 0) {
