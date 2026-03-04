@@ -1,85 +1,117 @@
-diff --git a/js/data/enemies.js b/js/data/enemies.js
-index 9d8e0c42a40e7385a2c8c77fcc87193297f5161f..a37537f9e881e85b9ab3be2c2ee360d2612894af 100644
---- a/js/data/enemies.js
-+++ b/js/data/enemies.js
-@@ -26,50 +26,80 @@
-     {
-       name: "強靭なる",
-       multipliers: { hp: 1.55, str: 1.05, vit: 1.45, agi: 0.95, dex: 1.0, int: 1.0, exp: 1.25 },
-       effects: { damageReduction: 0.15 },
-     },
-     {
-       name: "不死の",
-       multipliers: { hp: 1.35, str: 1.05, vit: 1.25, agi: 1.0, dex: 1.0, int: 1.0, exp: 1.3 },
-       effects: { regenRate: 0.05 },
-     },
-     {
-       name: "必中の",
-       multipliers: { hp: 1.1, str: 1.15, vit: 1.1, agi: 1.0, dex: 1.4, int: 1.0, exp: 1.25 },
-       effects: { alwaysHit: true },
-     },
-     {
-       name: "狡猾なる",
-       multipliers: { hp: 1.05, str: 1.1, vit: 1.0, agi: 1.25, dex: 1.35, int: 1.0, exp: 1.2 },
-       effects: { poisonOnHitChance: 0.25, poisonTurns: 3 },
-     },
-     {
-       name: "破壊の",
-       multipliers: { hp: 1.1, str: 1.55, vit: 1.1, agi: 1.0, dex: 1.0, int: 1.0, exp: 1.35 },
-       effects: { armorPierceRate: 0.35 },
-     },
-+    {
-+      name: "執念の",
-+      multipliers: { hp: 1.25, str: 1.1, vit: 1.2, agi: 1.0, dex: 1.0, int: 1.0, exp: 1.25 },
-+      effects: { regenRate: 0.03, enrageBelowHpRate: 0.35, enrageDamageMul: 1.2 },
-+    },
-+    {
-+      name: "雷鳴の",
-+      multipliers: { hp: 1.0, str: 1.05, vit: 1.0, agi: 1.35, dex: 1.1, int: 1.15, exp: 1.25 },
-+      effects: { extraTurnChance: 0.1, alwaysHit: true },
-+    },
-+    {
-+      name: "堅牢なる",
-+      multipliers: { hp: 1.4, str: 1.0, vit: 1.55, agi: 0.9, dex: 1.0, int: 1.0, exp: 1.3 },
-+      effects: { damageReduction: 0.22 },
-+    },
-+    {
-+      name: "呪毒の",
-+      multipliers: { hp: 1.1, str: 1.05, vit: 1.05, agi: 1.1, dex: 1.2, int: 1.1, exp: 1.3 },
-+      effects: { poisonOnHitChance: 0.4, poisonTurns: 4 },
-+    },
-+    {
-+      name: "狂嵐の",
-+      multipliers: { hp: 1.05, str: 1.35, vit: 1.0, agi: 1.3, dex: 1.1, int: 1.0, exp: 1.3 },
-+      effects: { extraTurnChance: 0.08, armorPierceRate: 0.2 },
-+    },
-+    {
-+      name: "賢者の",
-+      multipliers: { hp: 1.1, str: 0.95, vit: 1.05, agi: 1.0, dex: 1.0, int: 1.6, exp: 1.35 },
-+      effects: { preferMagic: true, damageReduction: 0.08 },
-+    },
-   ];
+diff --git a/js/core.js b/js/core.js
+index 2d4d50e8fa5c9bbc738c08e4f6698bbd1950f9de..317d95e24de8233c5cb6e33c9670671be033e0ad 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -1520,52 +1520,52 @@
+       const defPct = Number(getAccessoryBonus("defensePct") || 0);
+       const hpPct = Number(getAccessoryBonus("maxHpPct") || 0);
+       const mpPct = Number(getAccessoryBonus("magicPowerPct") || 0);
+       const healPct = Number(getAccessoryBonus("healPowerPct") || 0);
  
-   // 敵スキル定義
-   // NOTE: 状態異常は core.js の applyOnHitStatuses が受け取って処理する。
-   const enemySkills = {
-     power_strike: {
-       name: "強打",
-       cooldown: 2,
-       kind: "physical",
-       damageMultiplier: 1.6,
-       hitBonus: 10,
-     },
-     multi_slash: {
-       name: "連撃",
-       cooldown: 3,
-       kind: "physical",
-       hits: 2,
-       damageMultiplier: 0.75,
-       hitBonus: 0,
-     },
-     fireball: {
-       name: "火球",
-       cooldown: 2,
-       kind: "magic",
-       damageMultiplier: 1.35,
+       const mul = (pct) => 1 + clamp(Number(pct) || 0, -80, 500) / 100;
+ 
+       if (Number.isFinite(atkPct) && atkPct !== 0) combat.attack *= mul(atkPct);
+       if (Number.isFinite(defPct) && defPct !== 0)
+         combat.defense *= mul(defPct);
+       if (Number.isFinite(hpPct) && hpPct !== 0) combat.maxHp *= mul(hpPct);
+       if (Number.isFinite(mpPct) && mpPct !== 0)
+         combat.magicPower *= mul(mpPct);
+       if (Number.isFinite(healPct) && healPct !== 0)
+         combat.healPower *= mul(healPct);
+     }
+ 
+     // 端数が出ないように丸める
+     combat.attack = Math.round(combat.attack);
+     combat.defense = Math.round(combat.defense);
+     combat.magicPower = Math.round(combat.magicPower);
+     combat.healPower = Math.round(combat.healPower || 0);
+     combat.accuracy = Math.round(combat.accuracy);
+     combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
+     combat.critRate = Math.round(combat.critRate);
+-    // 索敵は 0〜200 に丸める（100以上は二つ名確定に使う）
+-    combat.search = clamp(combat.search, 0, 200);
++    // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
++    combat.search = clamp(combat.search, 0, 150);
+ 
+     // 最大HP更新
+     // 端数が出ないように丸める
+     combat.maxHp = Math.round(combat.maxHp);
+ 
+     gameData.player.maxHp = combat.maxHp;
+     if (gameData.player.hp > gameData.player.maxHp) {
+       gameData.player.hp = gameData.player.maxHp;
+     }
+ 
+     return combat;
+   }
+ 
+   // 装備効果ボーナス取得（装備1/装備2/装飾品の effects を合算）
+   function getAccessoryBonus(type) {
+     let total = 0;
+     const eq = (gameData.player && gameData.player.equipment) || {};
+     const slot1 = eq.slot1 || null;
+     const slot2 = eq.slot2 || null;
+ 
+     const hasWeapon = !!(
+       (slot1 && slot1.category === "weapon") ||
+       (slot2 && slot2.category === "weapon")
+     );
+     const hasArmor = !!(
+@@ -2161,51 +2161,56 @@
+     const search = combat.search;
+ 
+     // フロア補正（常に強くなる）
+     const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
+     enemy.hp = Math.round(enemy.hp * floorMul);
+     enemy.str = Math.round(enemy.str * floorMul);
+     enemy.vit = Math.round(enemy.vit * floorMul);
+     enemy.int = Math.round(enemy.int * floorMul);
+     enemy.agi = Math.round(enemy.agi * floorMul);
+     enemy.dex = Math.round(enemy.dex * floorMul);
+     enemy.exp = Math.round(enemy.exp * floorMul);
+ 
+     // 二つ名判定（索敵が 0 の場合は出ない）
+     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
+     const epithetChance =
+       enemy && enemy.isBoss
+         ? 0
+         : search >= 100
+           ? 1
+           : search > 0
+             ? clamp(search, 0, 100) * 0.01
+             : 0;
+     let epithet = null;
+ 
+     if (Math.random() < epithetChance) {
+-      epithet = epithets[Math.floor(Math.random() * epithets.length)];
++      const availableEpithets = epithets.filter((e) => {
++        const minSearch = Number(e && e.minSearch);
++        return Number.isFinite(minSearch) ? search >= minSearch : true;
++      });
++      const pool = availableEpithets.length > 0 ? availableEpithets : epithets;
++      epithet = pool[Math.floor(Math.random() * pool.length)];
+       enemy.isNamed = true;
+ 
+       // 倍率適用
+       const mul = epithet.multipliers || {};
+       const mulOf = (k) => (typeof mul[k] === "number" ? mul[k] : 1);
+ 
+       enemy.hp = Math.round(enemy.hp * mulOf("hp"));
+       enemy.str = Math.round(enemy.str * mulOf("str"));
+       enemy.vit = Math.round(enemy.vit * mulOf("vit"));
+       enemy.int = Math.round(enemy.int * mulOf("int"));
+       enemy.agi = Math.round(enemy.agi * mulOf("agi"));
+       enemy.dex = Math.round(enemy.dex * mulOf("dex"));
+       enemy.exp = Math.round(enemy.exp * mulOf("exp"));
+ 
+       enemy.epithet = epithet;
+       enemy.effects = epithet.effects || {};
+     } else {
+       enemy.epithet = null;
+       enemy.effects = {};
+     }
+ 
+     // 事前定義の効果を最後にマージ（ボスなど）
+     if (presetEffects && typeof presetEffects === "object") {
+       const keys = Object.keys(presetEffects);
+       if (keys.length > 0) {

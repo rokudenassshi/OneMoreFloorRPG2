@@ -78,6 +78,29 @@
       multipliers: { hp: 1.1, str: 0.95, vit: 1.05, agi: 1.0, dex: 1.0, int: 1.6, exp: 1.35 },
       effects: { preferMagic: true, damageReduction: 0.08 },
     },
+    {
+      name: "星砕きの",
+      minSearch: 150,
+      multipliers: { hp: 2.2, str: 2.1, vit: 1.9, agi: 1.5, dex: 1.55, int: 1.35, exp: 2.7 },
+      effects: {
+        armorPierceRate: 0.45,
+        extraTurnChance: 0.2,
+        enrageBelowHpRate: 0.6,
+        enrageDamageMul: 1.45,
+      },
+    },
+    {
+      name: "終焉招く",
+      minSearch: 150,
+      multipliers: { hp: 2.5, str: 1.7, vit: 2.1, agi: 1.3, dex: 1.45, int: 2.0, exp: 3.0 },
+      effects: {
+        damageReduction: 0.28,
+        regenRate: 0.08,
+        preferMagic: true,
+        poisonOnHitChance: 0.55,
+        poisonTurns: 5,
+      },
+    },
   ];
 
   // 敵スキル定義

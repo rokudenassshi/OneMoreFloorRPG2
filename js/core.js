@@ -1542,8 +1542,8 @@
     combat.accuracy = Math.round(combat.accuracy);
     combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
     combat.critRate = Math.round(combat.critRate);
-    // 索敵は 0〜200 に丸める（100以上は二つ名確定に使う）
-    combat.search = clamp(combat.search, 0, 200);
+    // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
+    combat.search = clamp(combat.search, 0, 150);
 
     // 最大HP更新
     // 端数が出ないように丸める
@@ -2183,7 +2183,12 @@
     let epithet = null;
 
     if (Math.random() < epithetChance) {
-      epithet = epithets[Math.floor(Math.random() * epithets.length)];
+      const availableEpithets = epithets.filter((e) => {
+        const minSearch = Number(e && e.minSearch);
+        return Number.isFinite(minSearch) ? search >= minSearch : true;
+      });
+      const pool = availableEpithets.length > 0 ? availableEpithets : epithets;
+      epithet = pool[Math.floor(Math.random() * pool.length)];
       enemy.isNamed = true;
 
       // 倍率適用
