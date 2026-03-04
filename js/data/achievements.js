@@ -53,6 +53,49 @@
     },
   ];
 
+  // 回避上限を段階的に引き上げる実績
+  // 基本上限70% → 実績で +5% ずつ、最大90%
+  {
+    const evadeMilestones = [
+      {
+        id: "evasion_limit_75",
+        title: "見切りの境地 1",
+        target: 100,
+        bonusCap: 5,
+      },
+      {
+        id: "evasion_limit_80",
+        title: "見切りの境地 2",
+        target: 300,
+        bonusCap: 5,
+      },
+      {
+        id: "evasion_limit_85",
+        title: "見切りの境地 3",
+        target: 700,
+        bonusCap: 5,
+      },
+      {
+        id: "evasion_limit_90",
+        title: "見切りの境地 4",
+        target: 1500,
+        bonusCap: 5,
+      },
+    ];
+
+    evadeMilestones.forEach((ms) => {
+      achievementDefs.push({
+        id: ms.id,
+        title: ms.title,
+        desc: `攻撃を${ms.target}回回避する（ボーナス：回避上限+${ms.bonusCap}%）`,
+        isDone: (p) => Number(p.totalEvades || 0) >= ms.target,
+        progress: (p) =>
+          `${Math.min(Number(p.totalEvades || 0), ms.target)}/${ms.target}`,
+        bonus: { evasionCapBonus: ms.bonusCap },
+      });
+    });
+  }
+
   // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
   // - 境地2以降は段階解放（1クリア後に2、2クリア後に3）
   // - 必要数は段階ごとの追加撃破数（2は+1500、3は+2000）

@@ -1889,6 +1889,12 @@
           ) {
             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
           }
+          if (
+            typeof a.bonus.evasionCapBonus === "number" &&
+            a.bonus.evasionCapBonus > 0
+          ) {
+            parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
+          }
           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
         }
         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
@@ -2090,7 +2096,11 @@
       push(`魔法威力: ${Math.round(combat.magicPower)}`);
       push(`回復力: ${Math.round(combat.healPower || 0)}`);
       push(`命中率: ${Math.round(combat.accuracy)}%`);
-      push(`回避率: ${Math.round(combat.evasion)}%`);
+      const evasionCap =
+        typeof getPlayerEvasionCap === "function"
+          ? Math.round(getPlayerEvasionCap())
+          : 90;
+      push(`回避率: ${Math.round(combat.evasion)}%（上限${evasionCap}%）`);
       push(`クリティカル: ${Math.round(combat.critRate)}%`);
       push(`索敵: ${Math.round(combat.search)}`);
 

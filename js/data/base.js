@@ -22,6 +22,7 @@
       job: "swordsman",
       jobKills: {},
       totalKills: 0,
+      totalEvades: 0,
       namedKills: 0,
       totalPlayTimeMs: 0,
       maxReachedFloor: 1,

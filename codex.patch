@@ -1,134 +1,118 @@
 diff --git a/js/ui.js b/js/ui.js
-index 0d00cee3b3c98c2c73b7e4d1ed213fcaff472a7e..2238a52b45d1e57e1aa4b7495f7cd09e2375f8b1 100644
+index 2238a52b45d1e57e1aa4b7495f7cd09e2375f8b1..37aab0165e611b97b5478f6342ae38ebe735d10c 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1788,61 +1788,76 @@
-     if (!allowed.includes(tab)) tab = "status";
-     currentStatusTab = tab;
+@@ -1867,50 +1867,56 @@
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+       });
  
-     const tabStatus = document.getElementById("tabStatus");
-     const tabAch = document.getElementById("tabAchievements");
-     const tabRec = document.getElementById("tabRecords");
+     const list = rows
+       .filter((row) => !row.done)
+       .concat(rows.filter((row) => row.done));
  
-     if (tabStatus)
-       tabStatus.style.display = tab === "status" ? "block" : "none";
-     if (tabAch)
-       tabAch.style.display = tab === "achievements" ? "block" : "none";
-     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
- 
-     const btnS = document.getElementById("statusTabBtnStatus");
-     const btnA = document.getElementById("statusTabBtnAchievements");
-     const btnR = document.getElementById("statusTabBtnRecords");
-     if (btnS) btnS.classList.toggle("is-active", tab === "status");
-     if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
-     if (btnR) btnR.classList.toggle("is-active", tab === "records");
- 
-     if (tab === "records") {
-       updateRecordsUI();
-     }
-   }
- 
-+  function formatPlayTime(totalMs) {
-+    const ms = Math.max(0, Math.floor(Number(totalMs) || 0));
-+    const totalSeconds = Math.floor(ms / 1000);
-+    const hours = Math.floor(totalSeconds / 3600);
-+    const minutes = Math.floor((totalSeconds % 3600) / 60);
-+    const seconds = totalSeconds % 60;
-+
-+    if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
-+    if (minutes > 0) return `${minutes}分${seconds}秒`;
-+    return `${seconds}秒`;
-+  }
-+
-   function updateRecordsUI() {
-     const elKills = document.getElementById("recordTotalKills");
-     const elMax = document.getElementById("recordMaxDamage");
--    if (!elKills && !elMax) return;
-+    const elPlayTime = document.getElementById("recordPlayTime");
-+    if (!elKills && !elMax && !elPlayTime) return;
- 
-     const p = gameData.player;
-     const totalKills = Number(p.totalKills || 0);
-     const maxDamage = Number(p.maxDamage || 0);
-+    const totalPlayTimeMs = Number(p.totalPlayTimeMs || 0);
- 
-     if (elKills) elKills.textContent = totalKills;
-     if (elMax) elMax.textContent = maxDamage;
-+    if (elPlayTime) elPlayTime.textContent = formatPlayTime(totalPlayTimeMs);
-   }
- 
-   function updateAchievementsUI() {
-     const el = document.getElementById("achievementsContent");
-     if (!el) return;
- 
-     const p = gameData.player;
-     if (!p.achievements || typeof p.achievements !== "object")
-       p.achievements = {};
- 
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
- 
-     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
-     const rows = defs.map((def, idx) => {
-         const done = !!p.achievements[def.id];
-         let progress = "";
-         try {
-           progress = typeof def.progress === "function" ? def.progress(p) : "";
-         } catch (e) {
-           progress = "";
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+           }
++          if (
++            typeof a.bonus.evasionCapBonus === "number" &&
++            a.bonus.evasionCapBonus > 0
++          ) {
++            parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
++          }
+           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
          }
-         return {
-           idx,
-@@ -3038,50 +3053,51 @@
- 
-     // 装備中スキルを解除
-     p.equippedSkills = [null, null];
-     p.equippedSkill = null;
-     p.skillCooldown = 0;
- 
-     // 職業ごとの保存割り振りもリセット
-     p.jobSkillBuilds = {};
- 
-     log("🔄 スキルをリセットした");
-     getCombatStats();
-     updateSkillUI();
-     updateStatusUI();
-     updateSkillButtons();
-     if (typeof requestAutosave === "function") requestAutosave();
+         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+       })
+       .join("");
    }
  
-   // ポップアップ
-   window.showRareEnemyPopup = showRareEnemyPopup;
-   window.showEventPopup = showEventPopup;
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
  
-   // -------------------
-   // グローバル公開
-   // -------------------
-   window.updateUI = updateUI;
-+  window.updateRecordsUI = updateRecordsUI;
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
+     // シリアルコード入力の有効/無効
+     const inputEl = document.getElementById("serialCodeInput");
+     const btnEl = document.getElementById("serialCodeSubmitBtn");
+     const disabled = !!serialCodePending;
+     if (inputEl) inputEl.disabled = disabled;
+     if (btnEl) btnEl.disabled = disabled;
+   }
  
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   function handleSerialCodeKeydown(event) {
+     if (event?.key !== "Enter") return;
+     handleSerialCodeSubmit();
+   }
+ 
+   async function handleSerialCodeSubmit() {
+@@ -2068,51 +2074,55 @@
+       twoHandLock === 1
+         ? "装備2: 空（両手装備中。上書きで切替可）"
+         : slot2
+           ? `装備2: ${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}（装備中）`
+           : "装備2: 空";
+ 
+     document.getElementById("equipAccessorySlot").textContent = acc
+       ? `装飾品（装備中）: ${acc.name}`
+       : "装飾品: 空";
+ 
+     // 計算後ステータス
+     // 得意装備を付けているか（武器/防具のみ）
+     const favoredOn = isEquippedFavored(slot1, slot2, job.favoredType);
+ 
+     {
+       const rows = [];
+       const push = (text) => rows.push(`<div>${text}</div>`);
+ 
+       // 基本（計算後）
+       push(`最大HP: ${Math.round(combat.maxHp)}`);
+       push(`攻撃力: ${Math.round(combat.attack)}`);
+       push(`防御力: ${Math.round(combat.defense)}`);
+       push(`魔法威力: ${Math.round(combat.magicPower)}`);
+       push(`回復力: ${Math.round(combat.healPower || 0)}`);
+       push(`命中率: ${Math.round(combat.accuracy)}%`);
+-      push(`回避率: ${Math.round(combat.evasion)}%`);
++      const evasionCap =
++        typeof getPlayerEvasionCap === "function"
++          ? Math.round(getPlayerEvasionCap())
++          : 90;
++      push(`回避率: ${Math.round(combat.evasion)}%（上限${evasionCap}%）`);
+       push(`クリティカル: ${Math.round(combat.critRate)}%`);
+       push(`索敵: ${Math.round(combat.search)}`);
+ 
+       // 得意装備補正
+       const jobTraits = jobs?.[p.job]?.traits || {};
+       const favoredMult = Number.isFinite(jobTraits.favoredMultiplier)
+         ? jobTraits.favoredMultiplier
+         : 1.2;
+       const favoredPct = Math.round((favoredMult - 1) * 100);
+       push(`得意装備補正: ${favoredOn ? `ON（+${favoredPct}%）` : "OFF"}`);
+ 
+       // 追加効果（0は表示しない）
+       const addBonus = (type, overrideValue = null) => {
+         const v =
+           overrideValue === null
+             ? Number(getAccessoryBonus(type) || 0)
+             : Number(overrideValue);
+         if (!Number.isFinite(v) || v === 0) return;
+         const t = formatEffectText({ type, value: v });
+         if (t) push(t);
+       };
+ 
+       // 経験値は「装備＋スキル＋実績」の合算で表示
+       const expEquip = Math.round(
+         Number(getAccessoryBonus("expBonus") || 0) +

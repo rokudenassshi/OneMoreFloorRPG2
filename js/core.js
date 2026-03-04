@@ -12,6 +12,8 @@
   // 解除したい場合は null にするか、この定義ごと削除してください。
   const TEST_FLOOR_CAP = 250;
   const SERIAL_UNLOCK_STORE_KEY = "omf_serial_unlocks_v1";
+  const BASE_EVASION_CAP = 70;
+  const MAX_EVASION_CAP = 90;
 
   function isFloorCapLiftUnlocked() {
     const p = gameData && gameData.player;
@@ -1514,7 +1516,7 @@
     combat.magicPower = Math.round(combat.magicPower);
     combat.healPower = Math.round(combat.healPower || 0);
     combat.accuracy = Math.round(combat.accuracy);
-    combat.evasion = Math.round(combat.evasion);
+    combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
     combat.critRate = Math.round(combat.critRate);
     // 索敵は 0〜200 に丸める（100以上は二つ名確定に使う）
     combat.search = clamp(combat.search, 0, 200);
@@ -1606,6 +1608,30 @@
     return Math.round(getAchievementExpBonusRate() * 100);
   }
 
+  function getAchievementEvasionCapBonusPercent() {
+    const p = gameData.player;
+    const map =
+      p && p.achievements && typeof p.achievements === "object"
+        ? p.achievements
+        : {};
+    const defs = Array.isArray(window.achievementDefs)
+      ? window.achievementDefs
+      : [];
+    let bonus = 0;
+    for (const def of defs) {
+      if (!def || !def.id || !map[def.id]) continue;
+      const b = def.bonus || {};
+      const v = Number(b.evasionCapBonus || 0);
+      if (Number.isFinite(v) && v > 0) bonus += Math.floor(v);
+    }
+    return bonus;
+  }
+
+  function getPlayerEvasionCap() {
+    const cap = BASE_EVASION_CAP + getAchievementEvasionCapBonusPercent();
+    return clamp(cap, 0, MAX_EVASION_CAP);
+  }
+
   function getAchievementAsuraBaseStatMultiplierBonus() {
     const p = gameData.player;
     const map =
@@ -1695,6 +1721,9 @@
         const b = def.bonus || {};
         if (typeof b.expRate === "number" && b.expRate > 0) {
           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
+        }
+        if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {
+          log(`✨ ボーナス：回避上限+${Math.floor(b.evasionCapBonus)}%`);
         }
 
         // 報酬ログ（任意）
@@ -3780,6 +3809,7 @@
 
     if (!enemyDidHit(0)) {
       addJobProgress("evade", 1);
+      gameData.player.totalEvades = (gameData.player.totalEvades || 0) + 1;
       log(`${enemy.displayName}の攻撃を回避した！`);
       applyEvadeHeal();
       onPlayerEvade();
@@ -3834,6 +3864,7 @@
     const hitBonus = def.hitBonus || 0;
     if (!enemyDidHit(hitBonus)) {
       addJobProgress("evade", 1);
+      gameData.player.totalEvades = (gameData.player.totalEvades || 0) + 1;
       log("しかし攻撃は回避された！");
       applyEvadeHeal();
       onPlayerEvade();
@@ -5149,6 +5180,8 @@
   window.getMaxPlayerBarrier = getMaxPlayerBarrier;
   window.getAchievementExpBonusRate = getAchievementExpBonusRate;
   window.getAchievementExpBonusPercent = getAchievementExpBonusPercent;
+  window.getAchievementEvasionCapBonusPercent = getAchievementEvasionCapBonusPercent;
+  window.getPlayerEvasionCap = getPlayerEvasionCap;
   window.checkAndUnlockAchievements = checkAndUnlockAchievements;
 
   // UI側から呼ぶ用
