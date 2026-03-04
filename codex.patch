@@ -1,235 +1,118 @@
-diff --git a/js/data/enemies.js b/js/data/enemies.js
-index 1a0630f9c9edb917c7f4c1068c8ff1867c1126ec..da2f8152f363f0a566a51b033f9d346fe13c8951 100644
---- a/js/data/enemies.js
-+++ b/js/data/enemies.js
-@@ -56,50 +56,139 @@
-     {
-       name: "雷鳴の",
-       multipliers: { hp: 1.0, str: 1.05, vit: 1.0, agi: 1.35, dex: 1.1, int: 1.15, exp: 1.25 },
-       effects: { extraTurnChance: 0.1, alwaysHit: true },
-     },
-     {
-       name: "堅牢なる",
-       multipliers: { hp: 1.4, str: 1.0, vit: 1.55, agi: 0.9, dex: 1.0, int: 1.0, exp: 1.3 },
-       effects: { damageReduction: 0.22 },
-     },
-     {
-       name: "呪毒の",
-       multipliers: { hp: 1.1, str: 1.05, vit: 1.05, agi: 1.1, dex: 1.2, int: 1.1, exp: 1.3 },
-       effects: { poisonOnHitChance: 0.4, poisonTurns: 4 },
-     },
-     {
-       name: "狂嵐の",
-       multipliers: { hp: 1.05, str: 1.35, vit: 1.0, agi: 1.3, dex: 1.1, int: 1.0, exp: 1.3 },
-       effects: { extraTurnChance: 0.08, armorPierceRate: 0.2 },
-     },
-     {
-       name: "賢者の",
-       multipliers: { hp: 1.1, str: 0.95, vit: 1.05, agi: 1.0, dex: 1.0, int: 1.6, exp: 1.35 },
-       effects: { preferMagic: true, damageReduction: 0.08 },
-     },
-+    {
-+      name: "紅蓮の",
-+      multipliers: { hp: 1.1, str: 1.2, vit: 1.05, agi: 1.05, dex: 1.0, int: 1.2, exp: 1.25 },
-+      effects: {
-+        preferMagic: true,
-+        enrageBelowHpRate: 0.4,
-+        enrageDamageMul: 1.15,
-+        bonusSkills: ["crimson_burst"],
-+      },
-+    },
-+    {
-+      name: "蒼氷の",
-+      multipliers: { hp: 1.15, str: 1.05, vit: 1.15, agi: 1.0, dex: 1.0, int: 1.2, exp: 1.25 },
-+      effects: { damageReduction: 0.1, preferMagic: true, bonusSkills: ["frost_chain"] },
-+    },
-+    {
-+      name: "疾風の",
-+      multipliers: { hp: 1.0, str: 1.1, vit: 1.0, agi: 1.35, dex: 1.2, int: 1.0, exp: 1.2 },
-+      effects: { extraTurnChance: 0.1 },
-+    },
-+    {
-+      name: "緋眼の",
-+      multipliers: { hp: 1.05, str: 1.15, vit: 1.0, agi: 1.15, dex: 1.3, int: 1.05, exp: 1.22 },
-+      effects: { alwaysHit: true },
-+    },
-+    {
-+      name: "暴食の",
-+      multipliers: { hp: 1.3, str: 1.2, vit: 1.15, agi: 0.95, dex: 1.0, int: 1.0, exp: 1.28 },
-+      effects: { regenRate: 0.04, enrageBelowHpRate: 0.35, enrageDamageMul: 1.18 },
-+    },
-+    {
-+      name: "裂爪の",
-+      multipliers: { hp: 1.1, str: 1.35, vit: 1.05, agi: 1.1, dex: 1.2, int: 0.95, exp: 1.26 },
-+      effects: { armorPierceRate: 0.25 },
-+    },
-+    {
-+      name: "黒曜の",
-+      multipliers: { hp: 1.2, str: 1.1, vit: 1.25, agi: 0.95, dex: 1.0, int: 1.0, exp: 1.24 },
-+      effects: { damageReduction: 0.12 },
-+    },
-+    {
-+      name: "白夜の",
-+      multipliers: { hp: 1.05, str: 1.0, vit: 1.05, agi: 1.15, dex: 1.1, int: 1.25, exp: 1.23 },
-+      effects: { preferMagic: true, alwaysHit: true },
-+    },
-+    {
-+      name: "影纏う",
-+      multipliers: { hp: 1.0, str: 1.15, vit: 1.0, agi: 1.3, dex: 1.25, int: 1.0, exp: 1.22 },
-+      effects: {
-+        poisonOnHitChance: 0.22,
-+        poisonTurns: 3,
-+        bonusSkills: ["shadow_fang"],
-+      },
-+    },
-+    {
-+      name: "鉄壁の",
-+      multipliers: { hp: 1.3, str: 0.95, vit: 1.35, agi: 0.9, dex: 1.0, int: 1.0, exp: 1.27 },
-+      effects: { damageReduction: 0.15 },
-+    },
-+    {
-+      name: "黄昏の",
-+      multipliers: { hp: 1.15, str: 1.15, vit: 1.1, agi: 1.05, dex: 1.05, int: 1.15, exp: 1.24 },
-+      effects: { enrageBelowHpRate: 0.45, enrageDamageMul: 1.2 },
-+    },
-+    {
-+      name: "暁光の",
-+      multipliers: { hp: 1.1, str: 1.0, vit: 1.05, agi: 1.15, dex: 1.1, int: 1.25, exp: 1.24 },
-+      effects: { preferMagic: true, extraTurnChance: 0.08 },
-+    },
-+    {
-+      name: "猛毒の",
-+      multipliers: { hp: 1.1, str: 1.05, vit: 1.05, agi: 1.1, dex: 1.15, int: 1.1, exp: 1.26 },
-+      effects: { poisonOnHitChance: 0.35, poisonTurns: 4 },
-+    },
-+    {
-+      name: "迅雷の",
-+      multipliers: { hp: 1.0, str: 1.15, vit: 1.0, agi: 1.3, dex: 1.15, int: 1.05, exp: 1.24 },
-+      effects: { extraTurnChance: 0.12, alwaysHit: true, bonusSkills: ["lightning_pierce"] },
-+    },
-+    {
-+      name: "荒波の",
-+      multipliers: { hp: 1.2, str: 1.2, vit: 1.1, agi: 1.0, dex: 1.0, int: 1.05, exp: 1.23 },
-+      effects: { armorPierceRate: 0.2, enrageBelowHpRate: 0.4, enrageDamageMul: 1.15 },
-+    },
-+    {
-+      name: "霊峰の",
-+      multipliers: { hp: 1.2, str: 1.0, vit: 1.2, agi: 0.95, dex: 1.0, int: 1.2, exp: 1.25 },
-+      effects: { damageReduction: 0.1, preferMagic: true },
-+    },
-     {
-       name: "星砕きの",
-       minSearch: 150,
-       multipliers: { hp: 2.8, str: 2.55, vit: 2.25, agi: 1.85, dex: 1.9, int: 1.7, exp: 3.6 },
-       effects: {
-         armorPierceRate: 0.45,
-         extraTurnChance: 0.2,
-         enrageBelowHpRate: 0.6,
-         enrageDamageMul: 1.45,
-         bonusSkills: ["void_reaver"],
-       },
-     },
-     {
-       name: "終焉招く",
-       minSearch: 150,
-       multipliers: { hp: 3.1, str: 2.15, vit: 2.7, agi: 1.65, dex: 1.8, int: 2.55, exp: 3.9 },
-       effects: {
-         damageReduction: 0.28,
-         regenRate: 0.08,
-         preferMagic: true,
-         poisonOnHitChance: 0.55,
-         poisonTurns: 5,
-         bonusSkills: ["abyss_nova"],
-       },
-     },
-@@ -409,50 +498,90 @@
-       vulnerableRate: 0.25,
-     },
-     abyss_nova: {
-       name: "深淵の星爆",
-       cooldown: 5,
-       kind: "magic",
-       damageMultiplier: 1.42,
-       hitBonus: 18,
-       burnChance: 0.35,
-       burnTurns: 7,
-       silenceChance: 0.25,
-       silenceTurns: 1,
-     },
-     soul_drain: {
-       name: "魂蝕",
-       cooldown: 6,
-       kind: "debuff",
-       silenceChance: 1.0,
-       silenceTurns: 1,
-       accuracyDownTurns: 2,
-       accuracyDownRate: 0.2,
-       vulnerableChance: 0.45,
-       vulnerableTurns: 2,
-       vulnerableRate: 0.2,
-     },
-+    crimson_burst: {
-+      name: "紅蓮爆ぜ",
-+      cooldown: 4,
-+      kind: "magic",
-+      damageMultiplier: 1.3,
-+      hitBonus: 12,
-+      burnChance: 0.32,
-+      burnTurns: 6,
-+    },
-+    frost_chain: {
-+      name: "氷鎖",
-+      cooldown: 4,
-+      kind: "magic",
-+      damageMultiplier: 1.15,
-+      hitBonus: 14,
-+      slowChance: 0.42,
-+      slowTurns: 2,
-+      slowRate: 0.28,
-+    },
-+    shadow_fang: {
-+      name: "影牙",
-+      cooldown: 4,
-+      kind: "physical",
-+      damageMultiplier: 1.2,
-+      hitBonus: 10,
-+      poisonChance: 0.3,
-+      poisonTurns: 3,
-+      vulnerableChance: 0.2,
-+      vulnerableTurns: 2,
-+      vulnerableRate: 0.2,
-+    },
-+    lightning_pierce: {
-+      name: "迅雷刺",
-+      cooldown: 4,
-+      kind: "physical",
-+      damageMultiplier: 1.24,
-+      hitBonus: 16,
-+      stunChance: 0.2,
-+      stunTurns: 1,
-+    },
-   };
+diff --git a/js/core.js b/js/core.js
+index e00da52c97aa2af6cda5ce592f76bdd34a5d4db5..3b977d6dee986c64a82969f6cf85010f2433a670 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -5088,85 +5088,110 @@
+     let optionCount = 0;
  
-   // モンスター定義
-   // minFloor / maxFloor: 出現レンジ
-   // skills: 敵が使うスキル（enemySkills の id）
-   const monsterTypes = [
-     // --------------------
-     // 0〜100F
-     // --------------------
-     { name: "スライム", hp: 55, str: 5, vit: 3, int: 1, agi: 2, dex: 3, exp: 22, minFloor: 1, maxFloor: 100, skills: ["multi_slash"] },
-     { name: "コウモリ", hp: 60, str: 6, vit: 3, int: 2, agi: 10, dex: 8, exp: 26, minFloor: 1, maxFloor: 100, skills: ["multi_slash"] },
-     { name: "ゴブリン", hp: 85, str: 8, vit: 5, int: 2, agi: 6, dex: 7, exp: 35, minFloor: 1, maxFloor: 100, skills: ["power_strike", "roar"] },
-     { name: "コボルド", hp: 95, str: 9, vit: 5, int: 2, agi: 8, dex: 9, exp: 40, minFloor: 3, maxFloor: 100, skills: ["power_strike"] },
-     { name: "ウルフ", hp: 110, str: 10, vit: 7, int: 2, agi: 12, dex: 9, exp: 46, minFloor: 5, maxFloor: 100, skills: ["multi_slash", "bite_poison"] },
-     { name: "スケルトン", hp: 130, str: 11, vit: 9, int: 3, agi: 6, dex: 8, exp: 55, minFloor: 8, maxFloor: 100, skills: ["power_strike"] },
-     { name: "盗賊", hp: 120, str: 10, vit: 7, int: 3, agi: 14, dex: 14, exp: 60, minFloor: 10, maxFloor: 100, skills: ["multi_slash", "roar"] },
-     { name: "オーク", hp: 170, str: 14, vit: 12, int: 3, agi: 5, dex: 6, exp: 70, minFloor: 15, maxFloor: 100, skills: ["power_strike", "crushing_blow"] },
-     { name: "ハーピー", hp: 155, str: 12, vit: 10, int: 6, agi: 16, dex: 12, exp: 75, minFloor: 18, maxFloor: 100, skills: ["roar", "ice_lance"] },
-     { name: "リザードマン", hp: 190, str: 15, vit: 13, int: 4, agi: 9, dex: 9, exp: 85, minFloor: 22, maxFloor: 100, skills: ["bite_poison", "power_strike"] },
-     { name: "トロール", hp: 280, str: 18, vit: 16, int: 3, agi: 4, dex: 5, exp: 110, minFloor: 28, maxFloor: 100, skills: ["heal", "crushing_blow"] },
-     { name: "ダークエルフ", hp: 220, str: 12, vit: 11, int: 18, agi: 14, dex: 13, exp: 120, minFloor: 32, maxFloor: 100, skills: ["fireball", "ice_lance", "multi_slash"] },
-     { name: "サソリ", hp: 240, str: 16, vit: 14, int: 3, agi: 10, dex: 10, exp: 125, minFloor: 40, maxFloor: 100, skills: ["toxic_spit", "bite_poison"] },
-     { name: "ゴーレム", hp: 380, str: 18, vit: 22, int: 2, agi: 3, dex: 6, exp: 150, minFloor: 55, maxFloor: 100, skills: ["crushing_blow"] },
-     { name: "リッチ", hp: 330, str: 10, vit: 14, int: 30, agi: 8, dex: 11, exp: 180, minFloor: 65, maxFloor: 100, skills: ["fireball", "ice_lance", "heal"] },
-     { name: "ミノタウロス", hp: 420, str: 24, vit: 20, int: 4, agi: 9, dex: 10, exp: 190, minFloor: 80, maxFloor: 100, skills: ["power_strike", "roar", "crushing_blow"] },
+     if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+     if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
+ 
+     // アクセサリー：効果数＝オプション数（effects と同じ）
+     if (category === "accessory") {
+       optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
+       // 念のため、randomOptionDetails を effects と同期
+       item.randomOptionDetails = (
+         Array.isArray(item.effects) ? item.effects : []
+       ).map((eff) => ({ kind: "effect", effect: eff }));
+       item.randomOptions = optionCount;
+     } else {
+       // 武器/防具：追加で付く強化/効果の回数をオプション数として扱う
+       optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
+ 
+       // 付与された内訳を列挙する（UI用）
+       item.randomOptionDetails = [];
+ 
+       // 武器/防具に付く効果系オプションは「装備品用テーブル」から選ぶ
+       const srcEffects = Array.isArray(window.equipmentOptionEffects)
+         ? window.equipmentOptionEffects
+         : [];
+       const equipmentEffectPool = Array.isArray(srcEffects) ? srcEffects : [];
++      let lastRolledOptionValue = null;
++
++      const rerollIfSameAsPrevious = (rollFn, maxRetry = 3) => {
++        let value = rollFn();
++        for (let i = 0; i < maxRetry && lastRolledOptionValue != null && value === lastRolledOptionValue; i++) {
++          value = rollFn();
++        }
++        lastRolledOptionValue = value;
++        return value;
++      };
++
++      const rollStatDelta = () => {
++        const base = Math.max(1, Math.round(statBase * 0.1));
++        const spread = Math.max(2, Math.round(statBase * 0.08));
++        return rerollIfSameAsPrevious(
++          () => base + Math.floor(Math.random() * (spread + 1)),
++          4,
++        );
++      };
+ 
+       for (let i = 0; i < optionCount; i++) {
+         if (Math.random() < 0.5) {
+           /** @type {Record<string, number>} */
+           const deltas = {};
+           if (item.attack) {
+-            const d = Math.round(statBase * 0.12);
++            const d = rollStatDelta();
+             item.attack += d;
+             deltas.attack = d;
+           }
+           if (item.defense) {
+-            const d = Math.round(statBase * 0.12);
++            const d = rollStatDelta();
+             item.defense += d;
+             deltas.defense = d;
+           }
+           if (Object.keys(deltas).length) {
+             item.randomOptionDetails.push({ kind: "stat", deltas });
+           } else {
+             // 保険：何も増えない場合でも、オプション回数としてはカウントする
+             item.randomOptionDetails.push({ kind: "stat", deltas: {} });
+           }
+         } else {
+           if (!item.effects) item.effects = [];
+           const pool = equipmentEffectPool.length
+             ? equipmentEffectPool
+             : srcEffects;
+           if (!pool.length) continue;
+           const eff =
+             pickWeighted(pool, (e) =>
+               getEquipmentEffectWeight(category, item.type, e.type),
+             ) || pool[Math.floor(Math.random() * pool.length)];
+           const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
++          const baseValue = Math.max(1, Math.round((Number(scaledEff.value) || 0) * 0.5));
++          const variance = Math.max(1, Math.round(baseValue * 0.3));
++          const value = rerollIfSameAsPrevious(
++            () => clamp(baseValue + Math.floor(Math.random() * (variance * 2 + 1)) - variance, 1, 9999),
++            4,
++          );
+           const finalEff = {
+             ...scaledEff,
+-            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
++            value,
+           };
+           item.effects.push(finalEff);
+           item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
+         }
+       }
+ 
+       item.randomOptions = item.randomOptionDetails.length;
+     }
+ 
+     // 装備名（ベース名）は、数値レンジに応じて変化させる
+     // - 特殊接頭語がある場合は、ここでまとめて先頭に付ける
+     if (category !== "accessory") {
+       const tiered = buildTieredBaseName(item, type.name);
+       item.baseName = tiered;
+       item.name = tiered;
+       if (
+         item._specialPrefixName &&
+         typeof item._specialPrefixName === "string"
+       ) {
+         item.name = `${item._specialPrefixName}${tiered}`;
+       }
+     } else {
+       // アクセサリー名を「短く・分かりやすく」する（効果を先頭に出す）
+       item.baseName = type.name;
+ 

@@ -5110,18 +5110,37 @@
         ? window.equipmentOptionEffects
         : [];
       const equipmentEffectPool = Array.isArray(srcEffects) ? srcEffects : [];
+      let lastRolledOptionValue = null;
+
+      const rerollIfSameAsPrevious = (rollFn, maxRetry = 3) => {
+        let value = rollFn();
+        for (let i = 0; i < maxRetry && lastRolledOptionValue != null && value === lastRolledOptionValue; i++) {
+          value = rollFn();
+        }
+        lastRolledOptionValue = value;
+        return value;
+      };
+
+      const rollStatDelta = () => {
+        const base = Math.max(1, Math.round(statBase * 0.1));
+        const spread = Math.max(2, Math.round(statBase * 0.08));
+        return rerollIfSameAsPrevious(
+          () => base + Math.floor(Math.random() * (spread + 1)),
+          4,
+        );
+      };
 
       for (let i = 0; i < optionCount; i++) {
         if (Math.random() < 0.5) {
           /** @type {Record<string, number>} */
           const deltas = {};
           if (item.attack) {
-            const d = Math.round(statBase * 0.12);
+            const d = rollStatDelta();
             item.attack += d;
             deltas.attack = d;
           }
           if (item.defense) {
-            const d = Math.round(statBase * 0.12);
+            const d = rollStatDelta();
             item.defense += d;
             deltas.defense = d;
           }
@@ -5142,9 +5161,15 @@
               getEquipmentEffectWeight(category, item.type, e.type),
             ) || pool[Math.floor(Math.random() * pool.length)];
           const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
+          const baseValue = Math.max(1, Math.round((Number(scaledEff.value) || 0) * 0.5));
+          const variance = Math.max(1, Math.round(baseValue * 0.3));
+          const value = rerollIfSameAsPrevious(
+            () => clamp(baseValue + Math.floor(Math.random() * (variance * 2 + 1)) - variance, 1, 9999),
+            4,
+          );
           const finalEff = {
             ...scaledEff,
-            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
+            value,
           };
           item.effects.push(finalEff);
           item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
