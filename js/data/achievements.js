@@ -62,24 +62,28 @@
         title: "見切りの境地 1",
         target: 100,
         bonusCap: 5,
+        unlockAfterId: null,
       },
       {
         id: "evasion_limit_80",
         title: "見切りの境地 2",
         target: 300,
         bonusCap: 5,
+        unlockAfterId: "evasion_limit_75",
       },
       {
         id: "evasion_limit_85",
         title: "見切りの境地 3",
         target: 700,
         bonusCap: 5,
+        unlockAfterId: "evasion_limit_80",
       },
       {
         id: "evasion_limit_90",
         title: "見切りの境地 4",
         target: 1500,
         bonusCap: 5,
+        unlockAfterId: "evasion_limit_85",
       },
     ];
 
@@ -88,7 +92,16 @@
         id: ms.id,
         title: ms.title,
         desc: `攻撃を${ms.target}回回避する（ボーナス：回避上限+${ms.bonusCap}%）`,
-        isDone: (p) => Number(p.totalEvades || 0) >= ms.target,
+        isVisible: (p) =>
+          !ms.unlockAfterId ||
+          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
+        isDone: (p) => {
+          const unlocked =
+            !ms.unlockAfterId ||
+            !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          if (!unlocked) return false;
+          return Number(p.totalEvades || 0) >= ms.target;
+        },
         progress: (p) =>
           `${Math.min(Number(p.totalEvades || 0), ms.target)}/${ms.target}`,
         bonus: { evasionCapBonus: ms.bonusCap },

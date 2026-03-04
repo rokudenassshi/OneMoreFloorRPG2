@@ -1851,7 +1851,15 @@
       : [];
 
     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
-    const rows = defs.map((def, idx) => {
+    const rows = defs
+      .filter((def) => {
+        try {
+          return typeof def.isVisible !== "function" || !!def.isVisible(p);
+        } catch (e) {
+          return true;
+        }
+      })
+      .map((def, idx) => {
         const done = !!p.achievements[def.id];
         let progress = "";
         try {
