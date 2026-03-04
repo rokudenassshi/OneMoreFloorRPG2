@@ -1,8 +1,22 @@
 diff --git a/js/data/equipment_special_prefix.js b/js/data/equipment_special_prefix.js
-index 26b4f0179b170eb388915b04b5e79e6b329a1994..1e97aea2b0ff1d35e9bbe6243baf68c0d96e0bdc 100644
+index 1e97aea2b0ff1d35e9bbe6243baf68c0d96e0bdc..f5af983b4a249fb95341876399967371806daa0f 100644
 --- a/js/data/equipment_special_prefix.js
 +++ b/js/data/equipment_special_prefix.js
-@@ -538,81 +538,90 @@
+@@ -524,57 +524,57 @@
+         `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+     },
+     {
+       name: "不動の",
+       rarity: "legendary",
+       effects: [
+         { type: "statPct", stat: "defense", min: 12, max: 20 },
+         { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
+         { type: "bonusPct", key: "ailmentResist", min: 18, max: 35 },
+       ],
+       describe: (r) =>
+         `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)}`,
+     },
+ 
      {
        name: "生還者の",
        rarity: "legendary",
@@ -14,13 +28,15 @@ index 26b4f0179b170eb388915b04b5e79e6b329a1994..1e97aea2b0ff1d35e9bbe6243baf68c0
    // -------------------
    // 付与確率・レア度補正
    // -------------------
-   const SPECIAL_PREFIX_ATTACH_CHANCE = 0.01; // 1%（階層無関係）
+-  const SPECIAL_PREFIX_ATTACH_CHANCE = 0.01; // 1%（階層無関係）
++  const SPECIAL_PREFIX_ATTACH_CHANCE = 0.001; // 0.1%（階層無関係）
  
    // 接頭語レア度が高いほど出にくい（weightに掛ける）
    const PREFIX_RARITY_WEIGHT_MULT = {
      rare: 1.0,
      epic: 0.35,
-     legendary: 0.12,
+-    legendary: 0.12,
++    legendary: 0.08,
    };
  
    /**
@@ -28,8 +44,7 @@ index 26b4f0179b170eb388915b04b5e79e6b329a1994..1e97aea2b0ff1d35e9bbe6243baf68c0
     * @param {"common"|"uncommon"|"rare"|"epic"|"legendary"} itemRarity
     * @param {"weapon"|"armor"|"accessory"} category
     * @param {string} typeKey
--   * @param {{forceRarity?: "rare"|"epic"|"legendary"}} [options]
-+   * @param {{forceRarity?: "rare"|"epic"|"legendary", forceRarityPool?: Array<"rare"|"epic"|"legendary">}} [options]
+    * @param {{forceRarity?: "rare"|"epic"|"legendary", forceRarityPool?: Array<"rare"|"epic"|"legendary">}} [options]
     */
    function rollSpecialPrefix(itemRarity, category, typeKey, options) {
      if (category !== "weapon" && category !== "armor") return null;
@@ -38,62 +53,12 @@ index 26b4f0179b170eb388915b04b5e79e6b329a1994..1e97aea2b0ff1d35e9bbe6243baf68c0
        options && typeof options.forceRarity === "string"
          ? options.forceRarity
          : null;
-+    const forceRarityPool =
-+      options && Array.isArray(options.forceRarityPool)
-+        ? options.forceRarityPool.filter(
-+            (r) => r === "rare" || r === "epic" || r === "legendary",
-+          )
-+        : null;
-+    const hasForcedPool = !!(forceRarityPool && forceRarityPool.length > 0);
+     const forceRarityPool =
+       options && Array.isArray(options.forceRarityPool)
+         ? options.forceRarityPool.filter(
+             (r) => r === "rare" || r === "epic" || r === "legendary",
+           )
+         : null;
+     const hasForcedPool = !!(forceRarityPool && forceRarityPool.length > 0);
  
--    if (!forceRarity && Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
-+    if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
- 
-     // 武器/防具とも「装備レア度に関係なく」接頭語テーブル全体から抽選できる
-     // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）
-     const allowed = new Set(["rare", "epic", "legendary"]);
- 
-     const poolBase = [
-       ...SPECIAL_PREFIXES_COMMON,
-       ...(category === "weapon"
-         ? SPECIAL_PREFIXES_WEAPON
-         : SPECIAL_PREFIXES_ARMOR),
-     ];
- 
-     // レア度で絞る
-     const candidates = poolBase.filter((p) => allowed.has(p.rarity));
- 
-     if (!candidates.length) return null;
- 
-     // まず rarity を抽選（候補がある rarity のみ）
--    const rarityKeys = ["rare", "epic", "legendary"].filter((r) =>
--      candidates.some((p) => p.rarity === r),
-+    const rarityKeys = ["rare", "epic", "legendary"].filter(
-+      (r) =>
-+        candidates.some((p) => p.rarity === r) &&
-+        (!hasForcedPool || forceRarityPool.includes(r)),
-     );
- 
-     const pickedRarity =
-       forceRarity && rarityKeys.includes(forceRarity)
-         ? forceRarity
-         : pickWeighted(rarityKeys, (r) => {
-             return PREFIX_RARITY_WEIGHT_MULT[r] || 1.0;
-           });
- 
-     if (!pickedRarity) return null;
- 
-     // 抽選された rarity の中から均等に 1つ選ぶ（各接頭語 weight は使わない）
-     const rarityPool = candidates.filter((p) => p.rarity === pickedRarity);
-     const picked = rarityPool[Math.floor(Math.random() * rarityPool.length)];
- 
-     if (!picked) return null;
- 
-     // 返すときはコピー
-     return { ...picked, _category: category, _typeKey: typeKey };
-   }
- 
-   /**
-    * 特殊接頭語の効果を装備に適用する
-    * - ランダムオプションと差別化：固有効果は主に「%（乗算）」として適用
-    * @param {object} item
+     if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;

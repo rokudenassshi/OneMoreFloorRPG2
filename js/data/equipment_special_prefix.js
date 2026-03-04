@@ -546,13 +546,13 @@
   // -------------------
   // 付与確率・レア度補正
   // -------------------
-  const SPECIAL_PREFIX_ATTACH_CHANCE = 0.01; // 1%（階層無関係）
+  const SPECIAL_PREFIX_ATTACH_CHANCE = 0.001; // 0.1%（階層無関係）
 
   // 接頭語レア度が高いほど出にくい（weightに掛ける）
   const PREFIX_RARITY_WEIGHT_MULT = {
     rare: 1.0,
     epic: 0.35,
-    legendary: 0.12,
+    legendary: 0.08,
   };
 
   /**
