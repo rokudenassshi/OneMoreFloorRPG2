@@ -133,15 +133,16 @@
 
   function tickPlayTime() {
     const p = gameData && gameData.player;
-    if (!p || typeof p !== "object") return;
+    if (!p || typeof p !== "object") return 0;
     ensurePlayTimeConfig(p);
 
     const now = Date.now();
     const elapsed = now - lastPlayTimeTickAt;
     lastPlayTimeTickAt = now;
 
-    if (!Number.isFinite(elapsed) || elapsed <= 0) return;
+    if (!Number.isFinite(elapsed) || elapsed <= 0) return 0;
     p.totalPlayTimeMs += elapsed;
+    return elapsed;
   }
 
   function normalizeValuables(p) {
@@ -306,6 +307,7 @@
   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
   const AUTOSAVE_INTERVAL_MS = 2500;
+  const PLAYTIME_AUTOSAVE_STEP_MS = 15000;
 
   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
@@ -323,6 +325,7 @@
 
   function setAutosaveEnabled(v) {
     autosaveEnabled = !!v;
+    if (autosaveEnabled) autosaveDirty = true;
     try {
       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
     } catch (e) {}
@@ -358,6 +361,8 @@
   }
 
   let pendingAutosaveTimer = null;
+  let autosaveDirty = true;
+  let unsavedPlayTimeMs = 0;
 
   function buildSavePayload() {
     const payload = {
@@ -417,13 +422,16 @@
   function saveGameNow() {
     try {
       if (!autosaveEnabled) return;
+      if (!autosaveDirty) return;
       const payload = buildSavePayload();
       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      autosaveDirty = false;
     } catch (e) {}
   }
 
   function requestAutosave() {
     if (!autosaveEnabled) return;
+    autosaveDirty = true;
     if (pendingAutosaveTimer) return;
     pendingAutosaveTimer = setTimeout(() => {
       pendingAutosaveTimer = null;
@@ -561,9 +569,25 @@
     }
 
     setInterval(() => {
-      tickPlayTime();
+      const elapsed = tickPlayTime();
+      if (elapsed > 0) {
+        unsavedPlayTimeMs += elapsed;
+        if (unsavedPlayTimeMs >= PLAYTIME_AUTOSAVE_STEP_MS) {
+          autosaveDirty = true;
+          unsavedPlayTimeMs = 0;
+        }
+      }
       saveGameNow();
-      if (typeof updateRecordsUI === "function") updateRecordsUI();
+      if (typeof updateRecordsUI === "function") {
+        const statusScreenEl = document.getElementById("statusScreen");
+        const recordsTabEl = document.getElementById("tabRecords");
+        const recordsVisible =
+          !!statusScreenEl &&
+          !!recordsTabEl &&
+          statusScreenEl.style.display === "block" &&
+          recordsTabEl.style.display === "block";
+        if (recordsVisible) updateRecordsUI();
+      }
     }, AUTOSAVE_INTERVAL_MS);
 
     applyUrlActions();

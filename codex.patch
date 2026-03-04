@@ -1,58 +1,307 @@
 diff --git a/js/core.js b/js/core.js
-index 421d2c5273486d162640fa633fdcbba9f702e25f..20b7e20d298729eac7dd2a0aeb1b241cdef188df 100644
+index 20b7e20d298729eac7dd2a0aeb1b241cdef188df..2d4d50e8fa5c9bbc738c08e4f6698bbd1950f9de 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -1676,50 +1676,53 @@
-       if (Array.isArray(r.valuables)) {
-         for (const v of r.valuables) {
-           let id = "";
-           let amount = 1;
-           if (typeof v === "string") {
-             id = v;
-           } else if (v && typeof v === "object") {
-             id = typeof v.id === "string" ? v.id : "";
-             const a = Number(v.amount);
-             if (Number.isFinite(a) && a > 0) amount = Math.floor(a);
-           }
-           if (!id) continue;
-           const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
-           if (!defRelic) continue;
-           addValuableByDef(defRelic, amount);
-         }
+@@ -111,59 +111,60 @@
  
-         // 報酬は1回だけ
-         if (claimedMap && def.id) claimedMap[def.id] = true;
+   function ensureAutoAllocateExpUpConfig(p) {
+     if (!p || typeof p !== "object") return;
+     p.autoAllocateExpUp = !!p.autoAllocateExpUp;
+   }
+ 
+   function ensureAutoAllocateStatPointsConfig(p) {
+     if (!p || typeof p !== "object") return;
+     p.autoAllocateStatPoints = !!p.autoAllocateStatPoints;
+ 
+     const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
+     const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
+     p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
+   }
+ 
+   function ensurePlayTimeConfig(p) {
+     if (!p || typeof p !== "object") return;
+     const ms = Number(p.totalPlayTimeMs || 0);
+     p.totalPlayTimeMs = Number.isFinite(ms) && ms > 0 ? Math.floor(ms) : 0;
+   }
+ 
+   let lastPlayTimeTickAt = Date.now();
+ 
+   function tickPlayTime() {
+     const p = gameData && gameData.player;
+-    if (!p || typeof p !== "object") return;
++    if (!p || typeof p !== "object") return 0;
+     ensurePlayTimeConfig(p);
+ 
+     const now = Date.now();
+     const elapsed = now - lastPlayTimeTickAt;
+     lastPlayTimeTickAt = now;
+ 
+-    if (!Number.isFinite(elapsed) || elapsed <= 0) return;
++    if (!Number.isFinite(elapsed) || elapsed <= 0) return 0;
+     p.totalPlayTimeMs += elapsed;
++    return elapsed;
+   }
+ 
+   function normalizeValuables(p) {
+     ensureValuables(p);
+     p.valuables = p.valuables
+       .filter((v) => v && typeof v === "object")
+       .map((v) => {
+         const id = typeof v.id === "string" ? v.id : "";
+         const def = RELIC_DEFS.find((d) => d.id === id) || null;
+         const count = Number(v.count || 0);
+         return {
+           id: def ? def.id : id,
+           name:
+             typeof v.name === "string" && v.name
+               ? v.name
+               : def
+                 ? def.name
+                 : "貴重品",
+           statKey:
+             typeof v.statKey === "string" && v.statKey
+               ? v.statKey
+               : def
+                 ? def.statKey
+                 : "",
+           count: Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0,
+@@ -284,102 +285,106 @@
+ 
+   /**
+    * 現在の「スケーリング用」階層を返す。
+    * 戦闘中で battleFloor がある場合は battleFloor を使う。
+    * @returns {number}
+    */
+   function getScalingFloor() {
+     const bf = Number(gameData && gameData.battleFloor);
+     if (
+       gameData &&
+       gameData.gameState === "BATTLE" &&
+       Number.isFinite(bf) &&
+       bf > 0
+     )
+       return bf;
+     const f = Number(gameData && gameData.floor);
+     return Number.isFinite(f) && f > 0 ? f : 1;
+   }
+ 
+   // -------------------
+   // オートセーブ
+   // -------------------
+   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
+   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
+   const AUTOSAVE_INTERVAL_MS = 2500;
++  const PLAYTIME_AUTOSAVE_STEP_MS = 15000;
+ 
+   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
+   const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+   let autosaveEnabled = true;
+ 
+   function isAutosaveEnabled() {
+     try {
+       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
+       if (raw == null) return true;
+       return raw === "1";
+     } catch (e) {
+       return true;
+     }
+   }
+ 
+   function setAutosaveEnabled(v) {
+     autosaveEnabled = !!v;
++    if (autosaveEnabled) autosaveDirty = true;
+     try {
+       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
+     } catch (e) {}
+   }
+ 
+   function applyPendingImportIfAny() {
+     const payload = localStorage.getItem(PENDING_IMPORT_KEY);
+     if (!payload) return;
+ 
+     try {
+       const parsed = JSON.parse(payload);
+       const storage = parsed?.storage;
+ 
+       if (!storage || typeof storage !== "object") {
+         localStorage.removeItem(PENDING_IMPORT_KEY);
+         return;
        }
-     };
  
-     for (const def of defs) {
-       if (!def || !def.id || typeof def.isDone !== "function") continue;
-       const already = !!p.achievements[def.id];
-+      try {
-+        if (typeof def.onCheck === "function") def.onCheck(p);
-+      } catch (e) {}
-       let done = false;
+       // ここで確実に上書き
+       localStorage.clear();
+       for (const [k, v] of Object.entries(storage)) {
+         if (typeof k !== "string") continue;
+         localStorage.setItem(k, v == null ? "" : String(v));
+       }
+     } catch (e) {
+       // 壊れてたら無視
+     } finally {
+       // clearで消えてる可能性があるので最後にremove
        try {
-         done = !!def.isDone(p);
-       } catch (e) {
-         done = false;
+         localStorage.removeItem(PENDING_IMPORT_KEY);
+       } catch (e) {}
+     }
+   }
+ 
+   let pendingAutosaveTimer = null;
++  let autosaveDirty = true;
++  let unsavedPlayTimeMs = 0;
+ 
+   function buildSavePayload() {
+     const payload = {
+       schema: SAVE_SCHEMA,
+       savedAt: new Date().toISOString(),
+       floor: gameData.floor,
+       gameState: gameData.gameState,
+       player: gameData.player,
+       enemy: gameData.enemy,
+       battleFloor: gameData.battleFloor || null,
+       pendingFloorAfterWin: gameData.pendingFloorAfterWin || null,
+     };
+     return JSON.parse(JSON.stringify(payload));
+   }
+ 
+   function applySavePayload(payload) {
+     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
+ 
+     gameData.floor = clampFloor(payload.floor || 1);
+     gameData.gameState = payload.gameState || "EXPLORE";
+     gameData.player = payload.player || gameData.player;
+     gameData.enemy = payload.enemy || null;
+     gameData.battleFloor =
+       payload.battleFloor != null ? payload.battleFloor : null;
+     gameData.pendingFloorAfterWin =
+@@ -395,57 +400,60 @@
+ 
+     // テスト上限を越えたセーブが来ても破綻しないように丸める
+     try {
+       if (gameData && gameData.player) {
+         gameData.player.maxReachedFloor = clampFloor(
+           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
+         );
        }
-       if (done && !already) {
-         p.achievements[def.id] = true;
-         unlockedNow.push(def);
+       if (Number.isFinite(Number(gameData.battleFloor))) {
+         gameData.battleFloor = clampFloor(gameData.battleFloor);
        }
+       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+         gameData.pendingFloorAfterWin = clampFloor(
+           gameData.pendingFloorAfterWin,
+         );
+       }
+     } catch (e) {
+       // no-op
+     }
+     return true;
+   }
+ 
+   function saveGameNow() {
+     try {
+       if (!autosaveEnabled) return;
++      if (!autosaveDirty) return;
+       const payload = buildSavePayload();
+       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
++      autosaveDirty = false;
+     } catch (e) {}
+   }
+ 
+   function requestAutosave() {
+     if (!autosaveEnabled) return;
++    autosaveDirty = true;
+     if (pendingAutosaveTimer) return;
+     pendingAutosaveTimer = setTimeout(() => {
+       pendingAutosaveTimer = null;
+       saveGameNow();
+     }, 300);
+   }
+ 
+   function loadGameIfExists() {
+     try {
+       const raw = localStorage.getItem(SAVE_KEY);
+       if (!raw) return false;
+       const payload = JSON.parse(raw);
+       return applySavePayload(payload);
+     } catch (e) {
+       return false;
+     }
+   }
+ 
+   // -------------------
+   // 装備UID（永続化用）
+   // ※ロード時の互換補正は行わない（リリース前のため）
+   // -------------------
+   let uidSeed = 0;
+ 
+   function generateUid() {
+@@ -539,53 +547,69 @@
+     __initDone = true;
+ 
+     // UI参照
+     gameData.battleButtons = document.getElementById("battleButtons");
+     gameData.exploreButtons = document.getElementById("exploreButtons");
+ 
+     applyPendingImportIfAny();
+     autosaveEnabled = isAutosaveEnabled();
+ 
+     ensureAutoSellConfig(gameData.player);
+     ensureAutoAllocateExpUpConfig(gameData.player);
+     ensureAutoAllocateStatPointsConfig(gameData.player);
+     ensurePlayTimeConfig(gameData.player);
+     lastPlayTimeTickAt = Date.now();
+ 
+     const loaded = loadGameIfExists();
+     getCombatStats();
+ 
+     if (loaded) {
+       log("✅ オートセーブを読み込みました");
+     } else {
+       log("探索開始");
      }
  
-     // 報酬付与（解除済み実績にも一度だけ適用）
-     for (const def of defs) {
-       if (def && def.id && p.achievements[def.id]) grantReward(def);
+     setInterval(() => {
+-      tickPlayTime();
++      const elapsed = tickPlayTime();
++      if (elapsed > 0) {
++        unsavedPlayTimeMs += elapsed;
++        if (unsavedPlayTimeMs >= PLAYTIME_AUTOSAVE_STEP_MS) {
++          autosaveDirty = true;
++          unsavedPlayTimeMs = 0;
++        }
++      }
+       saveGameNow();
+-      if (typeof updateRecordsUI === "function") updateRecordsUI();
++      if (typeof updateRecordsUI === "function") {
++        const statusScreenEl = document.getElementById("statusScreen");
++        const recordsTabEl = document.getElementById("tabRecords");
++        const recordsVisible =
++          !!statusScreenEl &&
++          !!recordsTabEl &&
++          statusScreenEl.style.display === "block" &&
++          recordsTabEl.style.display === "block";
++        if (recordsVisible) updateRecordsUI();
++      }
+     }, AUTOSAVE_INTERVAL_MS);
+ 
+     applyUrlActions();
+ 
+     updateUI();
+   }
+ 
+   function applyUrlActions() {
+     let params;
+     try {
+       params = new URLSearchParams(window.location.search || "");
+     } catch (e) {
+       return;
      }
  
-     if (!silent && unlockedNow.length) {
-       for (const def of unlockedNow) {
-         log(`🏆 実績解除：${def.title}`);
-         const b = def.bonus || {};
-         if (typeof b.expRate === "number" && b.expRate > 0) {
-           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
-         }
-         if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {
+     if (!params.has("back")) return;
+ 
+     // 非戦闘時：通常の移動ロジックを利用
+     if (gameData.gameState === "EXPLORE") {
+       move(-1);
+       return;
+     }
+ 
+     // 戦闘時：URL指定は確定で離脱して1階層戻る
+     if (gameData.gameState === "BATTLE") {
