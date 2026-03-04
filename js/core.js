@@ -4022,10 +4022,16 @@
 
       // ボスは装備が必ず1つドロップ
       if (willDrop || isBoss) {
+        const isNamedEnemy = !!enemy.isNamed;
         const isHighSearchNamedEnemy =
-          !!enemy.isNamed && Number(enemy?.epithet?.minSearch || 0) >= 150;
+          isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
+        const forcedSpecialPrefixRarityPool = isNamedEnemy
+          ? isHighSearchNamedEnemy
+            ? ["rare", "epic", "legendary"]
+            : ["rare", "epic"]
+          : null;
         const item = generateEquipment({
-          forceLegendarySpecialPrefix: isHighSearchNamedEnemy,
+          specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
         });
         const soldByAutoSell = evaluateAutoSellDropItem(item);
 
@@ -4924,10 +4930,12 @@
       typeof window.applySpecialPrefixEffects === "function"
     ) {
       // 特殊接頭語抽選（rarity / category / typeKey）
-      const forceSpecialPrefixRarity =
-        options && options.forceLegendarySpecialPrefix ? "legendary" : null;
+      const forceSpecialPrefixRarityPool =
+        options && Array.isArray(options.specialPrefixRarityPool)
+          ? options.specialPrefixRarityPool
+          : null;
       let sp = window.rollSpecialPrefix(rarity, category, typeKey, {
-        forceRarity: forceSpecialPrefixRarity,
+        forceRarityPool: forceSpecialPrefixRarityPool,
       });
       if (sp) {
         window.applySpecialPrefixEffects(item, sp);
