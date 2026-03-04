@@ -133,6 +133,159 @@
         enrageDamageMul: 1.35,
       },
     },
+    {
+      name: "冥王の",
+      minSearch: 150,
+      multipliers: { hp: 2.45, str: 1.9, vit: 2.0, agi: 1.35, dex: 1.45, int: 1.9, exp: 3.0 },
+      effects: {
+        damageReduction: 0.2,
+        poisonOnHitChance: 0.5,
+        poisonTurns: 5,
+        regenRate: 0.06,
+      },
+    },
+    {
+      name: "覇道の",
+      minSearch: 150,
+      multipliers: { hp: 2.3, str: 2.25, vit: 1.85, agi: 1.45, dex: 1.55, int: 1.4, exp: 2.95 },
+      effects: {
+        armorPierceRate: 0.42,
+        enrageBelowHpRate: 0.5,
+        enrageDamageMul: 1.4,
+      },
+    },
+    {
+      name: "零閃の",
+      minSearch: 150,
+      multipliers: { hp: 2.05, str: 1.9, vit: 1.6, agi: 2.05, dex: 2.0, int: 1.25, exp: 2.9 },
+      effects: {
+        alwaysHit: true,
+        extraTurnChance: 0.22,
+      },
+    },
+    {
+      name: "災禍の",
+      minSearch: 150,
+      multipliers: { hp: 2.55, str: 1.75, vit: 2.1, agi: 1.3, dex: 1.35, int: 1.95, exp: 3.1 },
+      effects: {
+        preferMagic: true,
+        poisonOnHitChance: 0.5,
+        poisonTurns: 5,
+        damageReduction: 0.22,
+      },
+    },
+    {
+      name: "天魔の",
+      minSearch: 150,
+      multipliers: { hp: 2.35, str: 1.85, vit: 1.9, agi: 1.5, dex: 1.6, int: 2.05, exp: 3.0 },
+      effects: {
+        preferMagic: true,
+        extraTurnChance: 0.14,
+        regenRate: 0.06,
+      },
+    },
+    {
+      name: "無双の",
+      minSearch: 150,
+      multipliers: { hp: 2.4, str: 2.2, vit: 1.95, agi: 1.5, dex: 1.55, int: 1.3, exp: 3.0 },
+      effects: {
+        armorPierceRate: 0.4,
+        alwaysHit: true,
+      },
+    },
+    {
+      name: "断罪の",
+      minSearch: 150,
+      multipliers: { hp: 2.3, str: 2.05, vit: 1.8, agi: 1.55, dex: 1.7, int: 1.55, exp: 2.95 },
+      effects: {
+        alwaysHit: true,
+        armorPierceRate: 0.35,
+        extraTurnChance: 0.12,
+      },
+    },
+    {
+      name: "神罰の",
+      minSearch: 150,
+      multipliers: { hp: 2.5, str: 1.75, vit: 2.15, agi: 1.25, dex: 1.4, int: 2.05, exp: 3.1 },
+      effects: {
+        preferMagic: true,
+        damageReduction: 0.24,
+        enrageBelowHpRate: 0.55,
+        enrageDamageMul: 1.35,
+      },
+    },
+    {
+      name: "剛破の",
+      minSearch: 150,
+      multipliers: { hp: 2.45, str: 2.3, vit: 2.0, agi: 1.25, dex: 1.35, int: 1.2, exp: 3.0 },
+      effects: {
+        armorPierceRate: 0.48,
+        damageReduction: 0.16,
+      },
+    },
+    {
+      name: "幻影の",
+      minSearch: 150,
+      multipliers: { hp: 2.1, str: 1.6, vit: 1.6, agi: 2.1, dex: 2.1, int: 1.6, exp: 2.95 },
+      effects: {
+        alwaysHit: true,
+        extraTurnChance: 0.2,
+        poisonOnHitChance: 0.3,
+        poisonTurns: 4,
+      },
+    },
+    {
+      name: "豪雷の",
+      minSearch: 150,
+      multipliers: { hp: 2.25, str: 2.0, vit: 1.8, agi: 1.75, dex: 1.7, int: 1.45, exp: 2.95 },
+      effects: {
+        extraTurnChance: 0.16,
+        alwaysHit: true,
+        enrageBelowHpRate: 0.45,
+        enrageDamageMul: 1.3,
+      },
+    },
+    {
+      name: "凍獄の",
+      minSearch: 150,
+      multipliers: { hp: 2.4, str: 1.7, vit: 2.0, agi: 1.3, dex: 1.45, int: 1.95, exp: 3.0 },
+      effects: {
+        damageReduction: 0.23,
+        regenRate: 0.07,
+        preferMagic: true,
+      },
+    },
+    {
+      name: "鬼哭の",
+      minSearch: 150,
+      multipliers: { hp: 2.35, str: 2.15, vit: 1.9, agi: 1.45, dex: 1.5, int: 1.45, exp: 2.95 },
+      effects: {
+        enrageBelowHpRate: 0.5,
+        enrageDamageMul: 1.45,
+        poisonOnHitChance: 0.35,
+        poisonTurns: 4,
+      },
+    },
+    {
+      name: "深淵覗く",
+      minSearch: 150,
+      multipliers: { hp: 2.6, str: 1.75, vit: 2.25, agi: 1.2, dex: 1.3, int: 2.1, exp: 3.15 },
+      effects: {
+        preferMagic: true,
+        regenRate: 0.09,
+        damageReduction: 0.24,
+      },
+    },
+    {
+      name: "覇滅の",
+      minSearch: 150,
+      multipliers: { hp: 2.3, str: 2.2, vit: 1.85, agi: 1.55, dex: 1.65, int: 1.35, exp: 2.95 },
+      effects: {
+        armorPierceRate: 0.44,
+        extraTurnChance: 0.14,
+        alwaysHit: true,
+      },
+    },
   ];
 
   // 敵スキル定義

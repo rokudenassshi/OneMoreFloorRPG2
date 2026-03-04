@@ -149,11 +149,17 @@
     // 敵情報
     if (gameData.enemy) {
       const e = gameData.enemy;
-      document.getElementById("enemyName").textContent = e.displayName;
+      const enemyNameEl = document.getElementById("enemyName");
+      enemyNameEl.textContent = e.displayName;
+      const isStrongEpithet =
+        e.isNamed && Number(e?.epithet?.minSearch || 0) >= 150;
+      enemyNameEl.style.color = isStrongEpithet ? "#ff4d4d" : "#ffffff";
       document.getElementById("enemyHp").textContent =
         `HP：${Math.round(e.hp)}/${Math.round(e.maxHp)}`;
     } else {
-      document.getElementById("enemyName").textContent = "";
+      const enemyNameEl = document.getElementById("enemyName");
+      enemyNameEl.textContent = "";
+      enemyNameEl.style.color = "#ffffff";
       document.getElementById("enemyHp").textContent = "---";
     }
 
