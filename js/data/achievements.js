@@ -320,5 +320,48 @@
     }
   }
 
+
+
+  // -----------------
+  // 全職制覇 実績
+  // - 持たざる者・勇者を除く各職業で 10000 体撃破
+  // - 報酬：職業「勇者」解放
+  // -----------------
+  {
+    const jobs = window.jobs || {};
+    const TARGET = 10000;
+    const requiredJobKeys = Object.keys(jobs).filter(
+      (k) => jobs[k] && k !== "have_not" && k !== "hero",
+    );
+
+    const getKills = (p, jobKey) => {
+      const map =
+        p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+      const v = Number(map[jobKey] || 0);
+      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+    };
+
+    const getDoneCount = (p) =>
+      requiredJobKeys.reduce(
+        (sum, k) => sum + (getKills(p, k) >= TARGET ? 1 : 0),
+        0,
+      );
+
+    achievementDefs.push({
+      id: "all_jobs_slayer_10000_except_have_not",
+      title: "全職の極意",
+      desc: `持たざる者以外の各職業でモンスターを${TARGET}体倒す`,
+      isDone: (p) =>
+        requiredJobKeys.length > 0 &&
+        requiredJobKeys.every((k) => getKills(p, k) >= TARGET),
+      progress: (p) => `${getDoneCount(p)}/${requiredJobKeys.length}`,
+      bonus: {},
+      reward: {
+        unlockJobs: ["hero"],
+        text: "職業『勇者』を解放",
+      },
+    });
+  }
+
   window.achievementDefs = achievementDefs;
 })();

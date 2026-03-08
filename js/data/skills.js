@@ -2095,6 +2095,107 @@
       }),
     },
 
+    // ===================================
+    // 勇者 (hero)
+    // ===================================
+    hero_universal_mastery: {
+      name: "万能の極意",
+      type: "passive",
+      job: "hero",
+      maxLevel: 5,
+      desc: "攻撃+{attackBonus} / 防御+{defenseBonus} / 魔法威力+{magicBonus}",
+      effect: (lv) => ({
+        attackBonus: lv * 8,
+        defenseBonus: lv * 8,
+        magicBonus: lv * 8,
+      }),
+    },
+    hero_sixth_sense: {
+      name: "第六感",
+      type: "passive",
+      job: "hero",
+      maxLevel: 5,
+      desc: "命中+{accuracyBonus}% / 回避+{evasionBonus}% / 会心+{critBonus}%",
+      effect: (lv) => ({
+        accuracyBonus: lv * 2,
+        evasionBonus: lv * 2,
+        critBonus: lv * 2,
+      }),
+    },
+    hero_guardian_soul: {
+      name: "守護者の魂",
+      type: "passive",
+      job: "hero",
+      maxLevel: 5,
+      desc: "最大HP+{maxHpBonus}（防御+{defenseBonus}）",
+      effect: (lv) => ({
+        maxHpBonus: lv * 25,
+        defenseBonus: lv * 6,
+      }),
+    },
+    hero_blade_of_light: {
+      name: "光刃",
+      type: "active",
+      accuracy: 105,
+      job: "hero",
+      maxLevel: 3,
+      cooldown: 4,
+      desc: "光の斬撃（{value}倍、防御無視40%）",
+      effect: (lv) => ({ damageMultiplier: 1.5 + lv * 0.45, ignoreDef: 0.4 }),
+    },
+    hero_meteor_combo: {
+      name: "流星連撃",
+      type: "active",
+      accuracy: 105,
+      job: "hero",
+      maxLevel: 3,
+      cooldown: 6,
+      desc: "3連撃（{value}倍×3）",
+      effect: (lv) => ({ hits: 3, damageMultiplier: 0.78 + lv * 0.08 }),
+    },
+    hero_sacred_heal: {
+      name: "聖癒",
+      type: "active",
+      accuracy: 100,
+      job: "hero",
+      maxLevel: 3,
+      cooldown: 6,
+      desc: "HPを{value}%回復する",
+      effect: (lv) => {
+        const rate = 0.22 + lv * 0.06;
+        return { healRate: rate, value: Math.round(rate * 100) };
+      },
+    },
+    hero_radiant_break: {
+      name: "輝破",
+      type: "active",
+      accuracy: 108,
+      job: "hero",
+      maxLevel: 3,
+      requiredPoints: 5,
+      cooldown: 7,
+      desc: "強烈な一撃（{value}倍、防御無視65%、体勢崩し2T）",
+      effect: (lv) => ({
+        damageMultiplier: 2.1 + lv * 0.25,
+        ignoreDef: 0.65,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.2 + lv * 0.05,
+      }),
+    },
+    hero_revival_slash: {
+      name: "再起の剣",
+      type: "active",
+      accuracy: 105,
+      job: "hero",
+      maxLevel: 3,
+      requiredPoints: 5,
+      cooldown: 8,
+      desc: "大技（{value}倍、与ダメの35%回復）",
+      effect: (lv) => ({
+        damageMultiplier: 1.6 + lv * 0.2,
+        healPercent: 0.35,
+      }),
+    },
   };
 
   window.skills = skills;

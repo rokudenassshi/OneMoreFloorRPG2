@@ -68,6 +68,23 @@
       },
     },
 
+    hero: {
+      name: "勇者",
+      desc: "全職を極めし者。全基礎ステータスが1.2倍",
+      favoredType: ["sword", "spear", "staff"],
+      unlock: {
+        type: "hidden_achievement",
+        target: 1,
+        minLevel: 1,
+        text: "特別な実績を達成する",
+        hidden: true,
+      },
+      bonuses: { strength: 0, vitality: 0, intelligence: 0, agility: 0, dexterity: 0 },
+      traits: {
+        baseStatMultiplier: 1.2,
+      },
+    },
+
     // -----------------
     // 上級職（条件達成で解放）
     // -----------------
