@@ -1,118 +1,88 @@
-diff --git a/js/core.js b/js/core.js
-index e00da52c97aa2af6cda5ce592f76bdd34a5d4db5..3b977d6dee986c64a82969f6cf85010f2433a670 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -5088,85 +5088,110 @@
-     let optionCount = 0;
+diff --git a/js/data/enemies.js b/js/data/enemies.js
+index da2f8152f363f0a566a51b033f9d346fe13c8951..a28c9d437893ed5ff10e1fa300155d99b6cf480a 100644
+--- a/js/data/enemies.js
++++ b/js/data/enemies.js
+@@ -596,65 +596,70 @@
+     { name: "死霊騎士", hp: 820, str: 36, vit: 32, int: 10, agi: 12, dex: 16, exp: 310, minFloor: 120, maxFloor: 200, skills: ["crushing_blow", "doom_mark"] },
+     { name: "邪術師", hp: 640, str: 20, vit: 22, int: 40, agi: 14, dex: 16, exp: 330, minFloor: 128, maxFloor: 200, skills: ["fireball", "ice_lance", "silence_hex"] },
+     { name: "ワイバーン", hp: 900, str: 38, vit: 28, int: 18, agi: 18, dex: 20, exp: 350, minFloor: 135, maxFloor: 200, skills: ["fireball", "thunder_strike", "roar"] },
+     { name: "バジリスク", hp: 980, str: 40, vit: 30, int: 16, agi: 14, dex: 18, exp: 370, minFloor: 145, maxFloor: 200, skills: ["toxic_spit", "doom_mark"] },
+     { name: "キマイラ", hp: 1050, str: 42, vit: 34, int: 20, agi: 16, dex: 18, exp: 390, minFloor: 155, maxFloor: 200, skills: ["multi_slash", "fireball", "bite_poison"] },
+     { name: "雷の精霊", hp: 760, str: 24, vit: 20, int: 44, agi: 20, dex: 22, exp: 420, minFloor: 165, maxFloor: 200, skills: ["thunder_strike", "ice_lance"] },
+     { name: "上級デーモン", hp: 1150, str: 44, vit: 36, int: 30, agi: 18, dex: 20, exp: 450, minFloor: 175, maxFloor: 200, skills: ["fireball", "power_strike", "silence_hex"] },
+     { name: "古きドラゴン", hp: 1400, str: 50, vit: 40, int: 26, agi: 16, dex: 22, exp: 500, minFloor: 190, maxFloor: 200, skills: ["fireball", "crushing_blow", "doom_mark"] },
+     // --------------------
+     // 200〜500F（テーブル見直し）
+     // --------------------
+     { name: "深淵の教徒", hp: 1600, str: 60, vit: 70, int: 55, agi: 20, dex: 28, exp: 600, minFloor: 201, maxFloor: 240, skills: ["fireball", "silence_hex"] },
+     { name: "黒鎧の守衛", hp: 1900, str: 78, vit: 110, int: 18, agi: 18, dex: 22, exp: 640, minFloor: 210, maxFloor: 260, skills: ["crushing_blow", "power_strike"] },
+     { name: "影狩り", hp: 1750, str: 74, vit: 90, int: 28, agi: 34, dex: 36, exp: 680, minFloor: 230, maxFloor: 300, skills: ["multi_slash", "doom_mark", "roar"] },
+     { name: "堕天の司祭", hp: 2100, str: 62, vit: 105, int: 95, agi: 22, dex: 28, exp: 720, minFloor: 250, maxFloor: 330, skills: ["fireball", "ice_lance", "heal", "silence_hex"] },
+     { name: "鉄巨兵", hp: 2600, str: 98, vit: 150, int: 16, agi: 12, dex: 20, exp: 760, minFloor: 270, maxFloor: 360, skills: ["crushing_blow", "power_strike"] },
+     { name: "虚無の死神", hp: 2400, str: 120, vit: 130, int: 60, agi: 40, dex: 40, exp: 820, minFloor: 300, maxFloor: 400, skills: ["multi_slash", "power_strike", "doom_mark"] },
+     { name: "冥界の竜", hp: 3200, str: 140, vit: 180, int: 120, agi: 30, dex: 44, exp: 880, minFloor: 330, maxFloor: 420, skills: ["fireball", "thunder_strike", "crushing_blow"] },
+     { name: "終焉の騎士", hp: 3600, str: 160, vit: 230, int: 45, agi: 34, dex: 40, exp: 940, minFloor: 360, maxFloor: 450, skills: ["power_strike", "crushing_blow", "doom_mark"] },
+     { name: "虚空の天使", hp: 3400, str: 130, vit: 210, int: 140, agi: 42, dex: 48, exp: 1020, minFloor: 390, maxFloor: 470, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
+     { name: "災禍の大公", hp: 4600, str: 190, vit: 300, int: 170, agi: 38, dex: 50, exp: 1120, minFloor: 420, maxFloor: 500, skills: ["fireball", "doom_mark", "heal", "crushing_blow"] },
+     { name: "原初の龍王", hp: 5600, str: 220, vit: 380, int: 200, agi: 40, dex: 56, exp: 1250, minFloor: 460, maxFloor: 500, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow"] },
+     { name: "終末の審判者", hp: 6200, str: 240, vit: 420, int: 210, agi: 42, dex: 60, exp: 1400, minFloor: 485, maxFloor: 500, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
  
-     if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
-     if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
- 
-     // アクセサリー：効果数＝オプション数（effects と同じ）
-     if (category === "accessory") {
-       optionCount = Array.isArray(item.effects) ? item.effects.length : 0;
-       // 念のため、randomOptionDetails を effects と同期
-       item.randomOptionDetails = (
-         Array.isArray(item.effects) ? item.effects : []
-       ).map((eff) => ({ kind: "effect", effect: eff }));
-       item.randomOptions = optionCount;
-     } else {
-       // 武器/防具：追加で付く強化/効果の回数をオプション数として扱う
-       optionCount = Math.min(5, Math.floor(Math.random() * (1 + floor / 5)));
- 
-       // 付与された内訳を列挙する（UI用）
-       item.randomOptionDetails = [];
- 
-       // 武器/防具に付く効果系オプションは「装備品用テーブル」から選ぶ
-       const srcEffects = Array.isArray(window.equipmentOptionEffects)
-         ? window.equipmentOptionEffects
-         : [];
-       const equipmentEffectPool = Array.isArray(srcEffects) ? srcEffects : [];
-+      let lastRolledOptionValue = null;
+     // --------------------
+-    // 500〜1000F
++    // 500〜800F
+     // --------------------
+     { name: "深層の獣王", hp: 8200, str: 260, vit: 500, int: 80, agi: 60, dex: 62, exp: 1500, minFloor: 501, maxFloor: 600, skills: ["multi_slash", "power_strike"] },
+-    { name: "魔晶機兵", hp: 9000, str: 280, vit: 560, int: 60, agi: 40, dex: 55, exp: 1600, minFloor: 540, maxFloor: 650, skills: ["crushing_blow", "roar", "power_strike"] },
+-    { name: "星喰らい", hp: 9800, str: 270, vit: 540, int: 220, agi: 48, dex: 66, exp: 1750, minFloor: 580, maxFloor: 700, skills: ["fireball", "ice_lance", "thunder_strike"] },
+-    { name: "黒曜竜", hp: 11500, str: 320, vit: 620, int: 180, agi: 52, dex: 74, exp: 1900, minFloor: 620, maxFloor: 760, skills: ["fireball", "doom_mark", "crushing_blow"] },
+-    { name: "冥府の死神", hp: 10800, str: 350, vit: 580, int: 130, agi: 72, dex: 82, exp: 2050, minFloor: 660, maxFloor: 820, skills: ["multi_slash", "doom_mark", "power_strike"] },
+-    { name: "神罰の天使", hp: 12500, str: 310, vit: 680, int: 240, agi: 68, dex: 78, exp: 2200, minFloor: 700, maxFloor: 860, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
+-    { name: "機神の番人", hp: 14500, str: 380, vit: 760, int: 95, agi: 44, dex: 62, exp: 2400, minFloor: 740, maxFloor: 900, skills: ["crushing_blow", "power_strike", "roar"] },
+-    { name: "虚無の覇者", hp: 14000, str: 420, vit: 730, int: 280, agi: 60, dex: 80, exp: 2600, minFloor: 780, maxFloor: 940, skills: ["fireball", "doom_mark", "heal"] },
+-    { name: "終焉の大魔王", hp: 16500, str: 460, vit: 850, int: 300, agi: 58, dex: 76, exp: 2900, minFloor: 820, maxFloor: 1000, skills: ["fireball", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+-    { name: "天輪の裁定者", hp: 18000, str: 480, vit: 900, int: 320, agi: 72, dex: 88, exp: 3200, minFloor: 880, maxFloor: 1000, skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"] },
+-    { name: "万象の龍帝", hp: 20500, str: 520, vit: 1000, int: 350, agi: 76, dex: 92, exp: 3600, minFloor: 920, maxFloor: 1000, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
+-    { name: "深淵の観測者", hp: 22500, str: 450, vit: 950, int: 450, agi: 82, dex: 102, exp: 4200, minFloor: 960, maxFloor: 1000, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
+-    { name: "原初の終末", hp: 26000, str: 600, vit: 1150, int: 400, agi: 74, dex: 90, exp: 5000, minFloor: 985, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
++    { name: "魔晶機兵", hp: 9000, str: 280, vit: 560, int: 60, agi: 40, dex: 55, exp: 1600, minFloor: 530, maxFloor: 640, skills: ["crushing_blow", "roar", "power_strike"] },
++    { name: "星喰らい", hp: 9800, str: 290, vit: 590, int: 220, agi: 48, dex: 66, exp: 1750, minFloor: 560, maxFloor: 680, skills: ["fireball", "ice_lance", "thunder_strike"] },
++    { name: "黒曜竜", hp: 11200, str: 320, vit: 640, int: 180, agi: 52, dex: 74, exp: 1900, minFloor: 600, maxFloor: 730, skills: ["fireball", "doom_mark", "crushing_blow"] },
++    { name: "冥府の死神", hp: 12400, str: 360, vit: 680, int: 150, agi: 72, dex: 82, exp: 2100, minFloor: 650, maxFloor: 780, skills: ["multi_slash", "doom_mark", "power_strike"] },
++    { name: "神罰の天使", hp: 13600, str: 340, vit: 720, int: 260, agi: 68, dex: 78, exp: 2280, minFloor: 690, maxFloor: 800, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
++    { name: "機神の番人", hp: 14800, str: 390, vit: 790, int: 110, agi: 46, dex: 64, exp: 2450, minFloor: 730, maxFloor: 800, skills: ["crushing_blow", "power_strike", "roar"] },
++    { name: "虚無の覇者", hp: 15800, str: 430, vit: 820, int: 300, agi: 60, dex: 80, exp: 2650, minFloor: 760, maxFloor: 800, skills: ["fireball", "doom_mark", "heal"] },
 +
-+      const rerollIfSameAsPrevious = (rollFn, maxRetry = 3) => {
-+        let value = rollFn();
-+        for (let i = 0; i < maxRetry && lastRolledOptionValue != null && value === lastRolledOptionValue; i++) {
-+          value = rollFn();
-+        }
-+        lastRolledOptionValue = value;
-+        return value;
-+      };
-+
-+      const rollStatDelta = () => {
-+        const base = Math.max(1, Math.round(statBase * 0.1));
-+        const spread = Math.max(2, Math.round(statBase * 0.08));
-+        return rerollIfSameAsPrevious(
-+          () => base + Math.floor(Math.random() * (spread + 1)),
-+          4,
-+        );
-+      };
++    // --------------------
++    // 800〜1000F
++    // --------------------
++    { name: "終焉の大魔王", hp: 18000, str: 490, vit: 920, int: 340, agi: 60, dex: 80, exp: 3000, minFloor: 801, maxFloor: 900, skills: ["fireball", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
++    { name: "天輪の裁定者", hp: 19800, str: 520, vit: 980, int: 370, agi: 74, dex: 90, exp: 3350, minFloor: 830, maxFloor: 930, skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"] },
++    { name: "万象の龍帝", hp: 22000, str: 570, vit: 1080, int: 390, agi: 78, dex: 94, exp: 3750, minFloor: 870, maxFloor: 960, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
++    { name: "深淵の観測者", hp: 24400, str: 500, vit: 1040, int: 500, agi: 84, dex: 104, exp: 4400, minFloor: 910, maxFloor: 985, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
++    { name: "原初の終末", hp: 28500, str: 660, vit: 1250, int: 440, agi: 78, dex: 94, exp: 5300, minFloor: 950, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
++    { name: "時界の破壊神", hp: 31000, str: 720, vit: 1320, int: 480, agi: 86, dex: 108, exp: 6200, minFloor: 980, maxFloor: 1000, skills: ["thunder_strike", "doom_mark", "crushing_blow", "silence_hex", "heal"] },
+ ];
  
-       for (let i = 0; i < optionCount; i++) {
-         if (Math.random() < 0.5) {
-           /** @type {Record<string, number>} */
-           const deltas = {};
-           if (item.attack) {
--            const d = Math.round(statBase * 0.12);
-+            const d = rollStatDelta();
-             item.attack += d;
-             deltas.attack = d;
-           }
-           if (item.defense) {
--            const d = Math.round(statBase * 0.12);
-+            const d = rollStatDelta();
-             item.defense += d;
-             deltas.defense = d;
-           }
-           if (Object.keys(deltas).length) {
-             item.randomOptionDetails.push({ kind: "stat", deltas });
-           } else {
-             // 保険：何も増えない場合でも、オプション回数としてはカウントする
-             item.randomOptionDetails.push({ kind: "stat", deltas: {} });
-           }
-         } else {
-           if (!item.effects) item.effects = [];
-           const pool = equipmentEffectPool.length
-             ? equipmentEffectPool
-             : srcEffects;
-           if (!pool.length) continue;
-           const eff =
-             pickWeighted(pool, (e) =>
-               getEquipmentEffectWeight(category, item.type, e.type),
-             ) || pool[Math.floor(Math.random() * pool.length)];
-           const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
-+          const baseValue = Math.max(1, Math.round((Number(scaledEff.value) || 0) * 0.5));
-+          const variance = Math.max(1, Math.round(baseValue * 0.3));
-+          const value = rerollIfSameAsPrevious(
-+            () => clamp(baseValue + Math.floor(Math.random() * (variance * 2 + 1)) - variance, 1, 9999),
-+            4,
-+          );
-           const finalEff = {
-             ...scaledEff,
--            value: Math.round((Number(scaledEff.value) || 0) * 0.5),
-+            value,
-           };
-           item.effects.push(finalEff);
-           item.randomOptionDetails.push({ kind: "effect", effect: finalEff });
-         }
-       }
- 
-       item.randomOptions = item.randomOptionDetails.length;
-     }
- 
-     // 装備名（ベース名）は、数値レンジに応じて変化させる
-     // - 特殊接頭語がある場合は、ここでまとめて先頭に付ける
-     if (category !== "accessory") {
-       const tiered = buildTieredBaseName(item, type.name);
-       item.baseName = tiered;
-       item.name = tiered;
-       if (
-         item._specialPrefixName &&
-         typeof item._specialPrefixName === "string"
-       ) {
-         item.name = `${item._specialPrefixName}${tiered}`;
-       }
-     } else {
-       // アクセサリー名を「短く・分かりやすく」する（効果を先頭に出す）
-       item.baseName = type.name;
- 
+   
+   // --------------------
+   // ボスモンスター（敵テーブル切替階層）
+   // --------------------
+   // 100F / 200F / 500F / 1000F に固定出現するボス。
+   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
+   const bossMonsters = {
+     100: {
+       name: "境界の守護竜",
+       hp: 900,
+       str: 38,
+       vit: 28,
+       int: 20,
+       agi: 10,
+       dex: 14,
+       exp: 380,
+       isBoss: true,
+       skills: ["fireball", "power_strike", "roar", "heal"],
+       effects: { damageReduction: 0.08, regenRate: 0.03 },
+     },
+     200: {
+       name: "黒鋼の巨王",
+       hp: 1800,
