@@ -310,7 +310,8 @@
   const PLAYTIME_AUTOSAVE_STEP_MS = 15000;
 
   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
-  const PENDING_IMPORT_KEY = "omf_pending_import_v1";
+  const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
+  const CLOUD_SAVE_FUNCTION_SAVE = "saveUserGameData";
   let autosaveEnabled = true;
 
   function isAutosaveEnabled() {
@@ -331,38 +332,12 @@
     } catch (e) {}
   }
 
-  function applyPendingImportIfAny() {
-    const payload = localStorage.getItem(PENDING_IMPORT_KEY);
-    if (!payload) return;
-
-    try {
-      const parsed = JSON.parse(payload);
-      const storage = parsed?.storage;
-
-      if (!storage || typeof storage !== "object") {
-        localStorage.removeItem(PENDING_IMPORT_KEY);
-        return;
-      }
-
-      // ここで確実に上書き
-      localStorage.clear();
-      for (const [k, v] of Object.entries(storage)) {
-        if (typeof k !== "string") continue;
-        localStorage.setItem(k, v == null ? "" : String(v));
-      }
-    } catch (e) {
-      // 壊れてたら無視
-    } finally {
-      // clearで消えてる可能性があるので最後にremove
-      try {
-        localStorage.removeItem(PENDING_IMPORT_KEY);
-      } catch (e) {}
-    }
-  }
 
   let pendingAutosaveTimer = null;
   let autosaveDirty = true;
   let unsavedPlayTimeMs = 0;
+  let cloudSaveInFlight = false;
+  let cloudSaveQueued = false;
 
   function buildSavePayload() {
     const payload = {
@@ -419,13 +394,47 @@
     return true;
   }
 
-  function saveGameNow() {
+  async function saveGameNow() {
     try {
       if (!autosaveEnabled) return;
       if (!autosaveDirty) return;
+      const authBridge = window.firebaseAuthBridge || null;
+      const currentUser =
+        authBridge && typeof authBridge.getCurrentUser === "function"
+          ? authBridge.getCurrentUser()
+          : null;
+      if (!currentUser) return;
+
+      if (cloudSaveInFlight) {
+        cloudSaveQueued = true;
+        return;
+      }
+
       const payload = buildSavePayload();
-      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       autosaveDirty = false;
+
+      const functionsInstance = window.firebaseFunctions || null;
+      const httpsCallableFactory = window.firebaseHttpsCallable || null;
+      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
+        autosaveDirty = true;
+        return;
+      }
+
+      cloudSaveInFlight = true;
+      const saveUserGameData = httpsCallableFactory(
+        functionsInstance,
+        CLOUD_SAVE_FUNCTION_SAVE,
+      );
+      try {
+        await saveUserGameData({ payload });
+      } finally {
+        cloudSaveInFlight = false;
+      }
+
+      if (cloudSaveQueued) {
+        cloudSaveQueued = false;
+        if (autosaveDirty) saveGameNow();
+      }
     } catch (e) {}
   }
 
@@ -439,11 +448,29 @@
     }, 300);
   }
 
-  function loadGameIfExists() {
+  async function loadGameIfExists() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return false;
-      const payload = JSON.parse(raw);
+      const authBridge = window.firebaseAuthBridge || null;
+      const currentUser =
+        authBridge && typeof authBridge.getCurrentUser === "function"
+          ? authBridge.getCurrentUser()
+          : null;
+      if (!currentUser) return false;
+
+      const functionsInstance = window.firebaseFunctions || null;
+      const httpsCallableFactory = window.firebaseHttpsCallable || null;
+      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
+        return false;
+      }
+
+      const loadUserGameData = httpsCallableFactory(
+        functionsInstance,
+        CLOUD_SAVE_FUNCTION_LOAD,
+      );
+      const response = await loadUserGameData({});
+      const data = response && response.data ? response.data : null;
+      if (!data || !data.hasSave || !data.payload) return false;
+      const payload = data.payload;
       return applySavePayload(payload);
     } catch (e) {
       return false;
@@ -531,7 +558,7 @@
   // -------------------
   let __initDone = false;
 
-  function initGame() {
+  async function initGame() {
     if (__initDone) return;
 
     // ui.js がまだ読み込まれていない場合（動的ロードの順序によって起きうる）
@@ -550,7 +577,6 @@
     gameData.battleButtons = document.getElementById("battleButtons");
     gameData.exploreButtons = document.getElementById("exploreButtons");
 
-    applyPendingImportIfAny();
     autosaveEnabled = isAutosaveEnabled();
 
     ensureAutoSellConfig(gameData.player);
@@ -559,7 +585,13 @@
     ensurePlayTimeConfig(gameData.player);
     lastPlayTimeTickAt = Date.now();
 
-    const loaded = loadGameIfExists();
+    if (typeof window.promptGoogleLoginAtStart === "function") {
+      try {
+        await window.promptGoogleLoginAtStart();
+      } catch (e) {}
+    }
+
+    const loaded = await loadGameIfExists();
     getCombatStats();
 
     if (loaded) {

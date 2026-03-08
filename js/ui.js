@@ -3130,187 +3130,70 @@
   window.chooseEquipSlot = chooseEquipSlot;
   window.useItem = useItem;
   // =====================
-  // Save Data Import / Export (参考実装に準拠)
+  // セーブ設定
   // =====================
-  const PENDING_IMPORT_KEY = "omf_pending_import_v1";
-  const SAVE_EXPORT_SCHEMA_V1 = "one-more-floor-rpg-save-v1";
-  const SAVE_EXPORT_SCHEMA_V2 = "one-more-floor-rpg-save-v2";
-  const SAVE_EXPORT_SECRET = "one-more-floor-rpg-save-secret-v1";
-  const SAVE_EXPORT_SALT = "omf-save-key-salt-v1";
-  const SAVE_EXPORT_ITERATIONS = 100000;
-
-  function buildSaveDataSnapshot() {
-    const now = new Date();
-    const storage = {};
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (!k) continue;
-        storage[k] = localStorage.getItem(k);
-      }
-    } catch (e) {}
-    return {
-      schema: SAVE_EXPORT_SCHEMA_V1,
-      gameVersion: typeof GAME_VERSION === "string" ? GAME_VERSION : null,
-      exportedAt: now.toISOString(),
-      storage,
-    };
-  }
-
-  function base64ToUint8(base64) {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
-  }
-
-  function uint8ToBase64(bytes) {
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
-  }
-
-  async function getSaveExportKey() {
-    const encoder = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(SAVE_EXPORT_SECRET),
-      { name: "PBKDF2" },
-      false,
-      ["deriveKey"],
-    );
-    return crypto.subtle.deriveKey(
-      {
-        name: "PBKDF2",
-        salt: encoder.encode(SAVE_EXPORT_SALT),
-        iterations: SAVE_EXPORT_ITERATIONS,
-        hash: "SHA-256",
-      },
-      baseKey,
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt", "decrypt"],
-    );
-  }
-
-  async function encryptSaveSnapshot(snapshot) {
-    const encoder = new TextEncoder();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await getSaveExportKey();
-    const encoded = encoder.encode(JSON.stringify(snapshot));
-    const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      encoded,
-    );
-    return {
-      schema: SAVE_EXPORT_SCHEMA_V2,
-      gameVersion: snapshot.gameVersion || null,
-      exportedAt: snapshot.exportedAt,
-      alg: "AES-GCM",
-      kdf: "PBKDF2",
-      iv: uint8ToBase64(iv),
-      data: uint8ToBase64(new Uint8Array(encrypted)),
-    };
-  }
-
-  async function decryptSavePayload(payload) {
-    if (!payload || typeof payload !== "object")
-      throw new Error("invalid payload");
-    if (payload.schema !== SAVE_EXPORT_SCHEMA_V2) return payload;
-    const iv = base64ToUint8(String(payload.iv || ""));
-    const data = base64ToUint8(String(payload.data || ""));
-    const key = await getSaveExportKey();
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
-      key,
-      data,
-    );
-    const decoder = new TextDecoder();
-    return JSON.parse(decoder.decode(decrypted));
-  }
-
-  function downloadTextFile(filename, text, mime = "application/json") {
-    const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  }
-
-  async function exportSaveData() {
-    try {
-      const snapshot = buildSaveDataSnapshot();
-      const encrypted = await encryptSaveSnapshot(snapshot);
-      const safeVersion = snapshot.gameVersion || "unknown";
-      const dateLabel = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .slice(0, 19);
-      const filename = `OneMoreFloorRPG_save_${safeVersion}_${dateLabel}.json`;
-      downloadTextFile(filename, JSON.stringify(encrypted));
-      log("🔐 セーブデータをエクスポートしました");
-    } catch (e) {
-      log("⚠️ エクスポートに失敗しました");
-    }
-  }
-
-  function openImportSaveDialog() {
-    const input = document.getElementById("saveDataFileInput");
-    if (!input) {
-      log("⚠️ インポート用入力が見つかりません");
-      return;
-    }
-    input.value = "";
-    input.click();
-  }
-
-  function handleSaveDataImport(event) {
-    const file = event?.target?.files?.[0];
-    if (!file) return;
-    const ok = window.confirm(
-      "この端末の現在のセーブデータを上書きします。よろしいですか？",
-    );
-    if (!ok) return;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const text = String(reader.result || "");
-        const normalized = text.replace(/^\uFEFF/, "").trim();
-        const parsed = JSON.parse(normalized);
-        const decrypted = await decryptSavePayload(parsed);
-
-        const isKnownEncrypted = parsed?.schema === SAVE_EXPORT_SCHEMA_V2;
-        if (!isKnownEncrypted && decrypted?.schema !== SAVE_EXPORT_SCHEMA_V1) {
-          const proceed = window.confirm(
-            "このファイルは想定形式と異なる可能性があります。続行しますか？",
-          );
-          if (!proceed) return;
-        }
-
-        localStorage.setItem(PENDING_IMPORT_KEY, JSON.stringify(decrypted));
-        log("📥 セーブデータを読み込みました。再読み込みして反映します…");
-        window.location.reload();
-      } catch (e) {
-        log("⚠️ インポートに失敗しました（ファイル形式を確認してください）");
-      }
-    };
-    reader.onerror = () => log("⚠️ ファイル読み込みに失敗しました");
-    reader.readAsText(file, "utf-8");
-  }
-
   function toggleAutosave(enabled) {
     setAutosaveEnabled(!!enabled);
     updateOptionsUI();
     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
+  }
+
+  async function promptGoogleLoginAtStart() {
+    if (loginPromptPromise) return loginPromptPromise;
+
+    loginPromptResolved = false;
+    loginPromptPromise = new Promise((resolve) => {
+      resolveLoginPrompt = resolve;
+    });
+
+    const bridge = window.firebaseAuthBridge || null;
+    if (!bridge || typeof bridge.waitForReady !== "function") {
+      finishLoginPrompt();
+      return loginPromptPromise;
+    }
+
+    const user = await bridge.waitForReady();
+    if (user) {
+      finishLoginPrompt();
+      return loginPromptPromise;
+    }
+
+    const modal = document.getElementById("loginModal");
+    if (!modal) {
+      finishLoginPrompt();
+      return loginPromptPromise;
+    }
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    return loginPromptPromise;
+  }
+
+  async function startWithGoogleLogin() {
+    try {
+      const bridge = window.firebaseAuthBridge || null;
+      if (!bridge || typeof bridge.signInWithGoogle !== "function") {
+        log("⚠️ Googleログインを利用できません");
+        finishLoginPrompt();
+        return;
+      }
+      await bridge.signInWithGoogle();
+      log("✅ Googleログインしました");
+      finishLoginPrompt();
+    } catch (e) {
+      log("⚠️ Googleログインに失敗しました");
+    }
+  }
+
+  function startWithoutLogin() {
+    log("⚠️ ログインなしで開始します（クラウド保存は無効）");
+    finishLoginPrompt();
+  }
+
+  function handleFirebaseAuthChanged(user) {
+    if (user) {
+      finishLoginPrompt();
+    }
   }
 
   // -------------------
@@ -3324,11 +3207,13 @@
   applyGameVersionBadges();
 
   // グローバル公開（HTML onclick 用）
-  window.exportSaveData = exportSaveData;
-  window.openImportSaveDialog = openImportSaveDialog;
-  window.handleSaveDataImport = handleSaveDataImport;
   window.setStatusTab = setStatusTab;
   window.toggleAutosave = toggleAutosave;
+
+  window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
+  window.startWithGoogleLogin = startWithGoogleLogin;
+  window.startWithoutLogin = startWithoutLogin;
+  window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
 
   window.openStatus = openStatus;
   window.openOptions = openOptions;

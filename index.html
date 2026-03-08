@@ -274,13 +274,7 @@
 
       <div class="status-section">
         <h4>セーブデータ</h4>
-        <div class="options-row">
-          <button class="small-btn" type="button" onclick="openImportSaveDialog()">インポート</button>
-          <button class="small-btn" type="button" onclick="exportSaveData()">エクスポート</button>
-        </div>
-        <input id="saveDataFileInput" type="file" accept=".json,application/json" style="display:none"
-          onchange="handleSaveDataImport(event)">
-        <div class="status-note">※インポートは現在のデータを上書きします（反映のため再読み込みします）</div>
+        <div class="status-note">※セーブデータはGoogleログイン中のアカウントへ自動保存されます</div>
       </div>
 
       <div class="status-section">
@@ -292,6 +286,19 @@
             onclick="handleSerialCodeSubmit()">確認</button>
         </div>
         <div class="status-note">※大文字/小文字は区別しません</div>
+      </div>
+    </div>
+
+
+    <!-- ログインモーダル（起動時） -->
+    <div id="loginModal" class="modal" aria-hidden="false">
+      <div class="modal-content">
+        <h2>Googleログイン</h2>
+        <div class="status-note">セーブデータはGoogleアカウントに保存されます。</div>
+        <div class="modal-actions">
+          <button type="button" onclick="startWithGoogleLogin()">Googleでログインして開始</button>
+          <button type="button" onclick="startWithoutLogin()">ログインせずに開始（セーブなし）</button>
+        </div>
       </div>
     </div>
 
@@ -449,6 +456,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      onAuthStateChanged,
+      signInWithPopup,
+      signOut,
+    } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 
     try {
       const cfg = window.FIREBASE_CONFIG || null;
@@ -459,6 +473,33 @@
         const app = initializeApp(cfg);
         window.firebaseFunctions = getFunctions(app, region);
         window.firebaseHttpsCallable = httpsCallable;
+
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        let authReadyResolved = false;
+        let resolveAuthReady = () => {};
+        const authReadyPromise = new Promise((resolve) => {
+          resolveAuthReady = resolve;
+        });
+
+        onAuthStateChanged(auth, (user) => {
+          window.firebaseCurrentUser = user || null;
+          if (!authReadyResolved) {
+            authReadyResolved = true;
+            resolveAuthReady(user || null);
+          }
+          if (typeof window.handleFirebaseAuthChanged === "function") {
+            window.handleFirebaseAuthChanged(user || null);
+          }
+        });
+
+        window.firebaseAuthBridge = {
+          waitForReady: () => authReadyPromise,
+          getCurrentUser: () => auth.currentUser,
+          signInWithGoogle: () => signInWithPopup(auth, provider),
+          signOutCurrentUser: () => signOut(auth),
+        };
       }
     } catch (e) {
       console.warn("[Firebase] 初期化に失敗しました。", e);
