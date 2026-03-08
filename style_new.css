@@ -1034,6 +1034,20 @@ button.item-action-btn:disabled {
   align-items:center;
   gap:8px;
 }
+.author-links{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.author-links a{
+  color:#86c5ff;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  width:fit-content;
+}
+.author-links a:hover{
+  opacity:0.9;
+}
 .achievements-list{
   display:flex;
   flex-direction:column;

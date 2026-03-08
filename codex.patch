@@ -1,57 +1,69 @@
-diff --git a/js/ui.js b/js/ui.js
-index d8b960654036f8d0e6df1e183db00150a41bf667..29e72df9187cc9445aa2db74bc1f5a71b7dac1ce 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1976,51 +1976,51 @@
-         const lookup =
-           window.serialCodeLookup && typeof window.serialCodeLookup === "object"
-             ? window.serialCodeLookup
-             : null;
-         unlockKey = lookup ? String(lookup[code] || "") : "";
-         if (!unlockKey) {
-           log("⚠️ シリアルコードが無効です。");
-           return;
-         }
-       }
+diff --git a/style_new.css b/style_new.css
+index 856a8c6c54e238c620d2bea9fe5f23ca5d7e75c8..b745327947cbc8ed444461e126acdae65c1e500a 100644
+--- a/style_new.css
++++ b/style_new.css
+@@ -1012,50 +1012,64 @@ button.item-action-btn:disabled {
+ .options-row{
+   display:flex;
+   gap:8px;
+   flex-wrap:wrap;
+ }
+ .serial-row{
+   align-items:center;
+ }
+ .serial-input{
+   flex:1;
+   min-width:220px;
+   padding:8px 10px;
+   border-radius:10px;
+   border:1px solid rgba(255,255,255,0.12);
+   background:rgba(255,255,255,0.06);
+   color:inherit;
+ }
+ .serial-input:disabled{
+   opacity:0.6;
+ }
+ .option-check{
+   display:flex;
+   align-items:center;
+   gap:8px;
+ }
++.author-links{
++  display:flex;
++  flex-direction:column;
++  gap:8px;
++}
++.author-links a{
++  color:#86c5ff;
++  text-decoration:underline;
++  text-underline-offset:2px;
++  width:fit-content;
++}
++.author-links a:hover{
++  opacity:0.9;
++}
+ .achievements-list{
+   display:flex;
+   flex-direction:column;
+   gap:8px;
+ }
+ .achievement-card{
+   padding:10px 12px;
+   border-radius:12px;
+   border:1px solid rgba(255,255,255,0.10);
+   background:rgba(255,255,255,0.04);
+ }
+ .achievement-card .small{
+   margin-top:4px;
+   opacity:0.85;
+   font-size:12px;
+ }
  
-       const action = unlockKey ? actions[unlockKey] : null;
-       if (!unlockKey || !action) {
-         log("⚠️ シリアルコードが無効です。");
-         return;
-       }
-       if (typeof action.isUnlocked === "function" && action.isUnlocked()) {
-         log("⚠️ そのシリアルコードは既に使用済みです。");
-         return;
-       }
-       if (typeof action.unlock === "function") action.unlock();
- 
-       if (inputEl) inputEl.value = "";
-       log(action.logMessage || "✨ シリアルコードを確認しました。");
-       // ゲーム本体のセーブ（オートセーブONの時のみ）
--      if (typeof saveGameNow === "function") saveGameNow();
-+      if (typeof saveGameNow === "function") saveGameNow({ force: true });
-     } catch (e) {
-       console.error(e);
-       log("⚠️ シリアルコードの確認に失敗しました。");
-     } finally {
-       serialCodePending = false;
-       updateOptionsUI();
-     }
-   }
- 
-   function updateStatusUI() {
-     const p = gameData.player;
-     const stats = getTotalStats();
-     const combat = getCombatStats();
- 
-     // 紋章（貴重品）による加算値（0なら表示しない）
-     const emblem =
-       typeof getEmblemBonus === "function" ? getEmblemBonus() : null;
-     const fmtStat = (val, bonus) => {
-       const b = Math.max(0, Math.floor(Number(bonus || 0)));
-       return b > 0 ? `${val}（+${b}）` : `${val}`;
-     };
- 
-     const job = jobs[p.job] || { name: "-", favoredType: null };
-     const favoredName = getFavoredTypeLabel(job.favoredType);
-     const jt = (job && job.traits) || {};
+ .record-list{
+   display:flex;
+   flex-direction:column;
+   gap:8px;
+ }
+ .record-item{
+   padding:10px 12px;
+   border-radius:12px;
