@@ -2255,8 +2255,14 @@
       const minLevel = Number(jd.unlock.minLevel || 0);
       const level = Number(p.level || 0);
       const levelOk = !minLevel || level >= minLevel;
-      const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
-      if (jd.unlock.hidden) {
+      const isHiddenUnlock = !!jd.unlock.hidden;
+      const unlocked = isHiddenUnlock
+        ? !!p.unlockedJobs[jobKey]
+        : !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+      if (isHiddenUnlock && !unlocked) {
+        return { unlocked, hidden: true, text: "？？？" };
+      }
+      if (isHiddenUnlock) {
         return { unlocked, text: "？？？" };
       }
       const parts = [];
@@ -2267,7 +2273,9 @@
 
     const keys = Object.keys(jobs);
     const baseKeys = keys.filter(
-      (k) => !jobs[k] || jobs[k].tier !== "advanced",
+      (k) =>
+        (!jobs[k] || jobs[k].tier !== "advanced") &&
+        !(jobs[k] && jobs[k].unlock && jobs[k].unlock.hidden && !getUnlockInfo(k).unlocked),
     );
     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
 
@@ -2286,7 +2294,7 @@
 
       const extra = locked
         ? `<p class="job-req">🔒 ${unlockInfo.text}</p>`
-        : job.tier === "advanced"
+        : job.tier === "advanced" || (job.unlock && job.unlock.hidden)
           ? `<p class="job-req">✅ 解放済み</p>`
           : "";
 
@@ -2395,7 +2403,10 @@
       const minLevel = Number(jd.unlock.minLevel || 0);
       const level = Number(p.level || 0);
       const levelOk = !minLevel || level >= minLevel;
-      const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+      const isHiddenUnlock = !!jd.unlock.hidden;
+      const unlocked = isHiddenUnlock
+        ? !!p.unlockedJobs[jobKey]
+        : !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
 
       if (!unlocked) {
         const parts = [];

@@ -564,8 +564,10 @@
       const cur = Number(prog[unlock.type] || 0);
       const minLevel = Number(unlock.minLevel || 0);
       const levelOk = !minLevel || Number(p.level || 0) >= minLevel;
-      const unlocked =
-        !!p.unlockedJobs[key] || (levelOk && cur >= Number(unlock.target || 0));
+      const isHiddenUnlock = !!unlock.hidden;
+      const unlocked = isHiddenUnlock
+        ? !!p.unlockedJobs[key]
+        : !!p.unlockedJobs[key] || (levelOk && cur >= Number(unlock.target || 0));
 
       // 条件（レベル + カウント）を満たした瞬間に解放フラグを立てる
       if (unlocked && !p.unlockedJobs[key]) {

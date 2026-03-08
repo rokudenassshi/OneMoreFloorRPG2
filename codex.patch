@@ -1,57 +1,155 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index 85c20109a50c24632a49161366c4e531e41d63ca..6d01f468c1b2f9a319d2e89f51f47600a8fc5057 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -67,51 +67,51 @@
+diff --git a/js/ui.js b/js/ui.js
+index 0752cc17795a22cb09a8d478c153b78973b7b5bd..af44226be42fc8225bda425aa88663cbf636cada 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2233,82 +2233,90 @@
+     const grid = document.getElementById("jobGrid");
+     grid.innerHTML = "";
  
-     floorCapLift250: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.floorCapLift250) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.floorCapLift250 = true;
-         saveStore(s);
+     const p = gameData.player;
+     if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
+       p.unlockedJobs = {};
+     if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
+       p.jobUnlockProgress = {};
  
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.floorCapLift250 = true;
-         }
+     const getUnlockInfo = (jobKey) => {
+       const jd = jobs[jobKey];
+       if (!jd || !jd.unlock) return { unlocked: true, text: "" };
  
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
-         }
-       },
-       logMessage:
--        "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
-+        "✨ シリアルコードを確認しました。階層上限を2001階に解放しました。",
-     },
+       const group = jd.skillGroup || jd.baseJob || jobKey;
+       const type = jd.unlock.type;
+       const target = Number(jd.unlock.target || 0);
+       const cur = Number(
+         (p.jobUnlockProgress &&
+           p.jobUnlockProgress[group] &&
+           p.jobUnlockProgress[group][type]) ||
+           0,
+       );
+       const minLevel = Number(jd.unlock.minLevel || 0);
+       const level = Number(p.level || 0);
+       const levelOk = !minLevel || level >= minLevel;
+-      const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+-      if (jd.unlock.hidden) {
++      const isHiddenUnlock = !!jd.unlock.hidden;
++      const unlocked = isHiddenUnlock
++        ? !!p.unlockedJobs[jobKey]
++        : !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
++      if (isHiddenUnlock && !unlocked) {
++        return { unlocked, hidden: true, text: "？？？" };
++      }
++      if (isHiddenUnlock) {
+         return { unlocked, text: "？？？" };
+       }
+       const parts = [];
+       if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
+       return { unlocked, text: parts.join(" ＆ ") };
+     };
  
-     // 前世の記憶（実績解除：経験値+20%）
-     pastLifeMemory: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.pastLifeMemory) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
-       },
-       unlock: () => {
-         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
-         const s = loadStore();
-         s.pastLifeMemory = true;
-         saveStore(s);
+     const keys = Object.keys(jobs);
+     const baseKeys = keys.filter(
+-      (k) => !jobs[k] || jobs[k].tier !== "advanced",
++      (k) =>
++        (!jobs[k] || jobs[k].tier !== "advanced") &&
++        !(jobs[k] && jobs[k].unlock && jobs[k].unlock.hidden && !getUnlockInfo(k).unlocked),
+     );
+     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
  
-         // 2) セーブデータ側にも保存（実績用）
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.pastLifeMemory = true;
-         }
+     const renderTitle = (title) => {
+       grid.innerHTML += `<div class="job-section-title">${title}</div>`;
+     };
  
-         // 3) 実績解除チェック（ログもここで出る）
+     const renderCard = (key) => {
+       const job = jobs[key];
+       const isSelected = gameData.player.job === key;
+ 
+       const favoredName = getFavoredTypeLabel(job.favoredType);
+ 
+       const unlockInfo = getUnlockInfo(key);
+       const locked = job.unlock && !unlockInfo.unlocked;
+ 
+       const extra = locked
+         ? `<p class="job-req">🔒 ${unlockInfo.text}</p>`
+-        : job.tier === "advanced"
++        : job.tier === "advanced" || (job.unlock && job.unlock.hidden)
+           ? `<p class="job-req">✅ 解放済み</p>`
+           : "";
+ 
+       const shownDesc = String(job.desc || "")
+         .replace(/（上級職）/g, "")
+         .replace(/\(上級職\)/g, "")
+         .trim();
+ 
+       grid.innerHTML += `
+         <div class="job-card ${isSelected ? "selected" : ""} ${locked ? "locked" : ""}" onclick="selectJob('${key}')">
+           <h4>${job.name}${job.tier === "advanced" ? " <span class='job-adv-tag'>上級</span>" : ""}</h4>
+           <p>${shownDesc}</p>
+           <p style="font-size:12px; color:#aaa;">得意: ${favoredName}</p>
+           ${extra}
+         </div>
+       `;
+     };
+ 
+     renderTitle("初期職業");
+     baseKeys.forEach(renderCard);
+ 
+     if (advKeys.length > 0) {
+       renderTitle("上級職");
+ 
+       // 上級職は基礎職ごとにまとめて表示（2列グリッドで横並びになりやすくする）
+@@ -2373,51 +2381,54 @@
+ 
+   function selectJob(jobKey) {
+     const p = gameData.player;
+     const jd = jobs[jobKey];
+     if (!jd) return;
+ 
+     // 上級職は未解放なら選べない
+     if (jd.unlock) {
+       if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
+         p.unlockedJobs = {};
+       if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
+         p.jobUnlockProgress = {};
+ 
+       const group = jd.skillGroup || jd.baseJob || jobKey;
+       const type = jd.unlock.type;
+       const target = Number(jd.unlock.target || 0);
+       const cur = Number(
+         (p.jobUnlockProgress &&
+           p.jobUnlockProgress[group] &&
+           p.jobUnlockProgress[group][type]) ||
+           0,
+       );
+       const minLevel = Number(jd.unlock.minLevel || 0);
+       const level = Number(p.level || 0);
+       const levelOk = !minLevel || level >= minLevel;
+-      const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
++      const isHiddenUnlock = !!jd.unlock.hidden;
++      const unlocked = isHiddenUnlock
++        ? !!p.unlockedJobs[jobKey]
++        : !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+ 
+       if (!unlocked) {
+         const parts = [];
+         if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
+         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
+         return;
+       }
+       // 条件達成しているならフラグを立てておく
+       p.unlockedJobs[jobKey] = true;
+     }
+ 
+     const prevJob = p.job;
+     if (prevJob === jobKey) {
+       closeJobSelector();
+       return;
+     }
+ 
+     const prevJobDef = jobs && jobs[prevJob] ? jobs[prevJob] : null;
+     const prevGroup =
+       prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
+     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
+ 
+     // 職業ごとの状態保存領域（※スキルグループ単位）
+     // - build: その職で取得していた職専用スキル構成
