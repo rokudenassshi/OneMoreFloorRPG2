@@ -374,7 +374,7 @@
       bonus: {},
       reward: {
         unlockJobs: ["hero"],
-        text: "職業『勇者』を解放",
+        text: "？？？を解放",
       },
     });
   }
