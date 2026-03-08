@@ -4038,11 +4038,9 @@
           ? jobs[gameData.player.job].traits.dropRateBonus
           : 0;
 
-      const isBoss = !!enemy.isBoss;
       const willDrop = Math.random() * 100 < dropChance;
 
-      // ボスは装備が必ず1つドロップ
-      if (willDrop || isBoss) {
+      if (willDrop) {
         const isNamedEnemy = !!enemy.isNamed;
         const isHighSearchNamedEnemy =
           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;

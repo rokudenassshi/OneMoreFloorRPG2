@@ -1,82 +1,61 @@
-diff --git a/js/ui.js b/js/ui.js
-index 29e72df9187cc9445aa2db74bc1f5a71b7dac1ce..4de88b7a4546e7e4193547ae8ac5589eaa4d4798 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1794,76 +1794,61 @@
-     if (!allowed.includes(tab)) tab = "status";
-     currentStatusTab = tab;
+diff --git a/js/core.js b/js/core.js
+index 6ff8d46d3a101d9e16d046f5572da132777702da..7a210704d3fd9af605069ccc1dd543aaa68c757f 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -4016,55 +4016,53 @@
+       const jobExpRate =
+         typeof jobs?.[gameData.player?.job]?.traits?.expRate === "number"
+           ? jobs[gameData.player.job].traits.expRate
+           : 0;
+       exp = Math.round(
+         exp *
+           (1 + expBonus / 100) *
+           (1 + expSkillBonus / 100) *
+           (1 + expAchRate) *
+           (1 + jobExpRate),
+       );
  
-     const tabStatus = document.getElementById("tabStatus");
-     const tabAch = document.getElementById("tabAchievements");
-     const tabRec = document.getElementById("tabRecords");
+       gameData.player.exp += exp;
+       log(`${exp}EXPを獲得！`);
  
-     if (tabStatus)
-       tabStatus.style.display = tab === "status" ? "block" : "none";
-     if (tabAch)
-       tabAch.style.display = tab === "achievements" ? "block" : "none";
-     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+       checkLevelUp();
  
-     const btnS = document.getElementById("statusTabBtnStatus");
-     const btnA = document.getElementById("statusTabBtnAchievements");
-     const btnR = document.getElementById("statusTabBtnRecords");
-     if (btnS) btnS.classList.toggle("is-active", tab === "status");
-     if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
-     if (btnR) btnR.classList.toggle("is-active", tab === "records");
+       // ドロップ判定
+       let dropChance = 30;
+       dropChance += getAccessoryBonus("dropRate");
+       dropChance +=
+         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
+           ? jobs[gameData.player.job].traits.dropRateBonus
+           : 0;
  
-     if (tab === "records") {
-       updateRecordsUI();
-     }
-   }
+-      const isBoss = !!enemy.isBoss;
+       const willDrop = Math.random() * 100 < dropChance;
  
--  function formatPlayTime(totalMs) {
--    const ms = Math.max(0, Math.floor(Number(totalMs) || 0));
--    const totalSeconds = Math.floor(ms / 1000);
--    const hours = Math.floor(totalSeconds / 3600);
--    const minutes = Math.floor((totalSeconds % 3600) / 60);
--    const seconds = totalSeconds % 60;
--
--    if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
--    if (minutes > 0) return `${minutes}分${seconds}秒`;
--    return `${seconds}秒`;
--  }
--
-   function updateRecordsUI() {
-     const elKills = document.getElementById("recordTotalKills");
-     const elMax = document.getElementById("recordMaxDamage");
--    const elPlayTime = document.getElementById("recordPlayTime");
--    if (!elKills && !elMax && !elPlayTime) return;
-+    if (!elKills && !elMax) return;
+-      // ボスは装備が必ず1つドロップ
+-      if (willDrop || isBoss) {
++      if (willDrop) {
+         const isNamedEnemy = !!enemy.isNamed;
+         const isHighSearchNamedEnemy =
+           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
+         const forcedSpecialPrefixRarityPool = isNamedEnemy
+           ? isHighSearchNamedEnemy
+             ? ["rare", "epic", "legendary"]
+             : ["rare", "epic"]
+           : null;
+         const item = generateEquipment({
+           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
+         });
+         const soldByAutoSell = evaluateAutoSellDropItem(item);
  
-     const p = gameData.player;
-     const totalKills = Number(p.totalKills || 0);
-     const maxDamage = Number(p.maxDamage || 0);
--    const totalPlayTimeMs = Number(p.totalPlayTimeMs || 0);
- 
-     if (elKills) elKills.textContent = totalKills;
-     if (elMax) elMax.textContent = maxDamage;
--    if (elPlayTime) elPlayTime.textContent = formatPlayTime(totalPlayTimeMs);
-   }
- 
-   function updateAchievementsUI() {
-     const el = document.getElementById("achievementsContent");
-     if (!el) return;
- 
-     const p = gameData.player;
-     if (!p.achievements || typeof p.achievements !== "object")
-       p.achievements = {};
- 
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
- 
-     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
-     const rows = defs
-       .filter((def) => {
-         try {
-           return typeof def.isVisible !== "function" || !!def.isVisible(p);
-         } catch (e) {
-           return true;
+         if (soldByAutoSell) {
+           log(`💸 ${item.name}を自動売却した。`);
+         } else {
+           gameData.player.inventory.push(item);
+           log(`${item.name}を手に入れた！`);
          }
-       })
-       .map((def, idx) => {
-         const done = !!p.achievements[def.id];
+ 
+         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
+         if (
+           !soldByAutoSell &&
+           item &&
+           typeof item._specialPrefixName === "string" &&
