@@ -1765,14 +1765,14 @@
     const grantReward = (def) => {
       if (!def || !def.id) return;
       const claimedMap = p.achievementRewardsClaimed;
-      if (claimedMap && claimedMap[def.id]) return;
+      const alreadyClaimed = !!(claimedMap && claimedMap[def.id]);
       const r = def.reward;
       if (!r || typeof r !== "object") return;
 
       let rewarded = false;
 
       // 例: reward.valuables = ["emblem_strength", { id: "emblem_vitality", amount: 2 }]
-      if (Array.isArray(r.valuables)) {
+      if (!alreadyClaimed && Array.isArray(r.valuables)) {
         for (const v of r.valuables) {
           let id = "";
           let amount = 1;
@@ -1798,13 +1798,14 @@
           if (!jobKey || !jobs[jobKey]) continue;
           if (!p.unlockedJobs[jobKey]) {
             p.unlockedJobs[jobKey] = true;
+            rewarded = true;
           }
-          rewarded = true;
         }
       }
 
       // 報酬は1回だけ
-      if (rewarded && claimedMap && def.id) claimedMap[def.id] = true;
+      if (!alreadyClaimed && rewarded && claimedMap && def.id)
+        claimedMap[def.id] = true;
     };
 
     for (const def of defs) {

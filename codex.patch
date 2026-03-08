@@ -1,120 +1,100 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index cb7e4e88160f1e4f386831770b7249918cc3a9fd..6d4d041b72a71ebff06b91dc5fa37eb55dd5e94c 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -265,56 +265,56 @@
-         },
-         isDone: (p) => {
-           const unlocked =
-             !ms.unlockAfterId ||
-             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return false;
-           const startKills = getAsuraMilestoneStartKills(p, ms);
-           return Math.max(0, getAsuraKills(p) - startKills) >= ms.needKills;
-         },
-         progress: (p) => {
-           const unlocked =
-             !ms.unlockAfterId ||
-             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return "未解放";
-           const startKills = getAsuraMilestoneStartKills(p, ms);
-           const v = Math.max(0, getAsuraKills(p) - startKills);
-           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
-         },
-         bonus: { asuraBaseStatMultiplierBonus: 1 },
-       });
-     });
-   }
- 
-   // -----------------
-   // 上級職 実績
--  // - 各上級職で 10000 体撃破（個別）
-+  // - 各上級職で 1000 体撃破（個別）
-   // - 報酬：経験値 +10%
-   // -----------------
-   {
-     const jobs = window.jobs || {};
--    const ADV_TARGET = 10000;
-+    const ADV_TARGET = 1000;
-     const advKeys = Object.keys(jobs).filter(
-       (k) => jobs[k] && jobs[k].tier === "advanced",
-     );
- 
-     const getKills = (p, jobKey) => {
-       const map =
-         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
-       const v = Number(map[jobKey] || 0);
-       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-     };
- 
-     // 各上級職（個別）
-     for (const k of advKeys) {
-       const jd = jobs[k];
-       const name = jd && jd.name ? jd.name : k;
-       achievementDefs.push({
-         id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
-         title: `${name}の心得`,
-         desc: `${name}でモンスターを${ADV_TARGET}体倒す（ボーナス：経験値+10%）`,
-         isDone: (p) => getKills(p, k) >= ADV_TARGET,
-         progress: (p) =>
-           `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,
-         bonus: { expRate: 0.1 },
-       });
+diff --git a/js/core.js b/js/core.js
+index f0b9c53268f881251c6c53570b120fb548e10cd9..40f6963f88cafc0dffa9411043d60217b8d882b3 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -1743,90 +1743,91 @@
+       if (!def || !def.id || !map[def.id]) continue;
+       const b = def.bonus || {};
+       const v = Number(b.asuraBaseStatMultiplierBonus || 0);
+       if (Number.isFinite(v) && v > 0) bonus += v;
      }
-@@ -325,43 +325,54 @@
-   // -----------------
-   // 全職制覇 実績
-   // - 持たざる者・勇者を除く各職業で 10000 体撃破
-   // - 報酬：職業「勇者」解放
-   // -----------------
-   {
-     const jobs = window.jobs || {};
-     const TARGET = 10000;
-     const requiredJobKeys = Object.keys(jobs).filter(
-       (k) => jobs[k] && k !== "have_not" && k !== "hero",
-     );
- 
-     const getKills = (p, jobKey) => {
-       const map =
-         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
-       const v = Number(map[jobKey] || 0);
-       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-     };
- 
-     const getDoneCount = (p) =>
-       requiredJobKeys.reduce(
-         (sum, k) => sum + (getKills(p, k) >= TARGET ? 1 : 0),
-         0,
-       );
- 
-+    const getJobName = (jobKey) => {
-+      const jd = jobs[jobKey];
-+      return jd && jd.name ? jd.name : jobKey;
-+    };
-+
-+    const formatPerJobProgress = (p) =>
-+      requiredJobKeys
-+        .map((k) => `${getJobName(k)}:${Math.min(getKills(p, k), TARGET)}/${TARGET}`)
-+        .join(" / ");
-+
-     achievementDefs.push({
-       id: "all_jobs_slayer_10000_except_have_not",
-       title: "全職の極意",
--      desc: `持たざる者以外の各職業でモンスターを${TARGET}体倒す`,
-+      desc: `持たざる者・勇者を除く全職業でモンスターを${TARGET}体倒す`,
-       isDone: (p) =>
-         requiredJobKeys.length > 0 &&
-         requiredJobKeys.every((k) => getKills(p, k) >= TARGET),
--      progress: (p) => `${getDoneCount(p)}/${requiredJobKeys.length}`,
-+      progress: (p) =>
-+        `${getDoneCount(p)}/${requiredJobKeys.length}職達成 / ${formatPerJobProgress(p)}`,
-       bonus: {},
-       reward: {
-         unlockJobs: ["hero"],
-         text: "職業『勇者』を解放",
-       },
-     });
+     return bonus;
    }
  
-   window.achievementDefs = achievementDefs;
- })();
+   function checkAndUnlockAchievements({ silent = false } = {}) {
+     const p = gameData.player;
+     if (!p.achievements || typeof p.achievements !== "object")
+       p.achievements = {};
+     if (
+       !p.achievementRewardsClaimed ||
+       typeof p.achievementRewardsClaimed !== "object"
+     )
+       p.achievementRewardsClaimed = {};
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
+     const unlockedNow = [];
+ 
+     const grantReward = (def) => {
+       if (!def || !def.id) return;
+       const claimedMap = p.achievementRewardsClaimed;
+-      if (claimedMap && claimedMap[def.id]) return;
++      const alreadyClaimed = !!(claimedMap && claimedMap[def.id]);
+       const r = def.reward;
+       if (!r || typeof r !== "object") return;
+ 
+       let rewarded = false;
+ 
+       // 例: reward.valuables = ["emblem_strength", { id: "emblem_vitality", amount: 2 }]
+-      if (Array.isArray(r.valuables)) {
++      if (!alreadyClaimed && Array.isArray(r.valuables)) {
+         for (const v of r.valuables) {
+           let id = "";
+           let amount = 1;
+           if (typeof v === "string") {
+             id = v;
+           } else if (v && typeof v === "object") {
+             id = typeof v.id === "string" ? v.id : "";
+             const a = Number(v.amount);
+             if (Number.isFinite(a) && a > 0) amount = Math.floor(a);
+           }
+           if (!id) continue;
+           const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
+           if (!defRelic) continue;
+           addValuableByDef(defRelic, amount);
+           rewarded = true;
+         }
+       }
+ 
+       if (Array.isArray(r.unlockJobs)) {
+         if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
+         for (const jobKeyRaw of r.unlockJobs) {
+           const jobKey = String(jobKeyRaw || "");
+           if (!jobKey || !jobs[jobKey]) continue;
+           if (!p.unlockedJobs[jobKey]) {
+             p.unlockedJobs[jobKey] = true;
++            rewarded = true;
+           }
+-          rewarded = true;
+         }
+       }
+ 
+       // 報酬は1回だけ
+-      if (rewarded && claimedMap && def.id) claimedMap[def.id] = true;
++      if (!alreadyClaimed && rewarded && claimedMap && def.id)
++        claimedMap[def.id] = true;
+     };
+ 
+     for (const def of defs) {
+       if (!def || !def.id || typeof def.isDone !== "function") continue;
+       const already = !!p.achievements[def.id];
+       try {
+         if (typeof def.onCheck === "function") def.onCheck(p);
+       } catch (e) {}
+       let done = false;
+       try {
+         done = !!def.isDone(p);
+       } catch (e) {
+         done = false;
+       }
+       if (done && !already) {
+         p.achievements[def.id] = true;
+         unlockedNow.push(def);
+       }
+     }
+ 
+     // 報酬付与（解除済み実績にも一度だけ適用）
+     for (const def of defs) {
+       if (def && def.id && p.achievements[def.id]) grantReward(def);
+     }
+ 
