@@ -48,24 +48,6 @@
       },
       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
     },
-    accessorySynthesis: {
-      isUnlocked: () => !!loadStore().accessorySynthesis,
-      unlock: () => {
-        const s = loadStore();
-        s.accessorySynthesis = true;
-        saveStore(s);
-      },
-      logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-    },
-    doubleEffectBonus: {
-      isUnlocked: () => !!loadStore().doubleEffectBonus,
-      unlock: () => {
-        const s = loadStore();
-        s.doubleEffectBonus = true;
-        saveStore(s);
-      },
-      logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-    },
 
     floorCapLift250: {
       isUnlocked: () => {
