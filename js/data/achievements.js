@@ -51,6 +51,18 @@
       progress: (p) => `${Math.min(Number(p.namedKills || 0), 10)}/10`,
       bonus: {},
     },
+    {
+      id: "the_have_not",
+      title: "死を超える",
+      desc: "？？？",
+      isDone: (p) => Number(p.nakedDefeats || 0) >= 1000,
+      progress: (p) => `${Math.min(Number(p.nakedDefeats || 0), 1000)}/1000`,
+      bonus: {},
+      reward: {
+        unlockJobs: ["have_not"],
+        text: "？？？",
+      },
+    },
   ];
 
   // 回避上限を段階的に引き上げる実績

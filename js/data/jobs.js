@@ -48,6 +48,26 @@
       bonuses: { strength: 1, vitality: 1, intelligence: 1, agility: 3, dexterity: 0 },
     },
 
+    have_not: {
+      name: "持たざる者",
+      desc: "何も持たずに抗う者",
+      favoredType: null,
+      unlock: {
+        type: "hidden_naked_defeat",
+        target: 1,
+        minLevel: 1,
+        text: "？？？",
+        hidden: true,
+      },
+      bonuses: {
+        strength: -5,
+        vitality: -5,
+        intelligence: -5,
+        agility: -5,
+        dexterity: -5,
+      },
+    },
+
     // -----------------
     // 上級職（条件達成で解放）
     // -----------------

@@ -1,61 +1,58 @@
-diff --git a/js/core.js b/js/core.js
-index 6ff8d46d3a101d9e16d046f5572da132777702da..7a210704d3fd9af605069ccc1dd543aaa68c757f 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -4016,55 +4016,53 @@
-       const jobExpRate =
-         typeof jobs?.[gameData.player?.job]?.traits?.expRate === "number"
-           ? jobs[gameData.player.job].traits.expRate
-           : 0;
-       exp = Math.round(
-         exp *
-           (1 + expBonus / 100) *
-           (1 + expSkillBonus / 100) *
-           (1 + expAchRate) *
-           (1 + jobExpRate),
+diff --git a/js/ui.js b/js/ui.js
+index 4de88b7a4546e7e4193547ae8ac5589eaa4d4798..6432518b508b709aa4f91b1ba5870202d17d5696 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2183,50 +2183,53 @@
+     grid.innerHTML = "";
+ 
+     const p = gameData.player;
+     if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
+       p.unlockedJobs = {};
+     if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
+       p.jobUnlockProgress = {};
+ 
+     const getUnlockInfo = (jobKey) => {
+       const jd = jobs[jobKey];
+       if (!jd || !jd.unlock) return { unlocked: true, text: "" };
+ 
+       const group = jd.skillGroup || jd.baseJob || jobKey;
+       const type = jd.unlock.type;
+       const target = Number(jd.unlock.target || 0);
+       const cur = Number(
+         (p.jobUnlockProgress &&
+           p.jobUnlockProgress[group] &&
+           p.jobUnlockProgress[group][type]) ||
+           0,
        );
+       const minLevel = Number(jd.unlock.minLevel || 0);
+       const level = Number(p.level || 0);
+       const levelOk = !minLevel || level >= minLevel;
+       const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
++      if (jd.unlock.hidden) {
++        return { unlocked, text: "？？？" };
++      }
+       const parts = [];
+       if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
+       return { unlocked, text: parts.join(" ＆ ") };
+     };
  
-       gameData.player.exp += exp;
-       log(`${exp}EXPを獲得！`);
+     const keys = Object.keys(jobs);
+     const baseKeys = keys.filter(
+       (k) => !jobs[k] || jobs[k].tier !== "advanced",
+     );
+     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
  
-       checkLevelUp();
+     const renderTitle = (title) => {
+       grid.innerHTML += `<div class="job-section-title">${title}</div>`;
+     };
  
-       // ドロップ判定
-       let dropChance = 30;
-       dropChance += getAccessoryBonus("dropRate");
-       dropChance +=
-         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
-           ? jobs[gameData.player.job].traits.dropRateBonus
-           : 0;
+     const renderCard = (key) => {
+       const job = jobs[key];
+       const isSelected = gameData.player.job === key;
  
--      const isBoss = !!enemy.isBoss;
-       const willDrop = Math.random() * 100 < dropChance;
+       const favoredName = getFavoredTypeLabel(job.favoredType);
  
--      // ボスは装備が必ず1つドロップ
--      if (willDrop || isBoss) {
-+      if (willDrop) {
-         const isNamedEnemy = !!enemy.isNamed;
-         const isHighSearchNamedEnemy =
-           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
-         const forcedSpecialPrefixRarityPool = isNamedEnemy
-           ? isHighSearchNamedEnemy
-             ? ["rare", "epic", "legendary"]
-             : ["rare", "epic"]
-           : null;
-         const item = generateEquipment({
-           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
-         });
-         const soldByAutoSell = evaluateAutoSellDropItem(item);
+       const unlockInfo = getUnlockInfo(key);
+       const locked = job.unlock && !unlockInfo.unlocked;
  
-         if (soldByAutoSell) {
-           log(`💸 ${item.name}を自動売却した。`);
-         } else {
-           gameData.player.inventory.push(item);
-           log(`${item.name}を手に入れた！`);
-         }
- 
-         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
-         if (
-           !soldByAutoSell &&
-           item &&
-           typeof item._specialPrefixName === "string" &&

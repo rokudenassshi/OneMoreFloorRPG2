@@ -2205,6 +2205,9 @@
       const level = Number(p.level || 0);
       const levelOk = !minLevel || level >= minLevel;
       const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+      if (jd.unlock.hidden) {
+        return { unlocked, text: "？？？" };
+      }
       const parts = [];
       if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);

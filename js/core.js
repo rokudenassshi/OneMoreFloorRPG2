@@ -1620,6 +1620,11 @@
     return total;
   }
 
+  function isFullyUnequipped(p) {
+    const eq = p && p.equipment && typeof p.equipment === "object" ? p.equipment : {};
+    return !eq.slot1 && !eq.slot2 && !eq.accessory;
+  }
+
   // 実績ボーナス（現在は経験値のみ）
   function getAchievementExpBonusRate() {
     const p = gameData.player;
@@ -1710,6 +1715,8 @@
       const r = def.reward;
       if (!r || typeof r !== "object") return;
 
+      let rewarded = false;
+
       // 例: reward.valuables = ["emblem_strength", { id: "emblem_vitality", amount: 2 }]
       if (Array.isArray(r.valuables)) {
         for (const v of r.valuables) {
@@ -1726,11 +1733,24 @@
           const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
           if (!defRelic) continue;
           addValuableByDef(defRelic, amount);
+          rewarded = true;
         }
-
-        // 報酬は1回だけ
-        if (claimedMap && def.id) claimedMap[def.id] = true;
       }
+
+      if (Array.isArray(r.unlockJobs)) {
+        if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
+        for (const jobKeyRaw of r.unlockJobs) {
+          const jobKey = String(jobKeyRaw || "");
+          if (!jobKey || !jobs[jobKey]) continue;
+          if (!p.unlockedJobs[jobKey]) {
+            p.unlockedJobs[jobKey] = true;
+          }
+          rewarded = true;
+        }
+      }
+
+      // 報酬は1回だけ
+      if (rewarded && claimedMap && def.id) claimedMap[def.id] = true;
     };
 
     for (const def of defs) {
@@ -4136,6 +4156,15 @@
         updateUI();
         return;
       }
+
+      if (isFullyUnequipped(gameData.player)) {
+        const cur = Number(gameData.player.nakedDefeats || 0);
+        gameData.player.nakedDefeats = Number.isFinite(cur)
+          ? Math.max(0, Math.floor(cur) + 1)
+          : 1;
+      }
+      checkAndUnlockAchievements();
+
       log("☠ 力尽きた…");
       gameData.player.hp = gameData.player.maxHp;
       gameData.floor = Math.max(1, gameData.floor - 3);
