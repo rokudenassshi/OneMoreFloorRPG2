@@ -8,9 +8,10 @@
   // -------------------
   // テスト用：階層上限
   // -------------------
-  // 250階層で頭打ち（テスト用）。
-  // 解除したい場合は null にするか、この定義ごと削除してください。
-  const TEST_FLOOR_CAP = 250;
+  // 通常時は250階層で頭打ち。
+  // 上限解放シリアル入力時は 2001 階層まで進行可能。
+  const DEFAULT_FLOOR_CAP = 250;
+  const UNLOCKED_FLOOR_CAP = 2001;
   const SERIAL_UNLOCK_STORE_KEY = "omf_serial_unlocks_v1";
   const BASE_EVASION_CAP = 70;
   const MAX_EVASION_CAP = 90;
@@ -55,19 +56,20 @@
     }
   }
 
+  function getCurrentFloorCap() {
+    return isFloorCapLiftUnlocked() ? UNLOCKED_FLOOR_CAP : DEFAULT_FLOOR_CAP;
+  }
+
   /**
-   * 階層を正規化する（1以上、テスト上限があれば上限までに丸める）
+   * 階層を正規化する（1以上、現在の上限までに丸める）
    * @param {number} n
    * @returns {number}
    */
   function clampFloor(n) {
     const f = Math.max(1, Math.floor(Number(n || 1)));
-    if (
-      Number.isFinite(TEST_FLOOR_CAP) &&
-      TEST_FLOOR_CAP > 0 &&
-      !isFloorCapLiftUnlocked()
-    ) {
-      return Math.min(TEST_FLOOR_CAP, f);
+    const floorCap = getCurrentFloorCap();
+    if (Number.isFinite(floorCap) && floorCap > 0) {
+      return Math.min(floorCap, f);
     }
     return f;
   }
@@ -1863,13 +1865,11 @@
     if (gameData.gameState !== "EXPLORE") return;
 
     const cur = clampFloor(gameData.floor || 1);
+    const floorCap = getCurrentFloorCap();
     const isAtTestFloorCap =
-      Number.isFinite(TEST_FLOOR_CAP) &&
-      TEST_FLOOR_CAP > 0 &&
-      cur >= TEST_FLOOR_CAP &&
-      !isFloorCapLiftUnlocked();
+      Number.isFinite(floorCap) && floorCap > 0 && cur >= floorCap;
 
-    // テスト上限に到達している場合：251へは進めないが、戦闘は発生させる（周回用）
+    // 上限に到達している場合：次階層へは進めないが、戦闘は発生させる（周回用）
     if (dir > 0 && isAtTestFloorCap) {
       gameData.floor = cur;
       // 進行待ちを残さず、現在階層で戦闘開始
@@ -1947,14 +1947,10 @@
     );
 
     const rawDest = Math.max(1, Math.floor(Number(destFloor || 1)));
-    if (
-      Number.isFinite(TEST_FLOOR_CAP) &&
-      TEST_FLOOR_CAP > 0 &&
-      !isFloorCapLiftUnlocked() &&
-      rawDest > TEST_FLOOR_CAP
-    ) {
+    const floorCap = getCurrentFloorCap();
+    if (Number.isFinite(floorCap) && floorCap > 0 && rawDest > floorCap) {
       if (typeof log === "function")
-        log(`⚠️ テスト上限は${TEST_FLOOR_CAP}階層（指定: ${rawDest}階）`);
+        log(`⚠️ 階層上限は${floorCap}階（指定: ${rawDest}階）`);
       return false;
     }
     const dest = rawDest;
