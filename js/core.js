@@ -35,6 +35,26 @@
     }
   }
 
+  function isStayBattleUnlocked() {
+    const p = gameData && gameData.player;
+    if (
+      p &&
+      p.serialUnlocks &&
+      typeof p.serialUnlocks === "object" &&
+      p.serialUnlocks.stayBattle
+    ) {
+      return true;
+    }
+
+    try {
+      const raw = localStorage.getItem(SERIAL_UNLOCK_STORE_KEY);
+      const obj = raw ? JSON.parse(raw) : null;
+      return !!(obj && typeof obj === "object" && obj.stayBattle);
+    } catch (e) {
+      return false;
+    }
+  }
+
   /**
    * 階層を正規化する（1以上、テスト上限があれば上限までに丸める）
    * @param {number} n
@@ -121,6 +141,14 @@
     const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
     const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
     p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
+  }
+
+  function ensureSerialOptionsConfig(p) {
+    if (!p || typeof p !== "object") return;
+    const src = p.serialOptions && typeof p.serialOptions === "object" ? p.serialOptions : {};
+    p.serialOptions = {
+      stayBattleCurrentFloor: !!src.stayBattleCurrentFloor,
+    };
   }
 
   function normalizeValuables(p) {
@@ -350,6 +378,7 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
+    ensureSerialOptionsConfig(gameData.player);
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
       if (gameData && gameData.player) {
@@ -575,6 +604,7 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
+    ensureSerialOptionsConfig(gameData.player);
     if (typeof window.promptGoogleLoginAtStart === "function") {
       try {
         await window.promptGoogleLoginAtStart();
@@ -4124,21 +4154,29 @@
 
       // 敵を倒したら階層が上がる（進行待ちがある場合）
       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+        const stayCurrentFloor =
+          isStayBattleUnlocked() &&
+          !!(gameData.player && gameData.player.serialOptions && gameData.player.serialOptions.stayBattleCurrentFloor);
         const nf = clampFloor(Number(gameData.pendingFloorAfterWin));
         gameData.pendingFloorAfterWin = null;
-        gameData.floor = nf;
 
-        if (typeof gameData.player.maxReachedFloor !== "number")
-          gameData.player.maxReachedFloor = 1;
-        gameData.player.maxReachedFloor = Math.max(
-          gameData.player.maxReachedFloor,
-          gameData.floor,
-        );
-        gameData.player.maxReachedFloor = clampFloor(
-          gameData.player.maxReachedFloor,
-        );
-        checkAndUnlockAchievements();
-        log(`✅ ${gameData.floor}階層へ進んだ！`);
+        if (stayCurrentFloor) {
+          log("📍 シリアル特典で現在の階層に留まった");
+        } else {
+          gameData.floor = nf;
+
+          if (typeof gameData.player.maxReachedFloor !== "number")
+            gameData.player.maxReachedFloor = 1;
+          gameData.player.maxReachedFloor = Math.max(
+            gameData.player.maxReachedFloor,
+            gameData.floor,
+          );
+          gameData.player.maxReachedFloor = clampFloor(
+            gameData.player.maxReachedFloor,
+          );
+          checkAndUnlockAchievements();
+          log(`✅ ${gameData.floor}階層へ進んだ！`);
+        }
       }
 
       // 取得した貴重品でステータスが変わることがあるので、ここで反映
@@ -4165,9 +4203,16 @@
       }
       checkAndUnlockAchievements();
 
+      const stayCurrentFloor =
+        isStayBattleUnlocked() &&
+        !!(gameData.player && gameData.player.serialOptions && gameData.player.serialOptions.stayBattleCurrentFloor);
       log("☠ 力尽きた…");
       gameData.player.hp = gameData.player.maxHp;
-      gameData.floor = Math.max(1, gameData.floor - 3);
+      if (stayCurrentFloor) {
+        log("📍 シリアル特典で現在の階層に留まった");
+      } else {
+        gameData.floor = Math.max(1, gameData.floor - 3);
+      }
       endBattle(false);
     }
   }
@@ -5313,6 +5358,7 @@
 
   window.move = move;
   window.teleportToFloor = teleportToFloor;
+  window.isStayBattleUnlocked = isStayBattleUnlocked;
   window.startBattle = startBattle;
   window.attack = attack;
   window.defend = defend;

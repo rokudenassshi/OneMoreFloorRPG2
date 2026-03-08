@@ -56,6 +56,11 @@
       skillPoints: 0,
       autoAllocateExpUp: false,
 
+      // シリアル特典の設定
+      serialOptions: {
+        stayBattleCurrentFloor: false,
+      },
+
       skills: {},
       equippedSkill: null,
       skillCooldown: 0,

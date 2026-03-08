@@ -740,6 +740,23 @@ button:active {
   color: #fff;
 }
 
+.teleport-stay-row {
+  margin: 8px 0 12px;
+}
+
+.teleport-stay-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ddd;
+}
+
+.teleport-stay-label input {
+  width: 16px;
+  height: 16px;
+}
+
 .stat-alloc-item {
   display: flex;
   justify-content: space-between;

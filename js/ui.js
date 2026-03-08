@@ -1716,6 +1716,33 @@
     return { list, maxReached };
   }
 
+  function syncTeleportStayBattleUi() {
+    const row = document.getElementById("teleportStayBattleRow");
+    const toggle = document.getElementById("teleportStayBattleToggle");
+    if (!row || !toggle) return;
+
+    const unlocked =
+      typeof window.isStayBattleUnlocked === "function"
+        ? !!window.isStayBattleUnlocked()
+        : false;
+    const enabled =
+      unlocked &&
+      !!(
+        gameData &&
+        gameData.player &&
+        gameData.player.serialOptions &&
+        gameData.player.serialOptions.stayBattleCurrentFloor
+      );
+
+    if (unlocked) {
+      row.classList.remove("hidden");
+      toggle.checked = enabled;
+    } else {
+      row.classList.add("hidden");
+      toggle.checked = false;
+    }
+  }
+
   function openTeleportModal() {
     if (!gameData || gameData.gameState !== "EXPLORE") {
       log("⚠️ 戦闘中は転移できません");
@@ -1728,6 +1755,8 @@
     const maxEl = document.getElementById("teleportMaxReached");
     const select = document.getElementById("teleportSelect");
     if (!modal || !select || !maxEl) return;
+
+    syncTeleportStayBattleUi();
 
     const { list, maxReached } = buildTeleportFloorList();
     maxEl.textContent = String(maxReached);
@@ -1781,7 +1810,23 @@
 
   function confirmTeleport() {
     const select = document.getElementById("teleportSelect");
+    const stayToggle = document.getElementById("teleportStayBattleToggle");
     const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
+
+    const unlocked =
+      typeof window.isStayBattleUnlocked === "function"
+        ? !!window.isStayBattleUnlocked()
+        : false;
+    if (gameData && gameData.player) {
+      if (
+        !gameData.player.serialOptions ||
+        typeof gameData.player.serialOptions !== "object"
+      ) {
+        gameData.player.serialOptions = {};
+      }
+      gameData.player.serialOptions.stayBattleCurrentFloor =
+        unlocked && !!(stayToggle && stayToggle.checked);
+    }
 
     if (typeof window.teleportToFloor === "function") {
       const ok = window.teleportToFloor(dest);

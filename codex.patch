@@ -1,103 +1,72 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index 7470580303e654936bf5b7d5694a5ffe579ea99a..85c20109a50c24632a49161366c4e531e41d63ca 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -18,77 +18,97 @@
-     } catch (e) {
-       return {};
-     }
-   }
+diff --git a/style_new.css b/style_new.css
+index b745327947cbc8ed444461e126acdae65c1e500a..077130eecb58ff99d561afdba94d449e6afacba2 100644
+--- a/style_new.css
++++ b/style_new.css
+@@ -718,50 +718,67 @@ button:active {
  
-   function saveStore(store) {
-     try {
-       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
-     } catch (e) {}
-   }
+ /* 転移モーダル */
+ .teleport-row {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   margin: 12px 0;
+ }
  
-   function getPlayer() {
-     return window.gameData && window.gameData.player
-       ? window.gameData.player
-       : null;
-   }
+ .teleport-row label {
+   font-size: 13px;
+   color: #ddd;
+   min-width: 56px;
+ }
  
-   // ✅ “シリアルコード → 解放キー”
-   // セキュリティのため通常は空（サーバー側で検証）。
-   const serialCodeLookup = {};
+ .teleport-select {
+   flex: 1;
+   padding: 10px;
+   font-size: 16px;
+   border-radius: 8px;
+   border: 1px solid #666;
+   background: #222;
+   color: #fff;
+ }
  
-   // ✅ “解放キー → 実行内容”
-   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
-   const serialCodeActions = {
-     stayBattle: {
--      isUnlocked: () => !!loadStore().stayBattle,
-+      isUnlocked: () => {
-+        const s = loadStore();
-+        if (s.stayBattle) return true;
-+        const p = getPlayer();
-+        return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
-+      },
-       unlock: () => {
-         const s = loadStore();
-         s.stayBattle = true;
-         saveStore(s);
++.teleport-stay-row {
++  margin: 8px 0 12px;
++}
 +
-+        const p = getPlayer();
-+        if (p) {
-+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-+            p.serialUnlocks = {};
-+          p.serialUnlocks.stayBattle = true;
-+        }
++.teleport-stay-label {
++  display: inline-flex;
++  align-items: center;
++  gap: 8px;
++  font-size: 13px;
++  color: #ddd;
++}
 +
-+        if (typeof window.checkAndUnlockAchievements === "function") {
-+          window.checkAndUnlockAchievements({ silent: false });
-+        }
-       },
-       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
-     },
- 
-     floorCapLift250: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.floorCapLift250) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.floorCapLift250 = true;
-         saveStore(s);
- 
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.floorCapLift250 = true;
-         }
++.teleport-stay-label input {
++  width: 16px;
++  height: 16px;
++}
 +
-+        if (typeof window.checkAndUnlockAchievements === "function") {
-+          window.checkAndUnlockAchievements({ silent: false });
-+        }
-       },
-       logMessage:
-         "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
-     },
+ .stat-alloc-item {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 10px;
+   background: #2a2a2a;
+   border-radius: 6px;
+   margin-bottom: 8px;
+ }
  
-     // 前世の記憶（実績解除：経験値+20%）
-     pastLifeMemory: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.pastLifeMemory) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
-       },
-       unlock: () => {
-         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
-         const s = loadStore();
-         s.pastLifeMemory = true;
-         saveStore(s);
+ .stat-alloc-controls {
+   display: flex;
+   gap: 8px;
+   align-items: center;
+ }
  
-         // 2) セーブデータ側にも保存（実績用）
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.pastLifeMemory = true;
+ .stat-alloc-controls button {
+   width: 36px;
+   height: 36px;
+   padding: 0;
+   font-size: 18px;
+   margin: 0;
+ }
+ 
+ .stat-alloc-value {
