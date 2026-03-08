@@ -2257,6 +2257,20 @@
     enemy.dex = Math.round(enemy.dex * floorMul);
     enemy.exp = Math.round(enemy.exp * floorMul);
 
+    // 1500〜2000Fは50階層ごとに追加ブースト
+    if (floor >= 1500) {
+      const boostSteps = Math.floor((Math.min(floor, 2000) - 1500) / 50) + 1;
+      const statBoostMul = 1 + boostSteps * 0.08;
+      const expBoostMul = 1 + boostSteps * 0.1;
+      enemy.hp = Math.round(enemy.hp * statBoostMul);
+      enemy.str = Math.round(enemy.str * statBoostMul);
+      enemy.vit = Math.round(enemy.vit * statBoostMul);
+      enemy.int = Math.round(enemy.int * statBoostMul);
+      enemy.agi = Math.round(enemy.agi * statBoostMul);
+      enemy.dex = Math.round(enemy.dex * statBoostMul);
+      enemy.exp = Math.round(enemy.exp * expBoostMul);
+    }
+
     // 二つ名判定（索敵が 0 の場合は出ない）
     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
     const epithetChance =

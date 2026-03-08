@@ -638,13 +638,38 @@
     { name: "深淵の観測者", hp: 24400, str: 500, vit: 1040, int: 500, agi: 84, dex: 104, exp: 4400, minFloor: 910, maxFloor: 985, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
     { name: "原初の終末", hp: 28500, str: 660, vit: 1250, int: 440, agi: 78, dex: 94, exp: 5300, minFloor: 950, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
     { name: "時界の破壊神", hp: 31000, str: 720, vit: 1320, int: 480, agi: 86, dex: 108, exp: 6200, minFloor: 980, maxFloor: 1000, skills: ["thunder_strike", "doom_mark", "crushing_blow", "silence_hex", "heal"] },
+
+    // --------------------
+    // 1000〜1500F（新テーブル）
+    // --------------------
+    { name: "星墓の守護獣", hp: 36000, str: 820, vit: 1500, int: 520, agi: 92, dex: 118, exp: 7600, minFloor: 1001, maxFloor: 1125, skills: ["power_strike", "crushing_blow", "roar", "heal"] },
+    { name: "深淵魔導司祭", hp: 34500, str: 700, vit: 1420, int: 680, agi: 98, dex: 122, exp: 7900, minFloor: 1040, maxFloor: 1180, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "断罪の雷帝", hp: 39000, str: 880, vit: 1560, int: 620, agi: 108, dex: 130, exp: 8400, minFloor: 1090, maxFloor: 1240, skills: ["thunder_strike", "crushing_blow", "multi_slash", "doom_mark"] },
+    { name: "虚界の竜神", hp: 42000, str: 940, vit: 1680, int: 700, agi: 102, dex: 134, exp: 9000, minFloor: 1160, maxFloor: 1320, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
+    { name: "冥刻の監視者", hp: 45500, str: 910, vit: 1760, int: 780, agi: 118, dex: 146, exp: 9600, minFloor: 1230, maxFloor: 1400, skills: ["ice_lance", "silence_hex", "doom_mark", "multi_slash", "heal"] },
+    { name: "奈落の絶影", hp: 48000, str: 990, vit: 1820, int: 640, agi: 132, dex: 160, exp: 10300, minFloor: 1300, maxFloor: 1460, skills: ["multi_slash", "power_strike", "doom_mark", "bite_poison"] },
+    { name: "天滅の機神", hp: 52000, str: 1080, vit: 1960, int: 760, agi: 110, dex: 142, exp: 11200, minFloor: 1380, maxFloor: 1500, skills: ["crushing_blow", "thunder_strike", "roar", "doom_mark", "heal"] },
+    { name: "彼岸の統治者", hp: 56000, str: 1150, vit: 2100, int: 860, agi: 124, dex: 154, exp: 12200, minFloor: 1450, maxFloor: 1500, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+
+    // --------------------
+    // 1500〜2000F（新テーブル）
+    // ※core.js 側で50階層ごとの追加ステータスブーストあり
+    // --------------------
+    { name: "虚星の侵略者", hp: 62000, str: 1260, vit: 2300, int: 920, agi: 136, dex: 170, exp: 13800, minFloor: 1501, maxFloor: 1620, skills: ["multi_slash", "power_strike", "doom_mark", "heal"] },
+    { name: "冥雷の皇子", hp: 65500, str: 1340, vit: 2380, int: 980, agi: 148, dex: 182, exp: 14600, minFloor: 1530, maxFloor: 1680, skills: ["thunder_strike", "crushing_blow", "doom_mark", "roar", "heal"] },
+    { name: "蒼獄の司書", hp: 64000, str: 1210, vit: 2360, int: 1180, agi: 144, dex: 176, exp: 15000, minFloor: 1560, maxFloor: 1720, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "断界の処刑騎士", hp: 70000, str: 1450, vit: 2540, int: 1020, agi: 154, dex: 188, exp: 16200, minFloor: 1610, maxFloor: 1780, skills: ["power_strike", "crushing_blow", "multi_slash", "doom_mark"] },
+    { name: "極夜の聖獣", hp: 73500, str: 1500, vit: 2640, int: 1100, agi: 160, dex: 194, exp: 17100, minFloor: 1660, maxFloor: 1840, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex", "doom_mark"] },
+    { name: "原罪の審判眼", hp: 78000, str: 1580, vit: 2760, int: 1240, agi: 172, dex: 206, exp: 18400, minFloor: 1720, maxFloor: 1910, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
+    { name: "無窮の戦神", hp: 84000, str: 1720, vit: 2920, int: 1080, agi: 166, dex: 202, exp: 19800, minFloor: 1790, maxFloor: 1970, skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"] },
+    { name: "終刻の創壊王", hp: 91000, str: 1860, vit: 3100, int: 1320, agi: 180, dex: 218, exp: 22000, minFloor: 1880, maxFloor: 2000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
 ];
 
   
   // --------------------
   // ボスモンスター（敵テーブル切替階層）
   // --------------------
-  // 100F / 200F / 500F / 1000F に固定出現するボス。
+  // 100F / 200F / 500F / 1000F / 1500F / 2000F に固定出現するボス。
   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
   const bossMonsters = {
     100: {
@@ -698,6 +723,32 @@
       isBoss: true,
       skills: ["doom_mark", "fireball", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
       effects: { damageReduction: 0.22, regenRate: 0.05, extraTurnChance: 0.12, armorPierceRate: 0.25 },
+    },
+    1500: {
+      name: "深宙の覇皇",
+      hp: 76000,
+      str: 1700,
+      vit: 2860,
+      int: 1200,
+      agi: 170,
+      dex: 205,
+      exp: 28000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.28, regenRate: 0.07, extraTurnChance: 0.16, armorPierceRate: 0.32 },
+    },
+    2000: {
+      name: "界滅の絶対者",
+      hp: 130000,
+      str: 2550,
+      vit: 4200,
+      int: 1800,
+      agi: 220,
+      dex: 260,
+      exp: 52000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.34, regenRate: 0.09, extraTurnChance: 0.2, armorPierceRate: 0.4 },
     },
   };
 

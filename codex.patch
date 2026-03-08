@@ -1,61 +1,148 @@
-diff --git a/js/ui.js b/js/ui.js
-index 6432518b508b709aa4f91b1ba5870202d17d5696..c3c01dfdc4a1ce93f3077d7bd6af5b7a32485f9b 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1872,50 +1872,56 @@
-     const list = rows
-       .filter((row) => !row.done)
-       .concat(rows.filter((row) => row.done));
+diff --git a/js/data/enemies.js b/js/data/enemies.js
+index a28c9d437893ed5ff10e1fa300155d99b6cf480a..520596e63b7ea61d909de0612397becb5fd4f526 100644
+--- a/js/data/enemies.js
++++ b/js/data/enemies.js
+@@ -616,57 +616,82 @@
+     { name: "災禍の大公", hp: 4600, str: 190, vit: 300, int: 170, agi: 38, dex: 50, exp: 1120, minFloor: 420, maxFloor: 500, skills: ["fireball", "doom_mark", "heal", "crushing_blow"] },
+     { name: "原初の龍王", hp: 5600, str: 220, vit: 380, int: 200, agi: 40, dex: 56, exp: 1250, minFloor: 460, maxFloor: 500, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow"] },
+     { name: "終末の審判者", hp: 6200, str: 240, vit: 420, int: 210, agi: 42, dex: 60, exp: 1400, minFloor: 485, maxFloor: 500, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
  
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
-         let bonusText = "";
-         if (a.bonus) {
-           const parts = [];
-           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
-             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
-           }
-           if (
-             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
-             a.bonus.asuraBaseStatMultiplierBonus > 0
-           ) {
-             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
-           }
-           if (
-             typeof a.bonus.evasionCapBonus === "number" &&
-             a.bonus.evasionCapBonus > 0
-           ) {
-             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
-           }
-+          if (
-+            typeof a.bonus.itemDropRate === "number" &&
-+            a.bonus.itemDropRate > 0
-+          ) {
-+            parts.push(`アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`);
-+          }
-           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
-         }
-         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
-       })
-       .join("");
-   }
+     // --------------------
+     // 500〜800F
+     // --------------------
+     { name: "深層の獣王", hp: 8200, str: 260, vit: 500, int: 80, agi: 60, dex: 62, exp: 1500, minFloor: 501, maxFloor: 600, skills: ["multi_slash", "power_strike"] },
+     { name: "魔晶機兵", hp: 9000, str: 280, vit: 560, int: 60, agi: 40, dex: 55, exp: 1600, minFloor: 530, maxFloor: 640, skills: ["crushing_blow", "roar", "power_strike"] },
+     { name: "星喰らい", hp: 9800, str: 290, vit: 590, int: 220, agi: 48, dex: 66, exp: 1750, minFloor: 560, maxFloor: 680, skills: ["fireball", "ice_lance", "thunder_strike"] },
+     { name: "黒曜竜", hp: 11200, str: 320, vit: 640, int: 180, agi: 52, dex: 74, exp: 1900, minFloor: 600, maxFloor: 730, skills: ["fireball", "doom_mark", "crushing_blow"] },
+     { name: "冥府の死神", hp: 12400, str: 360, vit: 680, int: 150, agi: 72, dex: 82, exp: 2100, minFloor: 650, maxFloor: 780, skills: ["multi_slash", "doom_mark", "power_strike"] },
+     { name: "神罰の天使", hp: 13600, str: 340, vit: 720, int: 260, agi: 68, dex: 78, exp: 2280, minFloor: 690, maxFloor: 800, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
+     { name: "機神の番人", hp: 14800, str: 390, vit: 790, int: 110, agi: 46, dex: 64, exp: 2450, minFloor: 730, maxFloor: 800, skills: ["crushing_blow", "power_strike", "roar"] },
+     { name: "虚無の覇者", hp: 15800, str: 430, vit: 820, int: 300, agi: 60, dex: 80, exp: 2650, minFloor: 760, maxFloor: 800, skills: ["fireball", "doom_mark", "heal"] },
  
-   function updateOptionsUI() {
-     const cb = document.getElementById("optAutosave");
-     if (cb) cb.checked = isAutosaveEnabled();
+     // --------------------
+     // 800〜1000F
+     // --------------------
+     { name: "終焉の大魔王", hp: 18000, str: 490, vit: 920, int: 340, agi: 60, dex: 80, exp: 3000, minFloor: 801, maxFloor: 900, skills: ["fireball", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+     { name: "天輪の裁定者", hp: 19800, str: 520, vit: 980, int: 370, agi: 74, dex: 90, exp: 3350, minFloor: 830, maxFloor: 930, skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"] },
+     { name: "万象の龍帝", hp: 22000, str: 570, vit: 1080, int: 390, agi: 78, dex: 94, exp: 3750, minFloor: 870, maxFloor: 960, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
+     { name: "深淵の観測者", hp: 24400, str: 500, vit: 1040, int: 500, agi: 84, dex: 104, exp: 4400, minFloor: 910, maxFloor: 985, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
+     { name: "原初の終末", hp: 28500, str: 660, vit: 1250, int: 440, agi: 78, dex: 94, exp: 5300, minFloor: 950, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
+     { name: "時界の破壊神", hp: 31000, str: 720, vit: 1320, int: 480, agi: 86, dex: 108, exp: 6200, minFloor: 980, maxFloor: 1000, skills: ["thunder_strike", "doom_mark", "crushing_blow", "silence_hex", "heal"] },
++
++    // --------------------
++    // 1000〜1500F（新テーブル）
++    // --------------------
++    { name: "星墓の守護獣", hp: 36000, str: 820, vit: 1500, int: 520, agi: 92, dex: 118, exp: 7600, minFloor: 1001, maxFloor: 1125, skills: ["power_strike", "crushing_blow", "roar", "heal"] },
++    { name: "深淵魔導司祭", hp: 34500, str: 700, vit: 1420, int: 680, agi: 98, dex: 122, exp: 7900, minFloor: 1040, maxFloor: 1180, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
++    { name: "断罪の雷帝", hp: 39000, str: 880, vit: 1560, int: 620, agi: 108, dex: 130, exp: 8400, minFloor: 1090, maxFloor: 1240, skills: ["thunder_strike", "crushing_blow", "multi_slash", "doom_mark"] },
++    { name: "虚界の竜神", hp: 42000, str: 940, vit: 1680, int: 700, agi: 102, dex: 134, exp: 9000, minFloor: 1160, maxFloor: 1320, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
++    { name: "冥刻の監視者", hp: 45500, str: 910, vit: 1760, int: 780, agi: 118, dex: 146, exp: 9600, minFloor: 1230, maxFloor: 1400, skills: ["ice_lance", "silence_hex", "doom_mark", "multi_slash", "heal"] },
++    { name: "奈落の絶影", hp: 48000, str: 990, vit: 1820, int: 640, agi: 132, dex: 160, exp: 10300, minFloor: 1300, maxFloor: 1460, skills: ["multi_slash", "power_strike", "doom_mark", "bite_poison"] },
++    { name: "天滅の機神", hp: 52000, str: 1080, vit: 1960, int: 760, agi: 110, dex: 142, exp: 11200, minFloor: 1380, maxFloor: 1500, skills: ["crushing_blow", "thunder_strike", "roar", "doom_mark", "heal"] },
++    { name: "彼岸の統治者", hp: 56000, str: 1150, vit: 2100, int: 860, agi: 124, dex: 154, exp: 12200, minFloor: 1450, maxFloor: 1500, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
++
++    // --------------------
++    // 1500〜2000F（新テーブル）
++    // ※core.js 側で50階層ごとの追加ステータスブーストあり
++    // --------------------
++    { name: "虚星の侵略者", hp: 62000, str: 1260, vit: 2300, int: 920, agi: 136, dex: 170, exp: 13800, minFloor: 1501, maxFloor: 1620, skills: ["multi_slash", "power_strike", "doom_mark", "heal"] },
++    { name: "冥雷の皇子", hp: 65500, str: 1340, vit: 2380, int: 980, agi: 148, dex: 182, exp: 14600, minFloor: 1530, maxFloor: 1680, skills: ["thunder_strike", "crushing_blow", "doom_mark", "roar", "heal"] },
++    { name: "蒼獄の司書", hp: 64000, str: 1210, vit: 2360, int: 1180, agi: 144, dex: 176, exp: 15000, minFloor: 1560, maxFloor: 1720, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
++    { name: "断界の処刑騎士", hp: 70000, str: 1450, vit: 2540, int: 1020, agi: 154, dex: 188, exp: 16200, minFloor: 1610, maxFloor: 1780, skills: ["power_strike", "crushing_blow", "multi_slash", "doom_mark"] },
++    { name: "極夜の聖獣", hp: 73500, str: 1500, vit: 2640, int: 1100, agi: 160, dex: 194, exp: 17100, minFloor: 1660, maxFloor: 1840, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex", "doom_mark"] },
++    { name: "原罪の審判眼", hp: 78000, str: 1580, vit: 2760, int: 1240, agi: 172, dex: 206, exp: 18400, minFloor: 1720, maxFloor: 1910, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
++    { name: "無窮の戦神", hp: 84000, str: 1720, vit: 2920, int: 1080, agi: 166, dex: 202, exp: 19800, minFloor: 1790, maxFloor: 1970, skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"] },
++    { name: "終刻の創壊王", hp: 91000, str: 1860, vit: 3100, int: 1320, agi: 180, dex: 218, exp: 22000, minFloor: 1880, maxFloor: 2000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+ ];
  
-     // シリアルコード入力の有効/無効
-     const inputEl = document.getElementById("serialCodeInput");
-     const btnEl = document.getElementById("serialCodeSubmitBtn");
-     const disabled = !!serialCodePending;
-     if (inputEl) inputEl.disabled = disabled;
-     if (btnEl) btnEl.disabled = disabled;
-   }
+   
+   // --------------------
+   // ボスモンスター（敵テーブル切替階層）
+   // --------------------
+-  // 100F / 200F / 500F / 1000F に固定出現するボス。
++  // 100F / 200F / 500F / 1000F / 1500F / 2000F に固定出現するボス。
+   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
+   const bossMonsters = {
+     100: {
+       name: "境界の守護竜",
+       hp: 900,
+       str: 38,
+       vit: 28,
+       int: 20,
+       agi: 10,
+       dex: 14,
+       exp: 380,
+       isBoss: true,
+       skills: ["fireball", "power_strike", "roar", "heal"],
+       effects: { damageReduction: 0.08, regenRate: 0.03 },
+     },
+     200: {
+       name: "黒鋼の巨王",
+       hp: 1800,
+       str: 68,
+       vit: 62,
+       int: 18,
+       agi: 12,
+       dex: 18,
+       exp: 900,
+       isBoss: true,
+@@ -677,33 +702,59 @@
+       name: "冥界の審理者",
+       hp: 8500,
+       str: 300,
+       vit: 520,
+       int: 260,
+       agi: 45,
+       dex: 65,
+       exp: 2200,
+       isBoss: true,
+       skills: ["doom_mark", "fireball", "ice_lance", "crushing_blow", "silence_hex", "heal"],
+       effects: { damageReduction: 0.18, regenRate: 0.04, extraTurnChance: 0.08 },
+     },
+     1000: {
+       name: "終焉の根源",
+       hp: 32000,
+       str: 780,
+       vit: 1400,
+       int: 520,
+       agi: 90,
+       dex: 120,
+       exp: 9000,
+       isBoss: true,
+       skills: ["doom_mark", "fireball", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+       effects: { damageReduction: 0.22, regenRate: 0.05, extraTurnChance: 0.12, armorPierceRate: 0.25 },
+     },
++    1500: {
++      name: "深宙の覇皇",
++      hp: 76000,
++      str: 1700,
++      vit: 2860,
++      int: 1200,
++      agi: 170,
++      dex: 205,
++      exp: 28000,
++      isBoss: true,
++      skills: ["doom_mark", "fireball", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
++      effects: { damageReduction: 0.28, regenRate: 0.07, extraTurnChance: 0.16, armorPierceRate: 0.32 },
++    },
++    2000: {
++      name: "界滅の絶対者",
++      hp: 130000,
++      str: 2550,
++      vit: 4200,
++      int: 1800,
++      agi: 220,
++      dex: 260,
++      exp: 52000,
++      isBoss: true,
++      skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
++      effects: { damageReduction: 0.34, regenRate: 0.09, extraTurnChance: 0.2, armorPierceRate: 0.4 },
++    },
+   };
  
-   function handleSerialCodeKeydown(event) {
-     if (event?.key !== "Enter") return;
-     handleSerialCodeSubmit();
-   }
  
-   async function handleSerialCodeSubmit() {
+ window.epithets = epithets;
+   window.enemySkills = enemySkills;
+   window.monsterTypes = monsterTypes;
+   window.bossMonsters = bossMonsters;
+ })();
