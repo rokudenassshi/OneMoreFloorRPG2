@@ -63,7 +63,8 @@
       id: "serial_floor_cap_lift_250",
       title: "深淵への通行証",
       desc: "シリアルコード（250階制限解除）を入力する",
-      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
+      isDone: (p) =>
+        !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
       progress: (p) =>
         p && p.serialUnlocks && p.serialUnlocks.floorCapLift250 ? "1/1" : "0/1",
       bonus: {},
@@ -255,8 +256,11 @@
           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
         onCheck: (p) => {
           if (!ms.unlockAfterId) return;
-          const unlocked =
-            !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+          const unlocked = !!(
+            p &&
+            p.achievements &&
+            p.achievements[ms.unlockAfterId]
+          );
           if (!unlocked) return;
           const map = ensureAsuraMilestoneStartMap(p);
           const cur = Number(map[ms.id]);
@@ -287,12 +291,12 @@
 
   // -----------------
   // 上級職 実績
-  // - 各上級職で 10000 体撃破（個別）
+  // - 各上級職で 1000 体撃破（個別）
   // - 報酬：経験値 +10%
   // -----------------
   {
     const jobs = window.jobs || {};
-    const ADV_TARGET = 10000;
+    const ADV_TARGET = 1000;
     const advKeys = Object.keys(jobs).filter(
       (k) => jobs[k] && jobs[k].tier === "advanced",
     );
@@ -320,11 +324,9 @@
     }
   }
 
-
-
   // -----------------
   // 全職制覇 実績
-  // - 持たざる者・勇者を除く各職業で 10000 体撃破
+  // - 各職業で 10000 体撃破
   // - 報酬：職業「勇者」解放
   // -----------------
   {
@@ -347,14 +349,28 @@
         0,
       );
 
+    const getJobName = (jobKey) => {
+      const jd = jobs[jobKey];
+      return jd && jd.name ? jd.name : jobKey;
+    };
+
+    const formatPerJobProgress = (p) =>
+      requiredJobKeys
+        .map(
+          (k) =>
+            `${getJobName(k)}:${Math.min(getKills(p, k), TARGET)}/${TARGET}`,
+        )
+        .join(" / ");
+
     achievementDefs.push({
       id: "all_jobs_slayer_10000_except_have_not",
       title: "全職の極意",
-      desc: `持たざる者以外の各職業でモンスターを${TARGET}体倒す`,
+      desc: `全職業でモンスターを${TARGET}体倒す`,
       isDone: (p) =>
         requiredJobKeys.length > 0 &&
         requiredJobKeys.every((k) => getKills(p, k) >= TARGET),
-      progress: (p) => `${getDoneCount(p)}/${requiredJobKeys.length}`,
+      progress: (p) =>
+        `${getDoneCount(p)}/${requiredJobKeys.length}職達成 / ${formatPerJobProgress(p)}`,
       bonus: {},
       reward: {
         unlockJobs: ["hero"],

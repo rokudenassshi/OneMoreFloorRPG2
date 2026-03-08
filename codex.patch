@@ -1,135 +1,120 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 94f96cb398e84ec87496bb4eb9c97ee0c755fc40..cab556e471695d62b258651a5da13a2ae8bfb564 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -2073,29 +2073,130 @@
-       requiredPoints: 7,
-       exclusiveGroup: "warfiend_ultimate",
-       cooldown: 8,
-       desc: "吸い上げる一撃（{value}倍、与ダメの30%回復）",
-       effect: (lv) => ({ damageMultiplier: 2.1 + lv * 0.22, healPercent: 0.3 }),
-     },
+diff --git a/js/data/achievements.js b/js/data/achievements.js
+index cb7e4e88160f1e4f386831770b7249918cc3a9fd..6d4d041b72a71ebff06b91dc5fa37eb55dd5e94c 100644
+--- a/js/data/achievements.js
++++ b/js/data/achievements.js
+@@ -265,56 +265,56 @@
+         },
+         isDone: (p) => {
+           const unlocked =
+             !ms.unlockAfterId ||
+             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+           if (!unlocked) return false;
+           const startKills = getAsuraMilestoneStartKills(p, ms);
+           return Math.max(0, getAsuraKills(p) - startKills) >= ms.needKills;
+         },
+         progress: (p) => {
+           const unlocked =
+             !ms.unlockAfterId ||
+             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+           if (!unlocked) return "未解放";
+           const startKills = getAsuraMilestoneStartKills(p, ms);
+           const v = Math.max(0, getAsuraKills(p) - startKills);
+           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
+         },
+         bonus: { asuraBaseStatMultiplierBonus: 1 },
+       });
+     });
+   }
  
-     warfiend_frenzy_rend: {
-       name: "裂狂",
-       type: "active",
-       accuracy: 105,
-       job: "warfiend",
-       maxLevel: 3,
-       requiredPoints: 7,
-       exclusiveGroup: "warfiend_ultimate",
-       cooldown: 7,
-       desc: "五連撃（{value}倍×5、体勢崩し2T）",
-       effect: (lv) => ({
-         hits: 5,
-         damageMultiplier: 0.42 + lv * 0.04,
-         enemyVulnerableTurns: 2,
-         enemyVulnerableRate: 0.22 + lv * 0.05,
-       }),
-     },
+   // -----------------
+   // 上級職 実績
+-  // - 各上級職で 10000 体撃破（個別）
++  // - 各上級職で 1000 体撃破（個別）
+   // - 報酬：経験値 +10%
+   // -----------------
+   {
+     const jobs = window.jobs || {};
+-    const ADV_TARGET = 10000;
++    const ADV_TARGET = 1000;
+     const advKeys = Object.keys(jobs).filter(
+       (k) => jobs[k] && jobs[k].tier === "advanced",
+     );
  
-+    // ===================================
-+    // 勇者 (hero)
-+    // ===================================
-+    hero_universal_mastery: {
-+      name: "万能の極意",
-+      type: "passive",
-+      job: "hero",
-+      maxLevel: 5,
-+      desc: "攻撃+{attackBonus} / 防御+{defenseBonus} / 魔法威力+{magicBonus}",
-+      effect: (lv) => ({
-+        attackBonus: lv * 8,
-+        defenseBonus: lv * 8,
-+        magicBonus: lv * 8,
-+      }),
-+    },
-+    hero_sixth_sense: {
-+      name: "第六感",
-+      type: "passive",
-+      job: "hero",
-+      maxLevel: 5,
-+      desc: "命中+{accuracyBonus}% / 回避+{evasionBonus}% / 会心+{critBonus}%",
-+      effect: (lv) => ({
-+        accuracyBonus: lv * 2,
-+        evasionBonus: lv * 2,
-+        critBonus: lv * 2,
-+      }),
-+    },
-+    hero_guardian_soul: {
-+      name: "守護者の魂",
-+      type: "passive",
-+      job: "hero",
-+      maxLevel: 5,
-+      desc: "最大HP+{maxHpBonus}（防御+{defenseBonus}）",
-+      effect: (lv) => ({
-+        maxHpBonus: lv * 25,
-+        defenseBonus: lv * 6,
-+      }),
-+    },
-+    hero_blade_of_light: {
-+      name: "光刃",
-+      type: "active",
-+      accuracy: 105,
-+      job: "hero",
-+      maxLevel: 3,
-+      cooldown: 4,
-+      desc: "光の斬撃（{value}倍、防御無視40%）",
-+      effect: (lv) => ({ damageMultiplier: 1.5 + lv * 0.45, ignoreDef: 0.4 }),
-+    },
-+    hero_meteor_combo: {
-+      name: "流星連撃",
-+      type: "active",
-+      accuracy: 105,
-+      job: "hero",
-+      maxLevel: 3,
-+      cooldown: 6,
-+      desc: "3連撃（{value}倍×3）",
-+      effect: (lv) => ({ hits: 3, damageMultiplier: 0.78 + lv * 0.08 }),
-+    },
-+    hero_sacred_heal: {
-+      name: "聖癒",
-+      type: "active",
-+      accuracy: 100,
-+      job: "hero",
-+      maxLevel: 3,
-+      cooldown: 6,
-+      desc: "HPを{value}%回復する",
-+      effect: (lv) => {
-+        const rate = 0.22 + lv * 0.06;
-+        return { healRate: rate, value: Math.round(rate * 100) };
-+      },
-+    },
-+    hero_radiant_break: {
-+      name: "輝破",
-+      type: "active",
-+      accuracy: 108,
-+      job: "hero",
-+      maxLevel: 3,
-+      requiredPoints: 5,
-+      cooldown: 7,
-+      desc: "強烈な一撃（{value}倍、防御無視65%、体勢崩し2T）",
-+      effect: (lv) => ({
-+        damageMultiplier: 2.1 + lv * 0.25,
-+        ignoreDef: 0.65,
-+        enemyVulnerableTurns: 2,
-+        enemyVulnerableRate: 0.2 + lv * 0.05,
-+      }),
-+    },
-+    hero_revival_slash: {
-+      name: "再起の剣",
-+      type: "active",
-+      accuracy: 105,
-+      job: "hero",
-+      maxLevel: 3,
-+      requiredPoints: 5,
-+      cooldown: 8,
-+      desc: "大技（{value}倍、与ダメの35%回復）",
-+      effect: (lv) => ({
-+        damageMultiplier: 1.6 + lv * 0.2,
-+        healPercent: 0.35,
-+      }),
-+    },
-   };
+     const getKills = (p, jobKey) => {
+       const map =
+         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+       const v = Number(map[jobKey] || 0);
+       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+     };
  
-   window.skills = skills;
+     // 各上級職（個別）
+     for (const k of advKeys) {
+       const jd = jobs[k];
+       const name = jd && jd.name ? jd.name : k;
+       achievementDefs.push({
+         id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
+         title: `${name}の心得`,
+         desc: `${name}でモンスターを${ADV_TARGET}体倒す（ボーナス：経験値+10%）`,
+         isDone: (p) => getKills(p, k) >= ADV_TARGET,
+         progress: (p) =>
+           `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,
+         bonus: { expRate: 0.1 },
+       });
+     }
+@@ -325,43 +325,54 @@
+   // -----------------
+   // 全職制覇 実績
+   // - 持たざる者・勇者を除く各職業で 10000 体撃破
+   // - 報酬：職業「勇者」解放
+   // -----------------
+   {
+     const jobs = window.jobs || {};
+     const TARGET = 10000;
+     const requiredJobKeys = Object.keys(jobs).filter(
+       (k) => jobs[k] && k !== "have_not" && k !== "hero",
+     );
+ 
+     const getKills = (p, jobKey) => {
+       const map =
+         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+       const v = Number(map[jobKey] || 0);
+       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+     };
+ 
+     const getDoneCount = (p) =>
+       requiredJobKeys.reduce(
+         (sum, k) => sum + (getKills(p, k) >= TARGET ? 1 : 0),
+         0,
+       );
+ 
++    const getJobName = (jobKey) => {
++      const jd = jobs[jobKey];
++      return jd && jd.name ? jd.name : jobKey;
++    };
++
++    const formatPerJobProgress = (p) =>
++      requiredJobKeys
++        .map((k) => `${getJobName(k)}:${Math.min(getKills(p, k), TARGET)}/${TARGET}`)
++        .join(" / ");
++
+     achievementDefs.push({
+       id: "all_jobs_slayer_10000_except_have_not",
+       title: "全職の極意",
+-      desc: `持たざる者以外の各職業でモンスターを${TARGET}体倒す`,
++      desc: `持たざる者・勇者を除く全職業でモンスターを${TARGET}体倒す`,
+       isDone: (p) =>
+         requiredJobKeys.length > 0 &&
+         requiredJobKeys.every((k) => getKills(p, k) >= TARGET),
+-      progress: (p) => `${getDoneCount(p)}/${requiredJobKeys.length}`,
++      progress: (p) =>
++        `${getDoneCount(p)}/${requiredJobKeys.length}職達成 / ${formatPerJobProgress(p)}`,
+       bonus: {},
+       reward: {
+         unlockJobs: ["hero"],
+         text: "職業『勇者』を解放",
+       },
+     });
+   }
+ 
+   window.achievementDefs = achievementDefs;
  })();
