@@ -40,11 +40,27 @@
   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
   const serialCodeActions = {
     stayBattle: {
-      isUnlocked: () => !!loadStore().stayBattle,
+      isUnlocked: () => {
+        const s = loadStore();
+        if (s.stayBattle) return true;
+        const p = getPlayer();
+        return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+      },
       unlock: () => {
         const s = loadStore();
         s.stayBattle = true;
         saveStore(s);
+
+        const p = getPlayer();
+        if (p) {
+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+            p.serialUnlocks = {};
+          p.serialUnlocks.stayBattle = true;
+        }
+
+        if (typeof window.checkAndUnlockAchievements === "function") {
+          window.checkAndUnlockAchievements({ silent: false });
+        }
       },
       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
     },
@@ -66,6 +82,10 @@
           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
             p.serialUnlocks = {};
           p.serialUnlocks.floorCapLift250 = true;
+        }
+
+        if (typeof window.checkAndUnlockAchievements === "function") {
+          window.checkAndUnlockAchievements({ silent: false });
         }
       },
       logMessage:

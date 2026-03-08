@@ -34,6 +34,24 @@
       bonus: { expRate: 0.05 },
     },
     {
+      id: "serial_stay_battle",
+      title: "連戦の心得",
+      desc: "シリアルコード（連戦）を入力する",
+      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
+      bonus: {},
+    },
+    {
+      id: "serial_floor_cap_lift_250",
+      title: "深淵への通行証",
+      desc: "シリアルコード（250階制限解除）を入力する",
+      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.floorCapLift250 ? "1/1" : "0/1",
+      bonus: {},
+    },
+    {
       id: "past_life_memory",
       title: "前世の記憶",
       desc: "シリアルコードで解放する",

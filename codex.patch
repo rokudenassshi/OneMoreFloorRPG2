@@ -1,58 +1,103 @@
-diff --git a/js/ui.js b/js/ui.js
-index 4de88b7a4546e7e4193547ae8ac5589eaa4d4798..6432518b508b709aa4f91b1ba5870202d17d5696 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2183,50 +2183,53 @@
-     grid.innerHTML = "";
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index 7470580303e654936bf5b7d5694a5ffe579ea99a..85c20109a50c24632a49161366c4e531e41d63ca 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -18,77 +18,97 @@
+     } catch (e) {
+       return {};
+     }
+   }
  
-     const p = gameData.player;
-     if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
-       p.unlockedJobs = {};
-     if (!p.jobUnlockProgress || typeof p.jobUnlockProgress !== "object")
-       p.jobUnlockProgress = {};
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
+   }
  
-     const getUnlockInfo = (jobKey) => {
-       const jd = jobs[jobKey];
-       if (!jd || !jd.unlock) return { unlocked: true, text: "" };
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
+   }
  
-       const group = jd.skillGroup || jd.baseJob || jobKey;
-       const type = jd.unlock.type;
-       const target = Number(jd.unlock.target || 0);
-       const cur = Number(
-         (p.jobUnlockProgress &&
-           p.jobUnlockProgress[group] &&
-           p.jobUnlockProgress[group][type]) ||
-           0,
-       );
-       const minLevel = Number(jd.unlock.minLevel || 0);
-       const level = Number(p.level || 0);
-       const levelOk = !minLevel || level >= minLevel;
-       const unlocked = !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
-+      if (jd.unlock.hidden) {
-+        return { unlocked, text: "？？？" };
-+      }
-       const parts = [];
-       if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
-       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
-       return { unlocked, text: parts.join(" ＆ ") };
-     };
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+   const serialCodeLookup = {};
  
-     const keys = Object.keys(jobs);
-     const baseKeys = keys.filter(
-       (k) => !jobs[k] || jobs[k].tier !== "advanced",
-     );
-     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+-      isUnlocked: () => !!loadStore().stayBattle,
++      isUnlocked: () => {
++        const s = loadStore();
++        if (s.stayBattle) return true;
++        const p = getPlayer();
++        return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
++      },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
++
++        const p = getPlayer();
++        if (p) {
++          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
++            p.serialUnlocks = {};
++          p.serialUnlocks.stayBattle = true;
++        }
++
++        if (typeof window.checkAndUnlockAchievements === "function") {
++          window.checkAndUnlockAchievements({ silent: false });
++        }
+       },
+       logMessage: "✨ シリアルコードを確認しました。特典を解放しました。",
+     },
  
-     const renderTitle = (title) => {
-       grid.innerHTML += `<div class="job-section-title">${title}</div>`;
-     };
+     floorCapLift250: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.floorCapLift250) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.floorCapLift250 = true;
+         saveStore(s);
  
-     const renderCard = (key) => {
-       const job = jobs[key];
-       const isSelected = gameData.player.job === key;
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.floorCapLift250 = true;
+         }
++
++        if (typeof window.checkAndUnlockAchievements === "function") {
++          window.checkAndUnlockAchievements({ silent: false });
++        }
+       },
+       logMessage:
+         "✨ シリアルコードを確認しました。250階層以降への進行制限を解除しました。",
+     },
  
-       const favoredName = getFavoredTypeLabel(job.favoredType);
+     // 前世の記憶（実績解除：経験値+20%）
+     pastLifeMemory: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.pastLifeMemory) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
+       },
+       unlock: () => {
+         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
+         const s = loadStore();
+         s.pastLifeMemory = true;
+         saveStore(s);
  
-       const unlockInfo = getUnlockInfo(key);
-       const locked = job.unlock && !unlockInfo.unlocked;
- 
+         // 2) セーブデータ側にも保存（実績用）
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.pastLifeMemory = true;
