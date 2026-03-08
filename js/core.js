@@ -1655,7 +1655,7 @@
     return !eq.slot1 && !eq.slot2 && !eq.accessory;
   }
 
-  // 実績ボーナス（現在は経験値のみ）
+  // 実績ボーナス
   function getAchievementExpBonusRate() {
     const p = gameData.player;
     const map =
@@ -1679,6 +1679,26 @@
 
   function getAchievementExpBonusPercent() {
     return Math.round(getAchievementExpBonusRate() * 100);
+  }
+
+
+  function getAchievementItemDropRateBonus() {
+    const p = gameData.player;
+    const map =
+      p && p.achievements && typeof p.achievements === "object"
+        ? p.achievements
+        : {};
+    const defs = Array.isArray(window.achievementDefs)
+      ? window.achievementDefs
+      : [];
+    let bonus = 0;
+    for (const def of defs) {
+      if (!def || !def.id || !map[def.id]) continue;
+      const b = def.bonus || {};
+      const v = Number(b.itemDropRate || 0);
+      if (Number.isFinite(v) && v > 0) bonus += v;
+    }
+    return bonus;
   }
 
   function getAchievementEvasionCapBonusPercent() {
@@ -1815,6 +1835,9 @@
         }
         if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {
           log(`✨ ボーナス：回避上限+${Math.floor(b.evasionCapBonus)}%`);
+        }
+        if (typeof b.itemDropRate === "number" && b.itemDropRate > 0) {
+          log(`✨ ボーナス：アイテムドロップ率+${Math.floor(b.itemDropRate)}%`);
         }
 
         // 報酬ログ（任意）
@@ -4083,6 +4106,7 @@
       // ドロップ判定
       let dropChance = 30;
       dropChance += getAccessoryBonus("dropRate");
+      dropChance += getAchievementItemDropRateBonus();
       dropChance +=
         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
           ? jobs[gameData.player.job].traits.dropRateBonus

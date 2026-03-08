@@ -1939,6 +1939,12 @@
           ) {
             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
           }
+          if (
+            typeof a.bonus.itemDropRate === "number" &&
+            a.bonus.itemDropRate > 0
+          ) {
+            parts.push(`アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`);
+          }
           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
         }
         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;

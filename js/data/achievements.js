@@ -34,6 +34,23 @@
       bonus: { expRate: 0.05 },
     },
     {
+      id: "elite_adventurer",
+      title: "百戦錬磨",
+      desc: "敵を1000体倒す",
+      isDone: (p) => Number(p.totalKills || 0) >= 1000,
+      progress: (p) => `${Math.min(Number(p.totalKills || 0), 1000)}/1000`,
+      // 経験値 +10%
+      bonus: { expRate: 0.1 },
+    },
+    {
+      id: "level_50",
+      title: "力の芽生え",
+      desc: "プレイヤーレベル50に到達する",
+      isDone: (p) => Number(p.level || 1) >= 50,
+      progress: (p) => `${Math.min(Number(p.level || 1), 50)}/50`,
+      bonus: { expRate: 0.05 },
+    },
+    {
       id: "serial_stay_battle",
       title: "連戦の心得",
       desc: "シリアルコード（連戦）を入力する",
@@ -68,6 +85,14 @@
       isDone: (p) => Number(p.namedKills || 0) >= 10,
       progress: (p) => `${Math.min(Number(p.namedKills || 0), 10)}/10`,
       bonus: {},
+    },
+    {
+      id: "named_hunter_master",
+      title: "二つ名コレクター",
+      desc: "二つ名モンスターを50体倒す",
+      isDone: (p) => Number(p.namedKills || 0) >= 50,
+      progress: (p) => `${Math.min(Number(p.namedKills || 0), 50)}/50`,
+      bonus: { itemDropRate: 5 },
     },
     {
       id: "the_have_not",

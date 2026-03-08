@@ -1,72 +1,61 @@
-diff --git a/style_new.css b/style_new.css
-index b745327947cbc8ed444461e126acdae65c1e500a..077130eecb58ff99d561afdba94d449e6afacba2 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -718,50 +718,67 @@ button:active {
+diff --git a/js/ui.js b/js/ui.js
+index 6432518b508b709aa4f91b1ba5870202d17d5696..c3c01dfdc4a1ce93f3077d7bd6af5b7a32485f9b 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1872,50 +1872,56 @@
+     const list = rows
+       .filter((row) => !row.done)
+       .concat(rows.filter((row) => row.done));
  
- /* 転移モーダル */
- .teleport-row {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   margin: 12px 0;
- }
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+           }
+           if (
+             typeof a.bonus.evasionCapBonus === "number" &&
+             a.bonus.evasionCapBonus > 0
+           ) {
+             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
+           }
++          if (
++            typeof a.bonus.itemDropRate === "number" &&
++            a.bonus.itemDropRate > 0
++          ) {
++            parts.push(`アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`);
++          }
+           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
+         }
+         return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+       })
+       .join("");
+   }
  
- .teleport-row label {
-   font-size: 13px;
-   color: #ddd;
-   min-width: 56px;
- }
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
  
- .teleport-select {
-   flex: 1;
-   padding: 10px;
-   font-size: 16px;
-   border-radius: 8px;
-   border: 1px solid #666;
-   background: #222;
-   color: #fff;
- }
+     // シリアルコード入力の有効/無効
+     const inputEl = document.getElementById("serialCodeInput");
+     const btnEl = document.getElementById("serialCodeSubmitBtn");
+     const disabled = !!serialCodePending;
+     if (inputEl) inputEl.disabled = disabled;
+     if (btnEl) btnEl.disabled = disabled;
+   }
  
-+.teleport-stay-row {
-+  margin: 8px 0 12px;
-+}
-+
-+.teleport-stay-label {
-+  display: inline-flex;
-+  align-items: center;
-+  gap: 8px;
-+  font-size: 13px;
-+  color: #ddd;
-+}
-+
-+.teleport-stay-label input {
-+  width: 16px;
-+  height: 16px;
-+}
-+
- .stat-alloc-item {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   padding: 10px;
-   background: #2a2a2a;
-   border-radius: 6px;
-   margin-bottom: 8px;
- }
+   function handleSerialCodeKeydown(event) {
+     if (event?.key !== "Enter") return;
+     handleSerialCodeSubmit();
+   }
  
- .stat-alloc-controls {
-   display: flex;
-   gap: 8px;
-   align-items: center;
- }
- 
- .stat-alloc-controls button {
-   width: 36px;
-   height: 36px;
-   padding: 0;
-   font-size: 18px;
-   margin: 0;
- }
- 
- .stat-alloc-value {
+   async function handleSerialCodeSubmit() {
