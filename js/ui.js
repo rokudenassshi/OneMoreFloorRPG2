@@ -3138,6 +3138,25 @@
     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
   }
 
+  let loginPromptPromise = null;
+  let resolveLoginPrompt = null;
+  let loginPromptResolved = false;
+
+  function finishLoginPrompt() {
+    if (loginPromptResolved) return;
+    loginPromptResolved = true;
+
+    const modal = document.getElementById("loginModal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
+    resolveLoginPrompt = null;
+    loginPromptPromise = null;
+  }
+
   async function promptGoogleLoginAtStart() {
     if (loginPromptPromise) return loginPromptPromise;
 

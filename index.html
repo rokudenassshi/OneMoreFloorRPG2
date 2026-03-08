@@ -290,6 +290,53 @@
     </div>
 
 
+    <script>
+      (function () {
+        "use strict";
+
+        const deferredLoginActions = [];
+
+        function queueLoginAction(action) {
+          deferredLoginActions.push(action);
+          console.info("ログイン機能を初期化中です。しばらくお待ちください...");
+        }
+
+        function startWithGoogleLoginBootstrap() {
+          if (
+            typeof window.startWithGoogleLogin === "function" &&
+            window.startWithGoogleLogin !== startWithGoogleLoginBootstrap
+          ) {
+            return window.startWithGoogleLogin();
+          }
+          queueLoginAction("google");
+        }
+
+        function startWithoutLoginBootstrap() {
+          if (
+            typeof window.startWithoutLogin === "function" &&
+            window.startWithoutLogin !== startWithoutLoginBootstrap
+          ) {
+            return window.startWithoutLogin();
+          }
+          queueLoginAction("guest");
+        }
+
+        window.__consumeDeferredLoginStart = function () {
+          while (deferredLoginActions.length > 0) {
+            const action = deferredLoginActions.shift();
+            if (action === "google" && typeof window.startWithGoogleLogin === "function") {
+              window.startWithGoogleLogin();
+            } else if (action === "guest" && typeof window.startWithoutLogin === "function") {
+              window.startWithoutLogin();
+            }
+          }
+        };
+
+        window.startWithGoogleLogin = startWithGoogleLoginBootstrap;
+        window.startWithoutLogin = startWithoutLoginBootstrap;
+      })();
+    </script>
+
     <!-- ログインモーダル（起動時） -->
     <div id="loginModal" class="modal" aria-hidden="false">
       <div class="modal-content">
@@ -561,7 +608,11 @@
             const src = p + "?v=" + encodeURIComponent(version);
             chain = chain.then(() => loadScript(src));
           }
-          return chain;
+          return chain.then(() => {
+            if (typeof window.__consumeDeferredLoginStart === "function") {
+              window.__consumeDeferredLoginStart();
+            }
+          });
         })
         .catch((err) => {
           console.error(err);
