@@ -306,8 +306,10 @@
   // -------------------
   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
-  const AUTOSAVE_INTERVAL_MS = 2500;
-  const PLAYTIME_AUTOSAVE_STEP_MS = 15000;
+  const AUTOSAVE_INTERVAL_MS = 5000;
+  const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
+  const PLAYTIME_AUTOSAVE_STEP_MS = 60000;
+  const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
 
   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
   const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
@@ -334,10 +336,12 @@
 
 
   let pendingAutosaveTimer = null;
+  let pendingThrottledSaveTimer = null;
   let autosaveDirty = true;
   let unsavedPlayTimeMs = 0;
   let cloudSaveInFlight = false;
   let cloudSaveQueued = false;
+  let lastCloudSaveAt = 0;
 
   function buildSavePayload() {
     const payload = {
@@ -394,16 +398,29 @@
     return true;
   }
 
-  async function saveGameNow() {
+  async function saveGameNow(opts = {}) {
     try {
       if (!autosaveEnabled) return;
       if (!autosaveDirty) return;
+      const force = !!(opts && opts.force === true);
       const authBridge = window.firebaseAuthBridge || null;
       const currentUser =
         authBridge && typeof authBridge.getCurrentUser === "function"
           ? authBridge.getCurrentUser()
           : null;
       if (!currentUser) return;
+
+      const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
+      if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
+        if (!pendingThrottledSaveTimer) {
+          const delay = Math.max(0, MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave);
+          pendingThrottledSaveTimer = setTimeout(() => {
+            pendingThrottledSaveTimer = null;
+            saveGameNow();
+          }, delay);
+        }
+        return;
+      }
 
       if (cloudSaveInFlight) {
         cloudSaveQueued = true;
@@ -427,6 +444,7 @@
       );
       try {
         await saveUserGameData({ payload });
+        lastCloudSaveAt = Date.now();
       } finally {
         cloudSaveInFlight = false;
       }
@@ -435,7 +453,9 @@
         cloudSaveQueued = false;
         if (autosaveDirty) saveGameNow();
       }
-    } catch (e) {}
+    } catch (e) {
+      autosaveDirty = true;
+    }
   }
 
   function requestAutosave() {
@@ -445,7 +465,7 @@
     pendingAutosaveTimer = setTimeout(() => {
       pendingAutosaveTimer = null;
       saveGameNow();
-    }, 300);
+    }, REQUEST_AUTOSAVE_DEBOUNCE_MS);
   }
 
   async function loadGameIfExists() {

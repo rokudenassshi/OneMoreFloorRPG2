@@ -1,74 +1,57 @@
 diff --git a/js/ui.js b/js/ui.js
-index 6967d3f734a5d6873fc31d76b1edee02921f0dfe..d8b960654036f8d0e6df1e183db00150a41bf667 100644
+index d8b960654036f8d0e6df1e183db00150a41bf667..29e72df9187cc9445aa2db74bc1f5a71b7dac1ce 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -3116,50 +3116,69 @@
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   // =====================
-   // セーブ設定
-   // =====================
-   function toggleAutosave(enabled) {
-     setAutosaveEnabled(!!enabled);
-     updateOptionsUI();
-     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
+@@ -1976,51 +1976,51 @@
+         const lookup =
+           window.serialCodeLookup && typeof window.serialCodeLookup === "object"
+             ? window.serialCodeLookup
+             : null;
+         unlockKey = lookup ? String(lookup[code] || "") : "";
+         if (!unlockKey) {
+           log("⚠️ シリアルコードが無効です。");
+           return;
+         }
+       }
+ 
+       const action = unlockKey ? actions[unlockKey] : null;
+       if (!unlockKey || !action) {
+         log("⚠️ シリアルコードが無効です。");
+         return;
+       }
+       if (typeof action.isUnlocked === "function" && action.isUnlocked()) {
+         log("⚠️ そのシリアルコードは既に使用済みです。");
+         return;
+       }
+       if (typeof action.unlock === "function") action.unlock();
+ 
+       if (inputEl) inputEl.value = "";
+       log(action.logMessage || "✨ シリアルコードを確認しました。");
+       // ゲーム本体のセーブ（オートセーブONの時のみ）
+-      if (typeof saveGameNow === "function") saveGameNow();
++      if (typeof saveGameNow === "function") saveGameNow({ force: true });
+     } catch (e) {
+       console.error(e);
+       log("⚠️ シリアルコードの確認に失敗しました。");
+     } finally {
+       serialCodePending = false;
+       updateOptionsUI();
+     }
    }
  
-+  let loginPromptPromise = null;
-+  let resolveLoginPrompt = null;
-+  let loginPromptResolved = false;
-+
-+  function finishLoginPrompt() {
-+    if (loginPromptResolved) return;
-+    loginPromptResolved = true;
-+
-+    const modal = document.getElementById("loginModal");
-+    if (modal) {
-+      modal.classList.add("hidden");
-+      modal.setAttribute("aria-hidden", "true");
-+    }
-+
-+    if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
-+    resolveLoginPrompt = null;
-+    loginPromptPromise = null;
-+  }
-+
-   async function promptGoogleLoginAtStart() {
-     if (loginPromptPromise) return loginPromptPromise;
+   function updateStatusUI() {
+     const p = gameData.player;
+     const stats = getTotalStats();
+     const combat = getCombatStats();
  
-     loginPromptResolved = false;
-     loginPromptPromise = new Promise((resolve) => {
-       resolveLoginPrompt = resolve;
-     });
+     // 紋章（貴重品）による加算値（0なら表示しない）
+     const emblem =
+       typeof getEmblemBonus === "function" ? getEmblemBonus() : null;
+     const fmtStat = (val, bonus) => {
+       const b = Math.max(0, Math.floor(Number(bonus || 0)));
+       return b > 0 ? `${val}（+${b}）` : `${val}`;
+     };
  
-     const bridge = window.firebaseAuthBridge || null;
-     if (!bridge || typeof bridge.waitForReady !== "function") {
-       finishLoginPrompt();
-       return loginPromptPromise;
-     }
- 
-     const user = await bridge.waitForReady();
-     if (user) {
-       finishLoginPrompt();
-       return loginPromptPromise;
-     }
- 
-     const modal = document.getElementById("loginModal");
-     if (!modal) {
-       finishLoginPrompt();
-       return loginPromptPromise;
-     }
+     const job = jobs[p.job] || { name: "-", favoredType: null };
+     const favoredName = getFavoredTypeLabel(job.favoredType);
+     const jt = (job && job.traits) || {};

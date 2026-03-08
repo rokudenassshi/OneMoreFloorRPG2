@@ -1998,7 +1998,7 @@
       if (inputEl) inputEl.value = "";
       log(action.logMessage || "✨ シリアルコードを確認しました。");
       // ゲーム本体のセーブ（オートセーブONの時のみ）
-      if (typeof saveGameNow === "function") saveGameNow();
+      if (typeof saveGameNow === "function") saveGameNow({ force: true });
     } catch (e) {
       console.error(e);
       log("⚠️ シリアルコードの確認に失敗しました。");
