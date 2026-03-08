@@ -123,28 +123,6 @@
     p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
   }
 
-  function ensurePlayTimeConfig(p) {
-    if (!p || typeof p !== "object") return;
-    const ms = Number(p.totalPlayTimeMs || 0);
-    p.totalPlayTimeMs = Number.isFinite(ms) && ms > 0 ? Math.floor(ms) : 0;
-  }
-
-  let lastPlayTimeTickAt = Date.now();
-
-  function tickPlayTime() {
-    const p = gameData && gameData.player;
-    if (!p || typeof p !== "object") return 0;
-    ensurePlayTimeConfig(p);
-
-    const now = Date.now();
-    const elapsed = now - lastPlayTimeTickAt;
-    lastPlayTimeTickAt = now;
-
-    if (!Number.isFinite(elapsed) || elapsed <= 0) return 0;
-    p.totalPlayTimeMs += elapsed;
-    return elapsed;
-  }
-
   function normalizeValuables(p) {
     ensureValuables(p);
     p.valuables = p.valuables
@@ -308,7 +286,6 @@
   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
   const AUTOSAVE_INTERVAL_MS = 5000;
   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
-  const PLAYTIME_AUTOSAVE_STEP_MS = 60000;
   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
 
   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
@@ -338,7 +315,6 @@
   let pendingAutosaveTimer = null;
   let pendingThrottledSaveTimer = null;
   let autosaveDirty = true;
-  let unsavedPlayTimeMs = 0;
   let cloudSaveInFlight = false;
   let cloudSaveQueued = false;
   let lastCloudSaveAt = 0;
@@ -374,9 +350,6 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
-    ensurePlayTimeConfig(gameData.player);
-    lastPlayTimeTickAt = Date.now();
-
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
       if (gameData && gameData.player) {
@@ -602,9 +575,6 @@
     ensureAutoSellConfig(gameData.player);
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
-    ensurePlayTimeConfig(gameData.player);
-    lastPlayTimeTickAt = Date.now();
-
     if (typeof window.promptGoogleLoginAtStart === "function") {
       try {
         await window.promptGoogleLoginAtStart();
@@ -621,14 +591,6 @@
     }
 
     setInterval(() => {
-      const elapsed = tickPlayTime();
-      if (elapsed > 0) {
-        unsavedPlayTimeMs += elapsed;
-        if (unsavedPlayTimeMs >= PLAYTIME_AUTOSAVE_STEP_MS) {
-          autosaveDirty = true;
-          unsavedPlayTimeMs = 0;
-        }
-      }
       saveGameNow();
       if (typeof updateRecordsUI === "function") {
         const statusScreenEl = document.getElementById("statusScreen");

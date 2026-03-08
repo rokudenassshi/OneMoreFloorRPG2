@@ -1,69 +1,82 @@
-diff --git a/style_new.css b/style_new.css
-index 856a8c6c54e238c620d2bea9fe5f23ca5d7e75c8..b745327947cbc8ed444461e126acdae65c1e500a 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -1012,50 +1012,64 @@ button.item-action-btn:disabled {
- .options-row{
-   display:flex;
-   gap:8px;
-   flex-wrap:wrap;
- }
- .serial-row{
-   align-items:center;
- }
- .serial-input{
-   flex:1;
-   min-width:220px;
-   padding:8px 10px;
-   border-radius:10px;
-   border:1px solid rgba(255,255,255,0.12);
-   background:rgba(255,255,255,0.06);
-   color:inherit;
- }
- .serial-input:disabled{
-   opacity:0.6;
- }
- .option-check{
-   display:flex;
-   align-items:center;
-   gap:8px;
- }
-+.author-links{
-+  display:flex;
-+  flex-direction:column;
-+  gap:8px;
-+}
-+.author-links a{
-+  color:#86c5ff;
-+  text-decoration:underline;
-+  text-underline-offset:2px;
-+  width:fit-content;
-+}
-+.author-links a:hover{
-+  opacity:0.9;
-+}
- .achievements-list{
-   display:flex;
-   flex-direction:column;
-   gap:8px;
- }
- .achievement-card{
-   padding:10px 12px;
-   border-radius:12px;
-   border:1px solid rgba(255,255,255,0.10);
-   background:rgba(255,255,255,0.04);
- }
- .achievement-card .small{
-   margin-top:4px;
-   opacity:0.85;
-   font-size:12px;
- }
+diff --git a/js/ui.js b/js/ui.js
+index 29e72df9187cc9445aa2db74bc1f5a71b7dac1ce..4de88b7a4546e7e4193547ae8ac5589eaa4d4798 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1794,76 +1794,61 @@
+     if (!allowed.includes(tab)) tab = "status";
+     currentStatusTab = tab;
  
- .record-list{
-   display:flex;
-   flex-direction:column;
-   gap:8px;
- }
- .record-item{
-   padding:10px 12px;
-   border-radius:12px;
+     const tabStatus = document.getElementById("tabStatus");
+     const tabAch = document.getElementById("tabAchievements");
+     const tabRec = document.getElementById("tabRecords");
+ 
+     if (tabStatus)
+       tabStatus.style.display = tab === "status" ? "block" : "none";
+     if (tabAch)
+       tabAch.style.display = tab === "achievements" ? "block" : "none";
+     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+ 
+     const btnS = document.getElementById("statusTabBtnStatus");
+     const btnA = document.getElementById("statusTabBtnAchievements");
+     const btnR = document.getElementById("statusTabBtnRecords");
+     if (btnS) btnS.classList.toggle("is-active", tab === "status");
+     if (btnA) btnA.classList.toggle("is-active", tab === "achievements");
+     if (btnR) btnR.classList.toggle("is-active", tab === "records");
+ 
+     if (tab === "records") {
+       updateRecordsUI();
+     }
+   }
+ 
+-  function formatPlayTime(totalMs) {
+-    const ms = Math.max(0, Math.floor(Number(totalMs) || 0));
+-    const totalSeconds = Math.floor(ms / 1000);
+-    const hours = Math.floor(totalSeconds / 3600);
+-    const minutes = Math.floor((totalSeconds % 3600) / 60);
+-    const seconds = totalSeconds % 60;
+-
+-    if (hours > 0) return `${hours}時間${minutes}分${seconds}秒`;
+-    if (minutes > 0) return `${minutes}分${seconds}秒`;
+-    return `${seconds}秒`;
+-  }
+-
+   function updateRecordsUI() {
+     const elKills = document.getElementById("recordTotalKills");
+     const elMax = document.getElementById("recordMaxDamage");
+-    const elPlayTime = document.getElementById("recordPlayTime");
+-    if (!elKills && !elMax && !elPlayTime) return;
++    if (!elKills && !elMax) return;
+ 
+     const p = gameData.player;
+     const totalKills = Number(p.totalKills || 0);
+     const maxDamage = Number(p.maxDamage || 0);
+-    const totalPlayTimeMs = Number(p.totalPlayTimeMs || 0);
+ 
+     if (elKills) elKills.textContent = totalKills;
+     if (elMax) elMax.textContent = maxDamage;
+-    if (elPlayTime) elPlayTime.textContent = formatPlayTime(totalPlayTimeMs);
+   }
+ 
+   function updateAchievementsUI() {
+     const el = document.getElementById("achievementsContent");
+     if (!el) return;
+ 
+     const p = gameData.player;
+     if (!p.achievements || typeof p.achievements !== "object")
+       p.achievements = {};
+ 
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
+ 
+     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
+     const rows = defs
+       .filter((def) => {
+         try {
+           return typeof def.isVisible !== "function" || !!def.isVisible(p);
+         } catch (e) {
+           return true;
+         }
+       })
+       .map((def, idx) => {
+         const done = !!p.achievements[def.id];
