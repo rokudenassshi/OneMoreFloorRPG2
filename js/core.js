@@ -100,7 +100,7 @@
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
-  const ASURA_ENEMY_STAT_MULTIPLIER = 5;
+  const ASURA_ENEMY_STAT_MULTIPLIER = 2;
   const ASURA_ITEM_STAT_MULTIPLIER = 2;
   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
 
@@ -2415,8 +2415,8 @@
     gameData.battleFloor = floor;
     const isAsuraWorld = isInAsuraWorld();
     // 修羅の国では 1F 時点から元の世界 5000F 相当の敵ステータス帯に合わせる。
-    const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
-
+    // const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
+    const enemyScalingFloor = floor;
     // 敵生成：階層に応じて候補を絞る
     const candidates = monsterTypes.filter((m) => {
       const min = m.minFloor || 1;
