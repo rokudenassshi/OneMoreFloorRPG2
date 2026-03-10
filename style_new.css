@@ -857,6 +857,15 @@ button.item-action-btn:disabled {
   cursor: not-allowed;
 }
 
+
+button.item-action-btn.item-action-btn-text {
+  width: auto;
+  min-width: 88px;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .locked-label {
   color: #ffcc66;
   font-weight: bold;

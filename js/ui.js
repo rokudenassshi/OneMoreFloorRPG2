@@ -1364,7 +1364,7 @@
               <div class="item-name">✨ ${v.name} x${cnt}</div>
               ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
               ${description ? `<div class="item-stats">${description}</div>` : ""}
-              ${canUseMapFragment ? `<button type="button" class="item-action-btn" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
+              ${canUseMapFragment ? `<button type="button" class="item-action-btn item-action-btn-text" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
             </div>
           `;
         });

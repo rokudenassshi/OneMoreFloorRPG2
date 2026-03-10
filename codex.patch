@@ -1,66 +1,64 @@
-diff --git a/js/ui.js b/js/ui.js
-index 8c66c1845c8c9922c06eb26f27673a04c1963c36..df98d699499782394f9d82741c26c703893dfa78 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1633,50 +1633,61 @@
-       eq.accessory = item;
-       log(`${item.name}を装飾品に装備した`);
-       getCombatStats();
-       updateBagUI();
-       updateUI();
-       if (typeof requestAutosave === "function") requestAutosave();
-       return;
-     }
+diff --git a/style_new.css b/style_new.css
+index 077130eecb58ff99d561afdba94d449e6afacba2..1b817f3b78dd57f0c5b88c70ba1c012b7725ce20 100644
+--- a/style_new.css
++++ b/style_new.css
+@@ -835,50 +835,59 @@ button.item-action-btn {
+   width: 40px;
+   height: 36px;
+   padding: 0;
+   font-size: 16px;
+   line-height: 1;
+   background: #555;
+ }
  
-     // 武器/防具は装備先を選択
-     openEquipSlotPicker(idx);
-   }
+ button.item-action-btn:hover {
+   background: #666;
+ }
  
-   function useValuableById(id) {
-     if (id !== "ancient_map_fragment") return;
-     const vals = Array.isArray(gameData?.player?.valuables)
-       ? gameData.player.valuables
-       : [];
-     const target = vals.find((v) => v && v.id === id);
-     const cnt = Number(target?.count || 0);
-     if (!Number.isFinite(cnt) || cnt < 5) {
-       log("地図の切れ端が足りない");
-       return;
-     }
+ button.item-action-btn.discard {
+   background: #6b2b2b;
+ }
  
-+    const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
-+    if (
-+      !isAsuraNow &&
-+      typeof window.confirm === "function" &&
-+      !window.confirm(
-+        "敵の強さが5倍になるがドロップするアイテムのステータスが1.5倍になる。旅立ちますか？",
-+      )
-+    ) {
-+      return;
-+    }
+ button.item-action-btn.discard:hover {
+   background: #7a3333;
+ }
+ 
+ button.item-action-btn:disabled {
+   opacity: 0.35;
+   cursor: not-allowed;
+ }
+ 
 +
-     let movedToAsura = null;
-     if (typeof window.toggleAsuraWorldByMapFragment === "function") {
-       const result = window.toggleAsuraWorldByMapFragment();
-       if (result && result.ok) movedToAsura = !!result.movedToAsura;
-     }
++button.item-action-btn.item-action-btn-text {
++  width: auto;
++  min-width: 88px;
++  padding: 0 12px;
++  white-space: nowrap;
++  font-size: 13px;
++}
++
+ .locked-label {
+   color: #ffcc66;
+   font-weight: bold;
+   margin-top: 4px;
+   font-size: 12px;
+ }
  
-     if (movedToAsura === true) {
-       log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
-     } else if (movedToAsura === false) {
-       log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
-     } else {
-       log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
-     }
+ .item-card:not(.equipped).cat-weapon { border-left: 4px solid #e74c3c; }
+ .item-card:not(.equipped).cat-armor { border-left: 4px solid #4a6cf7; }
  
-     if (typeof window.showRareEnemyPopup === "function") {
-       const title = movedToAsura === true
-         ? "修羅の国"
-         : movedToAsura === false
-           ? "元の世界"
-           : "地図の切れ端";
-       const body = movedToAsura === true
-         ? "世界が歪み、修羅の国に飲み込まれた…"
-         : movedToAsura === false
-           ? "歪みが晴れ、元の世界に戻った"
-           : "5つ集めた…！";
+ .item-name {
+   font-weight: bold;
+   margin-bottom: 4px;
+   font-size: 14px;
+ }
+ 
+ .item-name.rarity-rare {
+   color: #4aa3ff;
+ }
+ 
+ .item-name.rarity-epic {
+   color: #ffd54a;
+ }
+ 
+ .item-name.rarity-legendary {
