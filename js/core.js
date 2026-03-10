@@ -2414,16 +2414,20 @@
 
     gameData.battleFloor = floor;
     const isAsuraWorld = isInAsuraWorld();
-    // 修羅の国では 1F 時点から元の世界 5000F 相当の敵ステータス帯に合わせる。
-    // const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
     const enemyScalingFloor = floor;
+    const asuraPool =
+      isAsuraWorld && Array.isArray(window.asuraMonsterTypes)
+        ? window.asuraMonsterTypes
+        : null;
+    const enemyTable = asuraPool && asuraPool.length > 0 ? asuraPool : monsterTypes;
+
     // 敵生成：階層に応じて候補を絞る
-    const candidates = monsterTypes.filter((m) => {
+    const candidates = enemyTable.filter((m) => {
       const min = m.minFloor || 1;
       const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
       return min <= enemyScalingFloor && enemyScalingFloor <= max;
     });
-    const pool = candidates.length > 0 ? candidates : monsterTypes;
+    const pool = candidates.length > 0 ? candidates : enemyTable;
 
     // ボス生成（敵テーブル切替階層）
     const bossDef =
@@ -2459,13 +2463,16 @@
     enemy.exp = Math.round(enemy.exp * floorMul);
 
     if (isAsuraWorld) {
-      enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
-      enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
+      const useLegacyAsuraMultiplier = !asuraPool || asuraPool.length <= 0;
+      if (useLegacyAsuraMultiplier) {
+        enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
+        enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
+      }
       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
         enemy.name = `修羅${enemy.name}`;
       }

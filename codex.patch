@@ -1,117 +1,194 @@
-diff --git a/js/core.js b/js/core.js
-index a3449533744b20b83f8c8748b847dc2645da921c..3c3edb090c498263a433d2902143ad5f6342e7a6 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -2391,107 +2391,95 @@
-     }
-     if (st.slowTurns > 0) {
-       st.slowTurns--;
-       if (st.slowTurns <= 0) st.slowRate = 0;
-     }
-     if (st.vulnerableTurns > 0) {
-       st.vulnerableTurns--;
-       if (st.vulnerableTurns <= 0) st.vulnerableRate = 0;
-     }
-     if (st.silenceTurns > 0) {
-       st.silenceTurns--;
-     }
-   }
+diff --git a/js/data/enemies.js b/js/data/enemies.js
+index 496bd1cc51486099d0849619ad2885bbc1f72d69..4e1e22fdd124b6a56db8bdac788f52bb322708bf 100644
+--- a/js/data/enemies.js
++++ b/js/data/enemies.js
+@@ -667,53 +667,158 @@
+     // --------------------
+     // 2000〜3000F（新テーブル）
+     // --------------------
+     { name: "深淵界の蹂躙兵", hp: 120000, str: 2350, vit: 3900, int: 1500, agi: 210, dex: 250, exp: 29000, minFloor: 2001, maxFloor: 2240, skills: ["crushing_blow", "power_strike", "doom_mark", "heal"] },
+     { name: "災雷の審問官", hp: 132000, str: 2480, vit: 4100, int: 1720, agi: 224, dex: 264, exp: 31500, minFloor: 2140, maxFloor: 2440, skills: ["thunder_strike", "silence_hex", "doom_mark", "roar", "heal"] },
+     { name: "蒼滅の禁書王", hp: 138000, str: 2260, vit: 4200, int: 2140, agi: 230, dex: 270, exp: 33800, minFloor: 2260, maxFloor: 2620, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+     { name: "天冥の断罪機", hp: 152000, str: 2710, vit: 4480, int: 1840, agi: 240, dex: 282, exp: 36500, minFloor: 2400, maxFloor: 2800, skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"] },
+     { name: "星喰らう魔王", hp: 168000, str: 2860, vit: 4720, int: 2260, agi: 252, dex: 294, exp: 39800, minFloor: 2580, maxFloor: 3000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
  
-   function startBattle(battleFloor) {
-     gameData.gameState = "BATTLE";
+     // --------------------
+     // 3000〜4500F（新テーブル）
+     // --------------------
+     { name: "虚空の征服者", hp: 205000, str: 3320, vit: 5600, int: 2520, agi: 286, dex: 328, exp: 45500, minFloor: 3001, maxFloor: 3360, skills: ["power_strike", "crushing_blow", "doom_mark", "heal"] },
+     { name: "冥府の天文学者", hp: 218000, str: 3140, vit: 5760, int: 3040, agi: 300, dex: 342, exp: 48800, minFloor: 3200, maxFloor: 3680, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+     { name: "断章の雷神", hp: 236000, str: 3580, vit: 6020, int: 2800, agi: 316, dex: 358, exp: 52500, minFloor: 3440, maxFloor: 3980, skills: ["thunder_strike", "multi_slash", "crushing_blow", "doom_mark", "roar"] },
+     { name: "万劫の冥騎士", hp: 254000, str: 3740, vit: 6380, int: 2920, agi: 326, dex: 372, exp: 56000, minFloor: 3700, maxFloor: 4260, skills: ["power_strike", "multi_slash", "doom_mark", "silence_hex", "heal"] },
+     { name: "天壊の終末炉", hp: 278000, str: 4020, vit: 6900, int: 3360, agi: 340, dex: 388, exp: 60800, minFloor: 4040, maxFloor: 4500, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
  
-     // 戦闘開始時にログをクリア
-     if (typeof window.clearLog === "function") window.clearLog();
+     // --------------------
+     // 4500〜5000F（新テーブル）
+     // --------------------
+     { name: "神罰の絶鎖竜", hp: 320000, str: 4560, vit: 7800, int: 3680, agi: 370, dex: 420, exp: 68200, minFloor: 4501, maxFloor: 4680, skills: ["crushing_blow", "thunder_strike", "doom_mark", "heal"] },
+     { name: "虚皇の冠位者", hp: 346000, str: 4820, vit: 8240, int: 4020, agi: 386, dex: 438, exp: 73000, minFloor: 4600, maxFloor: 4820, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+     { name: "界穿つ殲滅神", hp: 372000, str: 5160, vit: 8720, int: 4200, agi: 402, dex: 456, exp: 78800, minFloor: 4720, maxFloor: 4920, skills: ["multi_slash", "power_strike", "crushing_blow", "doom_mark", "roar"] },
+     { name: "零域の支配核", hp: 405000, str: 5480, vit: 9260, int: 4520, agi: 418, dex: 474, exp: 86000, minFloor: 4850, maxFloor: 5000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "silence_hex", "heal"] },
+-];
++  ];
++
++  // --------------------
++  // 修羅の国専用モンスターテーブル
++  // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
++  // --------------------
++  const asuraTierConfigs = [
++    { maxFloor: 100, target: { hp: 320000, str: 4500, vit: 7600, int: 3400, agi: 360, dex: 420, exp: 70000 } },
++    { maxFloor: 200, target: { hp: 380000, str: 5200, vit: 8400, int: 3800, agi: 390, dex: 450, exp: 78000 } },
++    { maxFloor: 500, target: { hp: 450000, str: 6000, vit: 9400, int: 4300, agi: 420, dex: 480, exp: 90000 } },
++    { maxFloor: 1000, target: { hp: 550000, str: 7000, vit: 10600, int: 5000, agi: 455, dex: 515, exp: 105000 } },
++    { maxFloor: 1500, target: { hp: 680000, str: 8200, vit: 12000, int: 5800, agi: 495, dex: 560, exp: 124000 } },
++    { maxFloor: 2000, target: { hp: 820000, str: 9500, vit: 13600, int: 6700, agi: 535, dex: 605, exp: 145000 } },
++    { maxFloor: 3000, target: { hp: 980000, str: 11000, vit: 15400, int: 7800, agi: 580, dex: 650, exp: 170000 } },
++    { maxFloor: 4500, target: { hp: 1180000, str: 12800, vit: 17600, int: 9200, agi: 630, dex: 700, exp: 200000 } },
++    { maxFloor: 5000, target: { hp: 1380000, str: 14600, vit: 19800, int: 10600, agi: 680, dex: 750, exp: 230000 } },
++  ];
++
++  function getAsuraTierConfig(maxFloor) {
++    return asuraTierConfigs.find((c) => maxFloor <= c.maxFloor) || asuraTierConfigs[asuraTierConfigs.length - 1];
++  }
++
++  const asuraTierAverages = asuraTierConfigs.map((cfg) => {
++    const members = monsterTypes.filter((m) => {
++      const max = Math.max(1, Number(m.maxFloor || m.minFloor || 1));
++      return getAsuraTierConfig(max).maxFloor === cfg.maxFloor;
++    });
++    const avg = (key) => {
++      if (members.length <= 0) return 1;
++      const sum = members.reduce((acc, m) => acc + Number(m[key] || 0), 0);
++      return Math.max(1, sum / members.length);
++    };
++    return {
++      maxFloor: cfg.maxFloor,
++      hp: avg("hp"),
++      str: avg("str"),
++      vit: avg("vit"),
++      int: avg("int"),
++      agi: avg("agi"),
++      dex: avg("dex"),
++      exp: avg("exp"),
++    };
++  });
++
++  function getAsuraTierAverage(maxFloor) {
++    return asuraTierAverages.find((c) => maxFloor <= c.maxFloor) || asuraTierAverages[asuraTierAverages.length - 1];
++  }
++
++  function getAsuraTierStart(maxFloor) {
++    const idx = asuraTierConfigs.findIndex((c) => maxFloor <= c.maxFloor);
++    if (idx <= 0) return 1;
++    return asuraTierConfigs[idx - 1].maxFloor + 1;
++  }
++
++  const asuraMonsterTypes = monsterTypes.map((m) => {
++    const min = Math.max(1, Number(m.minFloor || 1));
++    const max = Math.max(min, Number(m.maxFloor || min));
++    const tier = getAsuraTierConfig(max);
++    const avg = getAsuraTierAverage(max);
++    const tierStart = getAsuraTierStart(max);
++    const tierSpan = Math.max(1, tier.maxFloor - tierStart + 1);
++    const tierProgress = Math.max(0, Math.min(1, (min - tierStart) / tierSpan));
++    const tierGrowth = 1 + tierProgress * 0.2;
++
++    const mul = {
++      hp: tier.target.hp / avg.hp,
++      str: tier.target.str / avg.str,
++      vit: tier.target.vit / avg.vit,
++      int: tier.target.int / avg.int,
++      agi: tier.target.agi / avg.agi,
++      dex: tier.target.dex / avg.dex,
++      exp: tier.target.exp / avg.exp,
++    };
++
++    const baseScaled = {
++      hp: Math.max(1, Math.round(Number(m.hp || 1) * mul.hp * tierGrowth)),
++      str: Math.max(1, Math.round(Number(m.str || 1) * mul.str * tierGrowth)),
++      vit: Math.max(1, Math.round(Number(m.vit || 1) * mul.vit * tierGrowth)),
++      int: Math.max(1, Math.round(Number(m.int || 1) * mul.int * tierGrowth)),
++      agi: Math.max(1, Math.round(Number(m.agi || 1) * mul.agi * tierGrowth)),
++      dex: Math.max(1, Math.round(Number(m.dex || 1) * mul.dex * tierGrowth)),
++      exp: Math.max(1, Math.round(Number(m.exp || 1) * mul.exp * tierGrowth)),
++    };
++    const floorGuardRate = 1 + tierProgress * 0.1;
++    const floorGuard = {
++      hp: Math.round(tier.target.hp * floorGuardRate),
++      str: Math.round(tier.target.str * floorGuardRate),
++      vit: Math.round(tier.target.vit * floorGuardRate),
++      int: Math.round(tier.target.int * floorGuardRate),
++      agi: Math.round(tier.target.agi * floorGuardRate),
++      dex: Math.round(tier.target.dex * floorGuardRate),
++      exp: Math.round(tier.target.exp * floorGuardRate),
++    };
  
-     const floor = Number.isFinite(Number(battleFloor))
-       ? Math.max(1, Math.floor(Number(battleFloor)))
-       : gameData.floor;
+-  
++    return {
++      ...m,
++      name: typeof m.name === "string" && m.name.startsWith("修羅") ? m.name : `修羅${m.name}`,
++      hp: Math.max(baseScaled.hp, floorGuard.hp),
++      str: Math.max(baseScaled.str, floorGuard.str),
++      vit: Math.max(baseScaled.vit, floorGuard.vit),
++      int: Math.max(baseScaled.int, floorGuard.int),
++      agi: Math.max(baseScaled.agi, floorGuard.agi),
++      dex: Math.max(baseScaled.dex, floorGuard.dex),
++      exp: Math.max(baseScaled.exp, floorGuard.exp),
++      minFloor: min,
++      maxFloor: max,
++    };
++  });
+   // --------------------
+   // ボスモンスター（敵テーブル切替階層）
+   // --------------------
+   // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F に固定出現するボス。
+   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
+   const bossMonsters = {
+     100: {
+       name: "境界の守護竜",
+       hp: 900,
+       str: 38,
+       vit: 28,
+       int: 20,
+       agi: 10,
+       dex: 14,
+       exp: 380,
+       isBoss: true,
+       skills: ["fireball", "power_strike", "roar", "heal"],
+       effects: { damageReduction: 0.08, regenRate: 0.03 },
+     },
+     200: {
+       name: "黒鋼の巨王",
+       hp: 1800,
+       str: 68,
+       vit: 62,
+       int: 18,
+@@ -799,27 +904,28 @@
+       dex: 452,
+       exp: 145000,
+       isBoss: true,
+       skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+       effects: { damageReduction: 0.42, regenRate: 0.13, extraTurnChance: 0.28, armorPierceRate: 0.5, alwaysHit: true },
+     },
+     5000: {
+       name: "万界終焉アルカディア",
+       hp: 500000,
+       str: 6800,
+       vit: 11200,
+       int: 5600,
+       agi: 460,
+       dex: 520,
+       exp: 220000,
+       isBoss: true,
+       skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+       effects: { damageReduction: 0.48, regenRate: 0.16, extraTurnChance: 0.33, armorPierceRate: 0.58, alwaysHit: true },
+     },
+   };
  
-     gameData.battleFloor = floor;
-+    const isAsuraWorld = isInAsuraWorld();
-+    // 修羅の国では 1F 時点から元の世界 5000F 相当の敵ステータス帯に合わせる。
-+    const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
  
-     // 敵生成：階層に応じて候補を絞る
-     const candidates = monsterTypes.filter((m) => {
-       const min = m.minFloor || 1;
-       const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
--      return min <= floor && floor <= max;
-+      return min <= enemyScalingFloor && enemyScalingFloor <= max;
-     });
-     const pool = candidates.length > 0 ? candidates : monsterTypes;
- 
-     // ボス生成（敵テーブル切替階層）
-     const bossDef =
-       typeof window.bossMonsters === "object" && window.bossMonsters
-         ? window.bossMonsters[floor]
-         : null;
- 
-     const baseMonster = bossDef
-       ? bossDef
-       : pool[Math.floor(Math.random() * pool.length)];
-     const enemy = JSON.parse(JSON.stringify(baseMonster));
- 
-     // 敵の状態異常格納を初期化
-     ensureEnemyStatus(enemy);
- 
-     // 事前定義の特殊効果（ボスなど）を保持しておく
-     const presetEffects =
-       enemy && enemy.effects && typeof enemy.effects === "object"
-         ? JSON.parse(JSON.stringify(enemy.effects))
-         : {};
- 
-     const combat = getCombatStats();
-     const search = combat.search;
- 
-     // フロア補正（常に強くなる）
--    const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
--    const isAsuraWorld = isInAsuraWorld();
-+    const floorMul = Math.min(3.5, 1 + (enemyScalingFloor - 1) * 0.06);
-     enemy.hp = Math.round(enemy.hp * floorMul);
-     enemy.str = Math.round(enemy.str * floorMul);
-     enemy.vit = Math.round(enemy.vit * floorMul);
-     enemy.int = Math.round(enemy.int * floorMul);
-     enemy.agi = Math.round(enemy.agi * floorMul);
-     enemy.dex = Math.round(enemy.dex * floorMul);
-     enemy.exp = Math.round(enemy.exp * floorMul);
- 
--    // 1500〜2000Fは50階層ごとに追加ブースト
--    if (floor >= 1500) {
--      const boostSteps = Math.floor((Math.min(floor, 2000) - 1500) / 50) + 1;
--      const statBoostMul = 1 + boostSteps * 0.08;
--      const expBoostMul = 1 + boostSteps * 0.1;
--      enemy.hp = Math.round(enemy.hp * statBoostMul);
--      enemy.str = Math.round(enemy.str * statBoostMul);
--      enemy.vit = Math.round(enemy.vit * statBoostMul);
--      enemy.int = Math.round(enemy.int * statBoostMul);
--      enemy.agi = Math.round(enemy.agi * statBoostMul);
--      enemy.dex = Math.round(enemy.dex * statBoostMul);
--      enemy.exp = Math.round(enemy.exp * expBoostMul);
--    }
--
-     if (isAsuraWorld) {
-       enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
-       enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
-       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
-         enemy.name = `修羅${enemy.name}`;
-       }
-     }
- 
-     // 二つ名判定（索敵が 0 の場合は出ない）
-     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
-     const epithetChance =
-       enemy && enemy.isBoss
-         ? 0
-         : search >= 100
-           ? 1
-           : search > 0
-             ? clamp(search, 0, 100) * 0.01
-             : 0;
-     let epithet = null;
- 
+ window.epithets = epithets;
+   window.enemySkills = enemySkills;
+   window.monsterTypes = monsterTypes;
++  window.asuraMonsterTypes = asuraMonsterTypes;
+   window.bossMonsters = bossMonsters;
+ })();
