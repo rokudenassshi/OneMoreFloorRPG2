@@ -663,13 +663,39 @@
     { name: "原罪の審判眼", hp: 78000, str: 1580, vit: 2760, int: 1240, agi: 172, dex: 206, exp: 18400, minFloor: 1720, maxFloor: 1910, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
     { name: "無窮の戦神", hp: 84000, str: 1720, vit: 2920, int: 1080, agi: 166, dex: 202, exp: 19800, minFloor: 1790, maxFloor: 1970, skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"] },
     { name: "終刻の創壊王", hp: 91000, str: 1860, vit: 3100, int: 1320, agi: 180, dex: 218, exp: 22000, minFloor: 1880, maxFloor: 2000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+
+    // --------------------
+    // 2000〜3000F（新テーブル）
+    // --------------------
+    { name: "深淵界の蹂躙兵", hp: 120000, str: 2350, vit: 3900, int: 1500, agi: 210, dex: 250, exp: 29000, minFloor: 2001, maxFloor: 2240, skills: ["crushing_blow", "power_strike", "doom_mark", "heal"] },
+    { name: "災雷の審問官", hp: 132000, str: 2480, vit: 4100, int: 1720, agi: 224, dex: 264, exp: 31500, minFloor: 2140, maxFloor: 2440, skills: ["thunder_strike", "silence_hex", "doom_mark", "roar", "heal"] },
+    { name: "蒼滅の禁書王", hp: 138000, str: 2260, vit: 4200, int: 2140, agi: 230, dex: 270, exp: 33800, minFloor: 2260, maxFloor: 2620, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "天冥の断罪機", hp: 152000, str: 2710, vit: 4480, int: 1840, agi: 240, dex: 282, exp: 36500, minFloor: 2400, maxFloor: 2800, skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"] },
+    { name: "星喰らう魔王", hp: 168000, str: 2860, vit: 4720, int: 2260, agi: 252, dex: 294, exp: 39800, minFloor: 2580, maxFloor: 3000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+
+    // --------------------
+    // 3000〜4500F（新テーブル）
+    // --------------------
+    { name: "虚空の征服者", hp: 205000, str: 3320, vit: 5600, int: 2520, agi: 286, dex: 328, exp: 45500, minFloor: 3001, maxFloor: 3360, skills: ["power_strike", "crushing_blow", "doom_mark", "heal"] },
+    { name: "冥府の天文学者", hp: 218000, str: 3140, vit: 5760, int: 3040, agi: 300, dex: 342, exp: 48800, minFloor: 3200, maxFloor: 3680, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+    { name: "断章の雷神", hp: 236000, str: 3580, vit: 6020, int: 2800, agi: 316, dex: 358, exp: 52500, minFloor: 3440, maxFloor: 3980, skills: ["thunder_strike", "multi_slash", "crushing_blow", "doom_mark", "roar"] },
+    { name: "万劫の冥騎士", hp: 254000, str: 3740, vit: 6380, int: 2920, agi: 326, dex: 372, exp: 56000, minFloor: 3700, maxFloor: 4260, skills: ["power_strike", "multi_slash", "doom_mark", "silence_hex", "heal"] },
+    { name: "天壊の終末炉", hp: 278000, str: 4020, vit: 6900, int: 3360, agi: 340, dex: 388, exp: 60800, minFloor: 4040, maxFloor: 4500, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+
+    // --------------------
+    // 4500〜5000F（新テーブル）
+    // --------------------
+    { name: "神罰の絶鎖竜", hp: 320000, str: 4560, vit: 7800, int: 3680, agi: 370, dex: 420, exp: 68200, minFloor: 4501, maxFloor: 4680, skills: ["crushing_blow", "thunder_strike", "doom_mark", "heal"] },
+    { name: "虚皇の冠位者", hp: 346000, str: 4820, vit: 8240, int: 4020, agi: 386, dex: 438, exp: 73000, minFloor: 4600, maxFloor: 4820, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "界穿つ殲滅神", hp: 372000, str: 5160, vit: 8720, int: 4200, agi: 402, dex: 456, exp: 78800, minFloor: 4720, maxFloor: 4920, skills: ["multi_slash", "power_strike", "crushing_blow", "doom_mark", "roar"] },
+    { name: "零域の支配核", hp: 405000, str: 5480, vit: 9260, int: 4520, agi: 418, dex: 474, exp: 86000, minFloor: 4850, maxFloor: 5000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "silence_hex", "heal"] },
 ];
 
   
   // --------------------
   // ボスモンスター（敵テーブル切替階層）
   // --------------------
-  // 100F / 200F / 500F / 1000F / 1500F / 2000F に固定出現するボス。
+  // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F に固定出現するボス。
   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
   const bossMonsters = {
     100: {
@@ -749,6 +775,45 @@
       isBoss: true,
       skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
       effects: { damageReduction: 0.34, regenRate: 0.09, extraTurnChance: 0.2, armorPierceRate: 0.4 },
+    },
+    3000: {
+      name: "星滅の審級王",
+      hp: 245000,
+      str: 3920,
+      vit: 6500,
+      int: 3000,
+      agi: 330,
+      dex: 374,
+      exp: 92000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.38, regenRate: 0.11, extraTurnChance: 0.24, armorPierceRate: 0.45, alwaysHit: true },
+    },
+    4500: {
+      name: "虚界の超越皇",
+      hp: 360000,
+      str: 5200,
+      vit: 8600,
+      int: 4100,
+      agi: 398,
+      dex: 452,
+      exp: 145000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.42, regenRate: 0.13, extraTurnChance: 0.28, armorPierceRate: 0.5, alwaysHit: true },
+    },
+    5000: {
+      name: "万界終焉アルカディア",
+      hp: 500000,
+      str: 6800,
+      vit: 11200,
+      int: 5600,
+      agi: 460,
+      dex: 520,
+      exp: 220000,
+      isBoss: true,
+      skills: ["doom_mark", "fireball", "ice_lance", "thunder_strike", "crushing_blow", "multi_slash", "silence_hex", "heal"],
+      effects: { damageReduction: 0.48, regenRate: 0.16, extraTurnChance: 0.33, armorPierceRate: 0.58, alwaysHit: true },
     },
   };
 

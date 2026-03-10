@@ -1,154 +1,57 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index fc99e066188ea113f41a95b50f48a57e55d07ffa..cd25d11c2a743afeec1685a7ceeab36ea0715902 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -167,50 +167,149 @@
-       achievementDefs.push({
-         id: ms.id,
-         title: ms.title,
-         desc: `攻撃を${ms.target}回回避する`,
-         isVisible: (p) =>
-           !ms.unlockAfterId ||
-           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
-         isDone: (p) => {
-           const unlocked =
-             !ms.unlockAfterId ||
-             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
-           if (!unlocked) return false;
-           return Number(p.totalEvades || 0) >= ms.target;
-         },
-         progress: (p) =>
-           `${Math.min(Number(p.totalEvades || 0), ms.target)}/${ms.target}`,
-         bonus: { evasionCapBonus: ms.bonusCap },
-       });
-     });
-   }
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index 6d01f468c1b2f9a319d2e89f51f47600a8fc5057..a9638e8311cae8bb11d8b104ce9ed1e27f5299d1 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -67,51 +67,51 @@
  
-   // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
-   // - 境地2以降は段階解放（前段階クリア後に次が解放）
-   // - 各段階は「解放時点」から0カウントで進行する
-   // - 必要撃破数（段階ごと）：2は1500、3は2000、4は2500、5は3000
-+  {
-+    const getTotalKills = (p) => {
-+      const v = Number(p && p.totalKills ? p.totalKills : 0);
-+      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-+    };
-+
-+    const milestones = [
-+      {
-+        id: "elite_adventurer_5000_after",
-+        title: "千戦錬磨",
-+        unlockAfterId: "elite_adventurer",
-+        unlockAfterLabel: "百戦錬磨",
-+        needKills: 5000,
-+        bonusExpRate: 0.15,
-+      },
-+      {
-+        id: "elite_adventurer_10000_after",
-+        title: "万戦錬磨",
-+        unlockAfterId: "elite_adventurer_5000_after",
-+        unlockAfterLabel: "千戦錬磨",
-+        needKills: 10000,
-+        bonusExpRate: 0.2,
-+      },
-+    ];
-+
-+    const ensureMilestoneStartMap = (p) => {
-+      if (!p || typeof p !== "object") return {};
-+      if (
-+        !p.achievementProgressStarts ||
-+        typeof p.achievementProgressStarts !== "object"
-+      ) {
-+        p.achievementProgressStarts = {};
-+      }
-+      if (
-+        !p.achievementProgressStarts.eliteMilestones ||
-+        typeof p.achievementProgressStarts.eliteMilestones !== "object"
-+      ) {
-+        p.achievementProgressStarts.eliteMilestones = {};
-+      }
-+      return p.achievementProgressStarts.eliteMilestones;
-+    };
-+
-+    const getMilestoneStartKills = (p, ms) => {
-+      const map =
-+        p &&
-+        p.achievementProgressStarts &&
-+        p.achievementProgressStarts.eliteMilestones &&
-+        typeof p.achievementProgressStarts.eliteMilestones === "object"
-+          ? p.achievementProgressStarts.eliteMilestones
-+          : {};
-+      const raw = Number(map[ms.id]);
-+      return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
-+    };
-+
-+    milestones.forEach((ms) => {
-+      achievementDefs.push({
-+        id: ms.id,
-+        title: ms.title,
-+        desc: `${ms.unlockAfterLabel}クリア後、さらに敵を${ms.needKills}体倒す`,
-+        isVisible: (p) =>
-+          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
-+        onCheck: (p) => {
-+          const unlocked = !!(
-+            p &&
-+            p.achievements &&
-+            p.achievements[ms.unlockAfterId]
-+          );
-+          if (!unlocked) return;
-+          const map = ensureMilestoneStartMap(p);
-+          const cur = Number(map[ms.id]);
-+          if (Number.isFinite(cur)) return;
-+          map[ms.id] = getTotalKills(p);
-+        },
-+        isDone: (p) => {
-+          const unlocked = !!(
-+            p &&
-+            p.achievements &&
-+            p.achievements[ms.unlockAfterId]
-+          );
-+          if (!unlocked) return false;
-+          const startKills = getMilestoneStartKills(p, ms);
-+          return Math.max(0, getTotalKills(p) - startKills) >= ms.needKills;
-+        },
-+        progress: (p) => {
-+          const unlocked = !!(
-+            p &&
-+            p.achievements &&
-+            p.achievements[ms.unlockAfterId]
-+          );
-+          if (!unlocked) return "未解放";
-+          const startKills = getMilestoneStartKills(p, ms);
-+          const v = Math.max(0, getTotalKills(p) - startKills);
-+          return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
-+        },
-+        bonus: { expRate: ms.bonusExpRate },
-+      });
-+    });
-+  }
-+
-   {
-     const getAsuraKills = (p) => {
-       const map =
-         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
-       const v = Number(map.asura || 0);
-       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
-     };
+     floorCapLift250: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.floorCapLift250) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.floorCapLift250 = true;
+         saveStore(s);
  
-     const asuraMilestones = [
-       {
-         id: "asura_slayer_1000",
-         title: "修羅の境地 1",
-         unlockAfterId: null,
-         needKills: 1000,
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.floorCapLift250 = true;
+         }
+ 
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
        },
-       {
-         id: "asura_slayer_1500",
-         title: "修羅の境地 2",
-         unlockAfterId: "asura_slayer_1000",
-         unlockAfterLabel: "修羅の境地1",
-         needKills: 1500,
+       logMessage:
+-        "✨ シリアルコードを確認しました。階層上限を2001階に解放しました。",
++        "✨ シリアルコードを確認しました。階層上限を5001階に解放しました。",
+     },
+ 
+     // 前世の記憶（実績解除：経験値+20%）
+     pastLifeMemory: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.pastLifeMemory) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
        },
-       {
-         id: "asura_slayer_2000",
-         title: "修羅の境地 3",
+       unlock: () => {
+         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
+         const s = loadStore();
+         s.pastLifeMemory = true;
+         saveStore(s);
+ 
+         // 2) セーブデータ側にも保存（実績用）
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.pastLifeMemory = true;
+         }
+ 
+         // 3) 実績解除チェック（ログもここで出る）

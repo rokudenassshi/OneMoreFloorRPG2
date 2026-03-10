@@ -9,9 +9,9 @@
   // テスト用：階層上限
   // -------------------
   // 通常時は250階層で頭打ち。
-  // 上限解放シリアル入力時は 2001 階層まで進行可能。
+  // 上限解放シリアル入力時は 5001 階層まで進行可能。
   const DEFAULT_FLOOR_CAP = 250;
-  const UNLOCKED_FLOOR_CAP = 2001;
+  const UNLOCKED_FLOOR_CAP = 5001;
   const SERIAL_UNLOCK_STORE_KEY = "omf_serial_unlocks_v1";
   const BASE_EVASION_CAP = 70;
   const MAX_EVASION_CAP = 90;
