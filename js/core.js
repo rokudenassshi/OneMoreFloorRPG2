@@ -1582,6 +1582,9 @@
         combat.healPower *= mul(healPct);
     }
 
+    const achievementSearchBonus = getAchievementSearchBonus();
+    if (achievementSearchBonus > 0) combat.search += achievementSearchBonus;
+
     // 端数が出ないように丸める
     combat.attack = Math.round(combat.attack);
     combat.defense = Math.round(combat.defense);
@@ -1683,6 +1686,26 @@
 
   function getAchievementExpBonusPercent() {
     return Math.round(getAchievementExpBonusRate() * 100);
+  }
+
+
+  function getAchievementSearchBonus() {
+    const p = gameData.player;
+    const map =
+      p && p.achievements && typeof p.achievements === "object"
+        ? p.achievements
+        : {};
+    const defs = Array.isArray(window.achievementDefs)
+      ? window.achievementDefs
+      : [];
+    let bonus = 0;
+    for (const def of defs) {
+      if (!def || !def.id || !map[def.id]) continue;
+      const b = def.bonus || {};
+      const v = Number(b.search || 0);
+      if (Number.isFinite(v) && v > 0) bonus += Math.floor(v);
+    }
+    return bonus;
   }
 
 
@@ -1843,6 +1866,9 @@
         }
         if (typeof b.itemDropRate === "number" && b.itemDropRate > 0) {
           log(`✨ ボーナス：アイテムドロップ率+${Math.floor(b.itemDropRate)}%`);
+        }
+        if (typeof b.search === "number" && b.search > 0) {
+          log(`✨ ボーナス：索敵+${Math.floor(b.search)}`);
         }
 
         // 報酬ログ（任意）

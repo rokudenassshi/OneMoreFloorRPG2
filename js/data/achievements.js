@@ -108,6 +108,14 @@
       bonus: { itemDropRate: 5 },
     },
     {
+      id: "named_hunter_master_2",
+      title: "二つ名コレクター2",
+      desc: "二つ名モンスターを200体倒す",
+      isDone: (p) => Number(p.namedKills || 0) >= 200,
+      progress: (p) => `${Math.min(Number(p.namedKills || 0), 200)}/200`,
+      bonus: { search: 10 },
+    },
+    {
       id: "the_have_not",
       title: "死を超える",
       desc: "？？？",

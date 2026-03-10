@@ -1,69 +1,183 @@
-diff --git a/js/ui.js b/js/ui.js
-index af44226be42fc8225bda425aa88663cbf636cada..c831b24cfe7853306b8ea06eda20a8da74537688 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1892,53 +1892,61 @@
-         try {
-           return typeof def.isVisible !== "function" || !!def.isVisible(p);
-         } catch (e) {
-           return true;
-         }
-       })
-       .map((def, idx) => {
-         const done = !!p.achievements[def.id];
-         let progress = "";
-         try {
-           progress = typeof def.progress === "function" ? def.progress(p) : "";
-         } catch (e) {
-           progress = "";
-         }
-         return {
-           idx,
-           id: def.id,
-           title: def.title || def.id,
-           desc: def.desc || "",
-           done,
-           progress,
-           bonus: def.bonus || {},
-         };
-       });
+diff --git a/js/core.js b/js/core.js
+index 362e8bc6adf0270c581f50e64d9c3040bf505d43..a9c6ba873930860fe458a6e8e79547a231de8077 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -1560,50 +1560,53 @@
+     }
+     // -------------------
+     // 特殊接頭語（statPct系）：乗算% を最終ステータスに反映
+     // - equipment_special_prefix.js の statPct は item.effects に attackPct / defensePct / maxHpPct ... を積む
+     // - ここで合算し、combat の最終値に乗算する
+     // -------------------
+     {
+       const atkPct = Number(getAccessoryBonus("attackPct") || 0);
+       const defPct = Number(getAccessoryBonus("defensePct") || 0);
+       const hpPct = Number(getAccessoryBonus("maxHpPct") || 0);
+       const mpPct = Number(getAccessoryBonus("magicPowerPct") || 0);
+       const healPct = Number(getAccessoryBonus("healPowerPct") || 0);
  
--    const list = rows
--      .filter((row) => !row.done)
--      .concat(rows.filter((row) => row.done));
-+    const isDeathBeyondAchievement = (row) =>
-+      row &&
-+      (row.id === "defeated_10_times" ||
-+        String(row.title || "").includes("死を超える"));
+       const mul = (pct) => 1 + clamp(Number(pct) || 0, -80, 500) / 100;
+ 
+       if (Number.isFinite(atkPct) && atkPct !== 0) combat.attack *= mul(atkPct);
+       if (Number.isFinite(defPct) && defPct !== 0)
+         combat.defense *= mul(defPct);
+       if (Number.isFinite(hpPct) && hpPct !== 0) combat.maxHp *= mul(hpPct);
+       if (Number.isFinite(mpPct) && mpPct !== 0)
+         combat.magicPower *= mul(mpPct);
+       if (Number.isFinite(healPct) && healPct !== 0)
+         combat.healPower *= mul(healPct);
+     }
+ 
++    const achievementSearchBonus = getAchievementSearchBonus();
++    if (achievementSearchBonus > 0) combat.search += achievementSearchBonus;
 +
-+    const undone = rows.filter((row) => !row.done);
-+    const done = rows.filter((row) => row.done);
-+    const list = undone
-+      .filter((row) => !isDeathBeyondAchievement(row))
-+      .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
-+      .concat(done);
+     // 端数が出ないように丸める
+     combat.attack = Math.round(combat.attack);
+     combat.defense = Math.round(combat.defense);
+     combat.magicPower = Math.round(combat.magicPower);
+     combat.healPower = Math.round(combat.healPower || 0);
+     combat.accuracy = Math.round(combat.accuracy);
+     combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
+     combat.critRate = Math.round(combat.critRate);
+     // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
+     combat.search = clamp(combat.search, 0, 150);
  
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
-         let bonusText = "";
-         if (a.bonus) {
-           const parts = [];
-           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
-             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
-           }
-           if (
-             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
-             a.bonus.asuraBaseStatMultiplierBonus > 0
-           ) {
-             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
-           }
-           if (
-             typeof a.bonus.evasionCapBonus === "number" &&
-             a.bonus.evasionCapBonus > 0
-           ) {
-             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
-           }
-           if (
-             typeof a.bonus.itemDropRate === "number" &&
-             a.bonus.itemDropRate > 0
+     // 最大HP更新
+     // 端数が出ないように丸める
+     combat.maxHp = Math.round(combat.maxHp);
+ 
+     gameData.player.maxHp = combat.maxHp;
+     if (gameData.player.hp > gameData.player.maxHp) {
+       gameData.player.hp = gameData.player.maxHp;
+     }
+ 
+     return combat;
+   }
+ 
+   // 装備効果ボーナス取得（装備1/装備2/装飾品の effects を合算）
+   function getAccessoryBonus(type) {
+@@ -1664,50 +1667,70 @@
+     const p = gameData.player;
+     const map =
+       p && p.achievements && typeof p.achievements === "object"
+         ? p.achievements
+         : {};
+     let rate = 0;
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
+     for (const def of defs) {
+       if (!def || !def.id) continue;
+       if (!map[def.id]) continue;
+       const b = def.bonus || {};
+       if (typeof b.expRate === "number" && Number.isFinite(b.expRate)) {
+         rate += b.expRate;
+       }
+     }
+     return rate;
+   }
+ 
+   function getAchievementExpBonusPercent() {
+     return Math.round(getAchievementExpBonusRate() * 100);
+   }
+ 
+ 
++  function getAchievementSearchBonus() {
++    const p = gameData.player;
++    const map =
++      p && p.achievements && typeof p.achievements === "object"
++        ? p.achievements
++        : {};
++    const defs = Array.isArray(window.achievementDefs)
++      ? window.achievementDefs
++      : [];
++    let bonus = 0;
++    for (const def of defs) {
++      if (!def || !def.id || !map[def.id]) continue;
++      const b = def.bonus || {};
++      const v = Number(b.search || 0);
++      if (Number.isFinite(v) && v > 0) bonus += Math.floor(v);
++    }
++    return bonus;
++  }
++
++
+   function getAchievementItemDropRateBonus() {
+     const p = gameData.player;
+     const map =
+       p && p.achievements && typeof p.achievements === "object"
+         ? p.achievements
+         : {};
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
+     let bonus = 0;
+     for (const def of defs) {
+       if (!def || !def.id || !map[def.id]) continue;
+       const b = def.bonus || {};
+       const v = Number(b.itemDropRate || 0);
+       if (Number.isFinite(v) && v > 0) bonus += v;
+     }
+     return bonus;
+   }
+ 
+   function getAchievementEvasionCapBonusPercent() {
+     const p = gameData.player;
+     const map =
+       p && p.achievements && typeof p.achievements === "object"
+         ? p.achievements
+         : {};
+@@ -1822,50 +1845,53 @@
+       }
+       if (done && !already) {
+         p.achievements[def.id] = true;
+         unlockedNow.push(def);
+       }
+     }
+ 
+     // 報酬付与（解除済み実績にも一度だけ適用）
+     for (const def of defs) {
+       if (def && def.id && p.achievements[def.id]) grantReward(def);
+     }
+ 
+     if (!silent && unlockedNow.length) {
+       for (const def of unlockedNow) {
+         log(`🏆 実績解除：${def.title}`);
+         const b = def.bonus || {};
+         if (typeof b.expRate === "number" && b.expRate > 0) {
+           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
+         }
+         if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {
+           log(`✨ ボーナス：回避上限+${Math.floor(b.evasionCapBonus)}%`);
+         }
+         if (typeof b.itemDropRate === "number" && b.itemDropRate > 0) {
+           log(`✨ ボーナス：アイテムドロップ率+${Math.floor(b.itemDropRate)}%`);
+         }
++        if (typeof b.search === "number" && b.search > 0) {
++          log(`✨ ボーナス：索敵+${Math.floor(b.search)}`);
++        }
+ 
+         // 報酬ログ（任意）
+         const r = def.reward;
+         if (
+           r &&
+           typeof r === "object" &&
+           typeof r.text === "string" &&
+           r.text
+         ) {
+           log(`🎁 報酬：${r.text}`);
+         }
+       }
+     }
+ 
+     return unlockedNow;
+   }
+ 
+   // -------------------
+   // 探索
+   // -------------------
+   function move(dir) {
+     if (gameData.gameState !== "EXPLORE") return;
+ 
+     const cur = clampFloor(gameData.floor || 1);
+     const floorCap = getCurrentFloorCap();
