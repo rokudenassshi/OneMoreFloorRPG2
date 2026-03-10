@@ -25,6 +25,7 @@
       totalEvades: 0,
       namedKills: 0,
       nakedDefeats: 0,
+      totalDefeats: 0,
       maxReachedFloor: 1,
       achievements: {},
 

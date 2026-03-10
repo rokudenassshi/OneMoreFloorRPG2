@@ -1,100 +1,56 @@
-diff --git a/js/core.js b/js/core.js
-index f0b9c53268f881251c6c53570b120fb548e10cd9..40f6963f88cafc0dffa9411043d60217b8d882b3 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -1743,90 +1743,91 @@
-       if (!def || !def.id || !map[def.id]) continue;
-       const b = def.bonus || {};
-       const v = Number(b.asuraBaseStatMultiplierBonus || 0);
-       if (Number.isFinite(v) && v > 0) bonus += v;
-     }
-     return bonus;
-   }
+diff --git a/js/data/base.js b/js/data/base.js
+index 6c106cb7389b8c9a1a923856e93057e072453d2c..f9fc2ae9f3558831ce18d1bbe10a41378631ebc0 100644
+--- a/js/data/base.js
++++ b/js/data/base.js
+@@ -3,50 +3,51 @@
+ // ===================
  
-   function checkAndUnlockAchievements({ silent = false } = {}) {
-     const p = gameData.player;
-     if (!p.achievements || typeof p.achievements !== "object")
-       p.achievements = {};
-     if (
-       !p.achievementRewardsClaimed ||
-       typeof p.achievementRewardsClaimed !== "object"
-     )
-       p.achievementRewardsClaimed = {};
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
-     const unlockedNow = [];
+ (function () {
+   "use strict";
  
-     const grantReward = (def) => {
-       if (!def || !def.id) return;
-       const claimedMap = p.achievementRewardsClaimed;
--      if (claimedMap && claimedMap[def.id]) return;
-+      const alreadyClaimed = !!(claimedMap && claimedMap[def.id]);
-       const r = def.reward;
-       if (!r || typeof r !== "object") return;
+   // version.json の値がローダーで window.GAME_VERSION に入る
+   // ここでは fallback を持つ（ローダーが無い環境でも動くように）
+   const GAME_VERSION = (typeof window.GAME_VERSION === "string" && window.GAME_VERSION) ? window.GAME_VERSION : "0.2.1";
  
-       let rewarded = false;
+   const gameData = {
+     floor: 1,
+     battleFloor: null,
+     pendingFloorAfterWin: null,
  
-       // 例: reward.valuables = ["emblem_strength", { id: "emblem_vitality", amount: 2 }]
--      if (Array.isArray(r.valuables)) {
-+      if (!alreadyClaimed && Array.isArray(r.valuables)) {
-         for (const v of r.valuables) {
-           let id = "";
-           let amount = 1;
-           if (typeof v === "string") {
-             id = v;
-           } else if (v && typeof v === "object") {
-             id = typeof v.id === "string" ? v.id : "";
-             const a = Number(v.amount);
-             if (Number.isFinite(a) && a > 0) amount = Math.floor(a);
-           }
-           if (!id) continue;
-           const defRelic = RELIC_DEFS.find((d) => d && d.id === id);
-           if (!defRelic) continue;
-           addValuableByDef(defRelic, amount);
-           rewarded = true;
-         }
-       }
+     player: {
+       level: 1,
+       exp: 0,
+       hp: 100,
+       maxHp: 100,
+       job: "swordsman",
+       jobKills: {},
+       totalKills: 0,
+       totalEvades: 0,
+       namedKills: 0,
+       nakedDefeats: 0,
++      totalDefeats: 0,
+       maxReachedFloor: 1,
+       achievements: {},
  
-       if (Array.isArray(r.unlockJobs)) {
-         if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
-         for (const jobKeyRaw of r.unlockJobs) {
-           const jobKey = String(jobKeyRaw || "");
-           if (!jobKey || !jobs[jobKey]) continue;
-           if (!p.unlockedJobs[jobKey]) {
-             p.unlockedJobs[jobKey] = true;
-+            rewarded = true;
-           }
--          rewarded = true;
-         }
-       }
+       // 上級職解放の進捗 / 解放済み
+       jobUnlockProgress: {},
+       unlockedJobs: {},
  
-       // 報酬は1回だけ
--      if (rewarded && claimedMap && def.id) claimedMap[def.id] = true;
-+      if (!alreadyClaimed && rewarded && claimedMap && def.id)
-+        claimedMap[def.id] = true;
-     };
+       // 基本ステータス（基準値 5）
+       baseStats: {
+         strength: 5,
+         vitality: 5,
+         intelligence: 5,
+         agility: 5,
+         dexterity: 5,
+       },
  
-     for (const def of defs) {
-       if (!def || !def.id || typeof def.isDone !== "function") continue;
-       const already = !!p.achievements[def.id];
-       try {
-         if (typeof def.onCheck === "function") def.onCheck(p);
-       } catch (e) {}
-       let done = false;
-       try {
-         done = !!def.isDone(p);
-       } catch (e) {
-         done = false;
-       }
-       if (done && !already) {
-         p.achievements[def.id] = true;
-         unlockedNow.push(def);
-       }
-     }
- 
-     // 報酬付与（解除済み実績にも一度だけ適用）
-     for (const def of defs) {
-       if (def && def.id && p.achievements[def.id]) grantReward(def);
-     }
+       // 振り分けステータス
+       allocatedStats: {
+         strength: 0,
+         vitality: 0,
+         intelligence: 0,
+         agility: 0,
+         dexterity: 0,
+       },
  

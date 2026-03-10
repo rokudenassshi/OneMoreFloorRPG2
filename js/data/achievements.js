@@ -9,6 +9,18 @@
   // ※解除状態は player.achievements[id] に保存される
   const achievementDefs = [
     {
+      id: "defeated_10_times",
+      title: "不屈の証",
+      desc: "敵に10回倒される",
+      isDone: (p) => Number(p.totalDefeats || 0) >= 10,
+      progress: (p) => `${Math.min(Number(p.totalDefeats || 0), 10)}/10`,
+      bonus: {},
+      reward: {
+        valuables: [{ id: "emblem_vitality", amount: 5 }],
+        text: "体力の紋章 ×5",
+      },
+    },
+    {
       id: "first_kill",
       title: "初討伐",
       desc: "敵を1体倒す",
@@ -95,18 +107,6 @@
       progress: (p) => `${Math.min(Number(p.namedKills || 0), 50)}/50`,
       bonus: { itemDropRate: 5 },
     },
-    {
-      id: "the_have_not",
-      title: "死を超える",
-      desc: "？？？",
-      isDone: (p) => Number(p.nakedDefeats || 0) >= 1000,
-      progress: (p) => `${Math.min(Number(p.nakedDefeats || 0), 1000)}/1000`,
-      bonus: {},
-      reward: {
-        unlockJobs: ["have_not"],
-        text: "？？？",
-      },
-    },
   ];
 
   // 回避上限を段階的に引き上げる実績
@@ -147,7 +147,7 @@
       achievementDefs.push({
         id: ms.id,
         title: ms.title,
-        desc: `攻撃を${ms.target}回回避する（ボーナス：回避上限+${ms.bonusCap}%）`,
+        desc: `攻撃を${ms.target}回回避する`,
         isVisible: (p) =>
           !ms.unlockAfterId ||
           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
@@ -249,8 +249,8 @@
         id: ms.id,
         title: ms.title,
         desc: ms.unlockAfterId
-          ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`
-          : `修羅でモンスターを${ms.needKills}体倒す（ボーナス：修羅の基礎ステ倍率+1）`,
+          ? `${ms.unlockAfterLabel}クリア後、修羅でさらに${ms.needKills}体倒す`
+          : `修羅でモンスターを${ms.needKills}体倒す`,
         isVisible: (p) =>
           !ms.unlockAfterId ||
           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
@@ -315,7 +315,7 @@
       achievementDefs.push({
         id: `advanced_job_slayer_${k}_${ADV_TARGET}`,
         title: `${name}の心得`,
-        desc: `${name}でモンスターを${ADV_TARGET}体倒す（ボーナス：経験値+10%）`,
+        desc: `${name}でモンスターを${ADV_TARGET}体倒す`,
         isDone: (p) => getKills(p, k) >= ADV_TARGET,
         progress: (p) =>
           `${Math.min(getKills(p, k), ADV_TARGET)}/${ADV_TARGET}`,

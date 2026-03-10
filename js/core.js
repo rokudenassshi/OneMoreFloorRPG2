@@ -4232,6 +4232,11 @@
         return;
       }
 
+      const totalDefeats = Number(gameData.player.totalDefeats || 0);
+      gameData.player.totalDefeats = Number.isFinite(totalDefeats)
+        ? Math.max(0, Math.floor(totalDefeats) + 1)
+        : 1;
+
       if (isFullyUnequipped(gameData.player)) {
         const cur = Number(gameData.player.nakedDefeats || 0);
         gameData.player.nakedDefeats = Number.isFinite(cur)
