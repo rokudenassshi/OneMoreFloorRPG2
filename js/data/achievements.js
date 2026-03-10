@@ -190,6 +190,105 @@
   // - 各段階は「解放時点」から0カウントで進行する
   // - 必要撃破数（段階ごと）：2は1500、3は2000、4は2500、5は3000
   {
+    const getTotalKills = (p) => {
+      const v = Number(p && p.totalKills ? p.totalKills : 0);
+      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+    };
+
+    const milestones = [
+      {
+        id: "elite_adventurer_5000_after",
+        title: "千戦錬磨",
+        unlockAfterId: "elite_adventurer",
+        unlockAfterLabel: "百戦錬磨",
+        needKills: 5000,
+        bonusExpRate: 0.15,
+      },
+      {
+        id: "elite_adventurer_10000_after",
+        title: "万戦錬磨",
+        unlockAfterId: "elite_adventurer_5000_after",
+        unlockAfterLabel: "千戦錬磨",
+        needKills: 10000,
+        bonusExpRate: 0.2,
+      },
+    ];
+
+    const ensureMilestoneStartMap = (p) => {
+      if (!p || typeof p !== "object") return {};
+      if (
+        !p.achievementProgressStarts ||
+        typeof p.achievementProgressStarts !== "object"
+      ) {
+        p.achievementProgressStarts = {};
+      }
+      if (
+        !p.achievementProgressStarts.eliteMilestones ||
+        typeof p.achievementProgressStarts.eliteMilestones !== "object"
+      ) {
+        p.achievementProgressStarts.eliteMilestones = {};
+      }
+      return p.achievementProgressStarts.eliteMilestones;
+    };
+
+    const getMilestoneStartKills = (p, ms) => {
+      const map =
+        p &&
+        p.achievementProgressStarts &&
+        p.achievementProgressStarts.eliteMilestones &&
+        typeof p.achievementProgressStarts.eliteMilestones === "object"
+          ? p.achievementProgressStarts.eliteMilestones
+          : {};
+      const raw = Number(map[ms.id]);
+      return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
+    };
+
+    milestones.forEach((ms) => {
+      achievementDefs.push({
+        id: ms.id,
+        title: ms.title,
+        desc: `${ms.unlockAfterLabel}クリア後、さらに敵を${ms.needKills}体倒す`,
+        isVisible: (p) =>
+          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
+        onCheck: (p) => {
+          const unlocked = !!(
+            p &&
+            p.achievements &&
+            p.achievements[ms.unlockAfterId]
+          );
+          if (!unlocked) return;
+          const map = ensureMilestoneStartMap(p);
+          const cur = Number(map[ms.id]);
+          if (Number.isFinite(cur)) return;
+          map[ms.id] = getTotalKills(p);
+        },
+        isDone: (p) => {
+          const unlocked = !!(
+            p &&
+            p.achievements &&
+            p.achievements[ms.unlockAfterId]
+          );
+          if (!unlocked) return false;
+          const startKills = getMilestoneStartKills(p, ms);
+          return Math.max(0, getTotalKills(p) - startKills) >= ms.needKills;
+        },
+        progress: (p) => {
+          const unlocked = !!(
+            p &&
+            p.achievements &&
+            p.achievements[ms.unlockAfterId]
+          );
+          if (!unlocked) return "未解放";
+          const startKills = getMilestoneStartKills(p, ms);
+          const v = Math.max(0, getTotalKills(p) - startKills);
+          return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
+        },
+        bonus: { expRate: ms.bonusExpRate },
+      });
+    });
+  }
+
+  {
     const getAsuraKills = (p) => {
       const map =
         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};

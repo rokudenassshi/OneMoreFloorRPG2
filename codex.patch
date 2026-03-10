@@ -1,183 +1,154 @@
-diff --git a/js/core.js b/js/core.js
-index 362e8bc6adf0270c581f50e64d9c3040bf505d43..a9c6ba873930860fe458a6e8e79547a231de8077 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -1560,50 +1560,53 @@
-     }
-     // -------------------
-     // 特殊接頭語（statPct系）：乗算% を最終ステータスに反映
-     // - equipment_special_prefix.js の statPct は item.effects に attackPct / defensePct / maxHpPct ... を積む
-     // - ここで合算し、combat の最終値に乗算する
-     // -------------------
-     {
-       const atkPct = Number(getAccessoryBonus("attackPct") || 0);
-       const defPct = Number(getAccessoryBonus("defensePct") || 0);
-       const hpPct = Number(getAccessoryBonus("maxHpPct") || 0);
-       const mpPct = Number(getAccessoryBonus("magicPowerPct") || 0);
-       const healPct = Number(getAccessoryBonus("healPowerPct") || 0);
+diff --git a/js/data/achievements.js b/js/data/achievements.js
+index fc99e066188ea113f41a95b50f48a57e55d07ffa..cd25d11c2a743afeec1685a7ceeab36ea0715902 100644
+--- a/js/data/achievements.js
++++ b/js/data/achievements.js
+@@ -167,50 +167,149 @@
+       achievementDefs.push({
+         id: ms.id,
+         title: ms.title,
+         desc: `攻撃を${ms.target}回回避する`,
+         isVisible: (p) =>
+           !ms.unlockAfterId ||
+           !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
+         isDone: (p) => {
+           const unlocked =
+             !ms.unlockAfterId ||
+             !!(p && p.achievements && p.achievements[ms.unlockAfterId]);
+           if (!unlocked) return false;
+           return Number(p.totalEvades || 0) >= ms.target;
+         },
+         progress: (p) =>
+           `${Math.min(Number(p.totalEvades || 0), ms.target)}/${ms.target}`,
+         bonus: { evasionCapBonus: ms.bonusCap },
+       });
+     });
+   }
  
-       const mul = (pct) => 1 + clamp(Number(pct) || 0, -80, 500) / 100;
- 
-       if (Number.isFinite(atkPct) && atkPct !== 0) combat.attack *= mul(atkPct);
-       if (Number.isFinite(defPct) && defPct !== 0)
-         combat.defense *= mul(defPct);
-       if (Number.isFinite(hpPct) && hpPct !== 0) combat.maxHp *= mul(hpPct);
-       if (Number.isFinite(mpPct) && mpPct !== 0)
-         combat.magicPower *= mul(mpPct);
-       if (Number.isFinite(healPct) && healPct !== 0)
-         combat.healPower *= mul(healPct);
-     }
- 
-+    const achievementSearchBonus = getAchievementSearchBonus();
-+    if (achievementSearchBonus > 0) combat.search += achievementSearchBonus;
+   // 修羅：一定撃破数ごとに基礎ステ倍率が上昇
+   // - 境地2以降は段階解放（前段階クリア後に次が解放）
+   // - 各段階は「解放時点」から0カウントで進行する
+   // - 必要撃破数（段階ごと）：2は1500、3は2000、4は2500、5は3000
++  {
++    const getTotalKills = (p) => {
++      const v = Number(p && p.totalKills ? p.totalKills : 0);
++      return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
++    };
 +
-     // 端数が出ないように丸める
-     combat.attack = Math.round(combat.attack);
-     combat.defense = Math.round(combat.defense);
-     combat.magicPower = Math.round(combat.magicPower);
-     combat.healPower = Math.round(combat.healPower || 0);
-     combat.accuracy = Math.round(combat.accuracy);
-     combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
-     combat.critRate = Math.round(combat.critRate);
-     // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
-     combat.search = clamp(combat.search, 0, 150);
- 
-     // 最大HP更新
-     // 端数が出ないように丸める
-     combat.maxHp = Math.round(combat.maxHp);
- 
-     gameData.player.maxHp = combat.maxHp;
-     if (gameData.player.hp > gameData.player.maxHp) {
-       gameData.player.hp = gameData.player.maxHp;
-     }
- 
-     return combat;
-   }
- 
-   // 装備効果ボーナス取得（装備1/装備2/装飾品の effects を合算）
-   function getAccessoryBonus(type) {
-@@ -1664,50 +1667,70 @@
-     const p = gameData.player;
-     const map =
-       p && p.achievements && typeof p.achievements === "object"
-         ? p.achievements
-         : {};
-     let rate = 0;
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
-     for (const def of defs) {
-       if (!def || !def.id) continue;
-       if (!map[def.id]) continue;
-       const b = def.bonus || {};
-       if (typeof b.expRate === "number" && Number.isFinite(b.expRate)) {
-         rate += b.expRate;
-       }
-     }
-     return rate;
-   }
- 
-   function getAchievementExpBonusPercent() {
-     return Math.round(getAchievementExpBonusRate() * 100);
-   }
- 
- 
-+  function getAchievementSearchBonus() {
-+    const p = gameData.player;
-+    const map =
-+      p && p.achievements && typeof p.achievements === "object"
-+        ? p.achievements
-+        : {};
-+    const defs = Array.isArray(window.achievementDefs)
-+      ? window.achievementDefs
-+      : [];
-+    let bonus = 0;
-+    for (const def of defs) {
-+      if (!def || !def.id || !map[def.id]) continue;
-+      const b = def.bonus || {};
-+      const v = Number(b.search || 0);
-+      if (Number.isFinite(v) && v > 0) bonus += Math.floor(v);
-+    }
-+    return bonus;
++    const milestones = [
++      {
++        id: "elite_adventurer_5000_after",
++        title: "千戦錬磨",
++        unlockAfterId: "elite_adventurer",
++        unlockAfterLabel: "百戦錬磨",
++        needKills: 5000,
++        bonusExpRate: 0.15,
++      },
++      {
++        id: "elite_adventurer_10000_after",
++        title: "万戦錬磨",
++        unlockAfterId: "elite_adventurer_5000_after",
++        unlockAfterLabel: "千戦錬磨",
++        needKills: 10000,
++        bonusExpRate: 0.2,
++      },
++    ];
++
++    const ensureMilestoneStartMap = (p) => {
++      if (!p || typeof p !== "object") return {};
++      if (
++        !p.achievementProgressStarts ||
++        typeof p.achievementProgressStarts !== "object"
++      ) {
++        p.achievementProgressStarts = {};
++      }
++      if (
++        !p.achievementProgressStarts.eliteMilestones ||
++        typeof p.achievementProgressStarts.eliteMilestones !== "object"
++      ) {
++        p.achievementProgressStarts.eliteMilestones = {};
++      }
++      return p.achievementProgressStarts.eliteMilestones;
++    };
++
++    const getMilestoneStartKills = (p, ms) => {
++      const map =
++        p &&
++        p.achievementProgressStarts &&
++        p.achievementProgressStarts.eliteMilestones &&
++        typeof p.achievementProgressStarts.eliteMilestones === "object"
++          ? p.achievementProgressStarts.eliteMilestones
++          : {};
++      const raw = Number(map[ms.id]);
++      return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0;
++    };
++
++    milestones.forEach((ms) => {
++      achievementDefs.push({
++        id: ms.id,
++        title: ms.title,
++        desc: `${ms.unlockAfterLabel}クリア後、さらに敵を${ms.needKills}体倒す`,
++        isVisible: (p) =>
++          !!(p && p.achievements && p.achievements[ms.unlockAfterId]),
++        onCheck: (p) => {
++          const unlocked = !!(
++            p &&
++            p.achievements &&
++            p.achievements[ms.unlockAfterId]
++          );
++          if (!unlocked) return;
++          const map = ensureMilestoneStartMap(p);
++          const cur = Number(map[ms.id]);
++          if (Number.isFinite(cur)) return;
++          map[ms.id] = getTotalKills(p);
++        },
++        isDone: (p) => {
++          const unlocked = !!(
++            p &&
++            p.achievements &&
++            p.achievements[ms.unlockAfterId]
++          );
++          if (!unlocked) return false;
++          const startKills = getMilestoneStartKills(p, ms);
++          return Math.max(0, getTotalKills(p) - startKills) >= ms.needKills;
++        },
++        progress: (p) => {
++          const unlocked = !!(
++            p &&
++            p.achievements &&
++            p.achievements[ms.unlockAfterId]
++          );
++          if (!unlocked) return "未解放";
++          const startKills = getMilestoneStartKills(p, ms);
++          const v = Math.max(0, getTotalKills(p) - startKills);
++          return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
++        },
++        bonus: { expRate: ms.bonusExpRate },
++      });
++    });
 +  }
 +
-+
-   function getAchievementItemDropRateBonus() {
-     const p = gameData.player;
-     const map =
-       p && p.achievements && typeof p.achievements === "object"
-         ? p.achievements
-         : {};
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
-     let bonus = 0;
-     for (const def of defs) {
-       if (!def || !def.id || !map[def.id]) continue;
-       const b = def.bonus || {};
-       const v = Number(b.itemDropRate || 0);
-       if (Number.isFinite(v) && v > 0) bonus += v;
-     }
-     return bonus;
-   }
+   {
+     const getAsuraKills = (p) => {
+       const map =
+         p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+       const v = Number(map.asura || 0);
+       return Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+     };
  
-   function getAchievementEvasionCapBonusPercent() {
-     const p = gameData.player;
-     const map =
-       p && p.achievements && typeof p.achievements === "object"
-         ? p.achievements
-         : {};
-@@ -1822,50 +1845,53 @@
-       }
-       if (done && !already) {
-         p.achievements[def.id] = true;
-         unlockedNow.push(def);
-       }
-     }
- 
-     // 報酬付与（解除済み実績にも一度だけ適用）
-     for (const def of defs) {
-       if (def && def.id && p.achievements[def.id]) grantReward(def);
-     }
- 
-     if (!silent && unlockedNow.length) {
-       for (const def of unlockedNow) {
-         log(`🏆 実績解除：${def.title}`);
-         const b = def.bonus || {};
-         if (typeof b.expRate === "number" && b.expRate > 0) {
-           log(`✨ ボーナス：経験値+${Math.round(b.expRate * 100)}%`);
-         }
-         if (typeof b.evasionCapBonus === "number" && b.evasionCapBonus > 0) {
-           log(`✨ ボーナス：回避上限+${Math.floor(b.evasionCapBonus)}%`);
-         }
-         if (typeof b.itemDropRate === "number" && b.itemDropRate > 0) {
-           log(`✨ ボーナス：アイテムドロップ率+${Math.floor(b.itemDropRate)}%`);
-         }
-+        if (typeof b.search === "number" && b.search > 0) {
-+          log(`✨ ボーナス：索敵+${Math.floor(b.search)}`);
-+        }
- 
-         // 報酬ログ（任意）
-         const r = def.reward;
-         if (
-           r &&
-           typeof r === "object" &&
-           typeof r.text === "string" &&
-           r.text
-         ) {
-           log(`🎁 報酬：${r.text}`);
-         }
-       }
-     }
- 
-     return unlockedNow;
-   }
- 
-   // -------------------
-   // 探索
-   // -------------------
-   function move(dir) {
-     if (gameData.gameState !== "EXPLORE") return;
- 
-     const cur = clampFloor(gameData.floor || 1);
-     const floorCap = getCurrentFloorCap();
+     const asuraMilestones = [
+       {
+         id: "asura_slayer_1000",
+         title: "修羅の境地 1",
+         unlockAfterId: null,
+         needKills: 1000,
+       },
+       {
+         id: "asura_slayer_1500",
+         title: "修羅の境地 2",
+         unlockAfterId: "asura_slayer_1000",
+         unlockAfterLabel: "修羅の境地1",
+         needKills: 1500,
+       },
+       {
+         id: "asura_slayer_2000",
+         title: "修羅の境地 3",
