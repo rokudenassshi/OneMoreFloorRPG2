@@ -2413,12 +2413,15 @@
       : gameData.floor;
 
     gameData.battleFloor = floor;
+    const isAsuraWorld = isInAsuraWorld();
+    // 修羅の国では 1F 時点から元の世界 5000F 相当の敵ステータス帯に合わせる。
+    const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
 
     // 敵生成：階層に応じて候補を絞る
     const candidates = monsterTypes.filter((m) => {
       const min = m.minFloor || 1;
       const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
-      return min <= floor && floor <= max;
+      return min <= enemyScalingFloor && enemyScalingFloor <= max;
     });
     const pool = candidates.length > 0 ? candidates : monsterTypes;
 
@@ -2446,8 +2449,7 @@
     const search = combat.search;
 
     // フロア補正（常に強くなる）
-    const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
-    const isAsuraWorld = isInAsuraWorld();
+    const floorMul = Math.min(3.5, 1 + (enemyScalingFloor - 1) * 0.06);
     enemy.hp = Math.round(enemy.hp * floorMul);
     enemy.str = Math.round(enemy.str * floorMul);
     enemy.vit = Math.round(enemy.vit * floorMul);
@@ -2455,20 +2457,6 @@
     enemy.agi = Math.round(enemy.agi * floorMul);
     enemy.dex = Math.round(enemy.dex * floorMul);
     enemy.exp = Math.round(enemy.exp * floorMul);
-
-    // 1500〜2000Fは50階層ごとに追加ブースト
-    if (floor >= 1500) {
-      const boostSteps = Math.floor((Math.min(floor, 2000) - 1500) / 50) + 1;
-      const statBoostMul = 1 + boostSteps * 0.08;
-      const expBoostMul = 1 + boostSteps * 0.1;
-      enemy.hp = Math.round(enemy.hp * statBoostMul);
-      enemy.str = Math.round(enemy.str * statBoostMul);
-      enemy.vit = Math.round(enemy.vit * statBoostMul);
-      enemy.int = Math.round(enemy.int * statBoostMul);
-      enemy.agi = Math.round(enemy.agi * statBoostMul);
-      enemy.dex = Math.round(enemy.dex * statBoostMul);
-      enemy.exp = Math.round(enemy.exp * expBoostMul);
-    }
 
     if (isAsuraWorld) {
       enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);

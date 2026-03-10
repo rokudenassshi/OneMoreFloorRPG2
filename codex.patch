@@ -1,64 +1,117 @@
-diff --git a/style_new.css b/style_new.css
-index 077130eecb58ff99d561afdba94d449e6afacba2..1b817f3b78dd57f0c5b88c70ba1c012b7725ce20 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -835,50 +835,59 @@ button.item-action-btn {
-   width: 40px;
-   height: 36px;
-   padding: 0;
-   font-size: 16px;
-   line-height: 1;
-   background: #555;
- }
+diff --git a/js/core.js b/js/core.js
+index a3449533744b20b83f8c8748b847dc2645da921c..3c3edb090c498263a433d2902143ad5f6342e7a6 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -2391,107 +2391,95 @@
+     }
+     if (st.slowTurns > 0) {
+       st.slowTurns--;
+       if (st.slowTurns <= 0) st.slowRate = 0;
+     }
+     if (st.vulnerableTurns > 0) {
+       st.vulnerableTurns--;
+       if (st.vulnerableTurns <= 0) st.vulnerableRate = 0;
+     }
+     if (st.silenceTurns > 0) {
+       st.silenceTurns--;
+     }
+   }
  
- button.item-action-btn:hover {
-   background: #666;
- }
+   function startBattle(battleFloor) {
+     gameData.gameState = "BATTLE";
  
- button.item-action-btn.discard {
-   background: #6b2b2b;
- }
+     // 戦闘開始時にログをクリア
+     if (typeof window.clearLog === "function") window.clearLog();
  
- button.item-action-btn.discard:hover {
-   background: #7a3333;
- }
+     const floor = Number.isFinite(Number(battleFloor))
+       ? Math.max(1, Math.floor(Number(battleFloor)))
+       : gameData.floor;
  
- button.item-action-btn:disabled {
-   opacity: 0.35;
-   cursor: not-allowed;
- }
+     gameData.battleFloor = floor;
++    const isAsuraWorld = isInAsuraWorld();
++    // 修羅の国では 1F 時点から元の世界 5000F 相当の敵ステータス帯に合わせる。
++    const enemyScalingFloor = isAsuraWorld ? Math.max(5000, floor) : floor;
  
-+
-+button.item-action-btn.item-action-btn-text {
-+  width: auto;
-+  min-width: 88px;
-+  padding: 0 12px;
-+  white-space: nowrap;
-+  font-size: 13px;
-+}
-+
- .locked-label {
-   color: #ffcc66;
-   font-weight: bold;
-   margin-top: 4px;
-   font-size: 12px;
- }
+     // 敵生成：階層に応じて候補を絞る
+     const candidates = monsterTypes.filter((m) => {
+       const min = m.minFloor || 1;
+       const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
+-      return min <= floor && floor <= max;
++      return min <= enemyScalingFloor && enemyScalingFloor <= max;
+     });
+     const pool = candidates.length > 0 ? candidates : monsterTypes;
  
- .item-card:not(.equipped).cat-weapon { border-left: 4px solid #e74c3c; }
- .item-card:not(.equipped).cat-armor { border-left: 4px solid #4a6cf7; }
+     // ボス生成（敵テーブル切替階層）
+     const bossDef =
+       typeof window.bossMonsters === "object" && window.bossMonsters
+         ? window.bossMonsters[floor]
+         : null;
  
- .item-name {
-   font-weight: bold;
-   margin-bottom: 4px;
-   font-size: 14px;
- }
+     const baseMonster = bossDef
+       ? bossDef
+       : pool[Math.floor(Math.random() * pool.length)];
+     const enemy = JSON.parse(JSON.stringify(baseMonster));
  
- .item-name.rarity-rare {
-   color: #4aa3ff;
- }
+     // 敵の状態異常格納を初期化
+     ensureEnemyStatus(enemy);
  
- .item-name.rarity-epic {
-   color: #ffd54a;
- }
+     // 事前定義の特殊効果（ボスなど）を保持しておく
+     const presetEffects =
+       enemy && enemy.effects && typeof enemy.effects === "object"
+         ? JSON.parse(JSON.stringify(enemy.effects))
+         : {};
  
- .item-name.rarity-legendary {
+     const combat = getCombatStats();
+     const search = combat.search;
+ 
+     // フロア補正（常に強くなる）
+-    const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
+-    const isAsuraWorld = isInAsuraWorld();
++    const floorMul = Math.min(3.5, 1 + (enemyScalingFloor - 1) * 0.06);
+     enemy.hp = Math.round(enemy.hp * floorMul);
+     enemy.str = Math.round(enemy.str * floorMul);
+     enemy.vit = Math.round(enemy.vit * floorMul);
+     enemy.int = Math.round(enemy.int * floorMul);
+     enemy.agi = Math.round(enemy.agi * floorMul);
+     enemy.dex = Math.round(enemy.dex * floorMul);
+     enemy.exp = Math.round(enemy.exp * floorMul);
+ 
+-    // 1500〜2000Fは50階層ごとに追加ブースト
+-    if (floor >= 1500) {
+-      const boostSteps = Math.floor((Math.min(floor, 2000) - 1500) / 50) + 1;
+-      const statBoostMul = 1 + boostSteps * 0.08;
+-      const expBoostMul = 1 + boostSteps * 0.1;
+-      enemy.hp = Math.round(enemy.hp * statBoostMul);
+-      enemy.str = Math.round(enemy.str * statBoostMul);
+-      enemy.vit = Math.round(enemy.vit * statBoostMul);
+-      enemy.int = Math.round(enemy.int * statBoostMul);
+-      enemy.agi = Math.round(enemy.agi * statBoostMul);
+-      enemy.dex = Math.round(enemy.dex * statBoostMul);
+-      enemy.exp = Math.round(enemy.exp * expBoostMul);
+-    }
+-
+     if (isAsuraWorld) {
+       enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
+       enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
+       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
+         enemy.name = `修羅${enemy.name}`;
+       }
+     }
+ 
+     // 二つ名判定（索敵が 0 の場合は出ない）
+     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
+     const epithetChance =
+       enemy && enemy.isBoss
+         ? 0
+         : search >= 100
+           ? 1
+           : search > 0
+             ? clamp(search, 0, 100) * 0.01
+             : 0;
+     let epithet = null;
+ 
