@@ -1,56 +1,69 @@
-diff --git a/js/data/base.js b/js/data/base.js
-index 6c106cb7389b8c9a1a923856e93057e072453d2c..f9fc2ae9f3558831ce18d1bbe10a41378631ebc0 100644
---- a/js/data/base.js
-+++ b/js/data/base.js
-@@ -3,50 +3,51 @@
- // ===================
+diff --git a/js/ui.js b/js/ui.js
+index af44226be42fc8225bda425aa88663cbf636cada..c831b24cfe7853306b8ea06eda20a8da74537688 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1892,53 +1892,61 @@
+         try {
+           return typeof def.isVisible !== "function" || !!def.isVisible(p);
+         } catch (e) {
+           return true;
+         }
+       })
+       .map((def, idx) => {
+         const done = !!p.achievements[def.id];
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
+         return {
+           idx,
+           id: def.id,
+           title: def.title || def.id,
+           desc: def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+       });
  
- (function () {
-   "use strict";
+-    const list = rows
+-      .filter((row) => !row.done)
+-      .concat(rows.filter((row) => row.done));
++    const isDeathBeyondAchievement = (row) =>
++      row &&
++      (row.id === "defeated_10_times" ||
++        String(row.title || "").includes("死を超える"));
++
++    const undone = rows.filter((row) => !row.done);
++    const done = rows.filter((row) => row.done);
++    const list = undone
++      .filter((row) => !isDeathBeyondAchievement(row))
++      .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
++      .concat(done);
  
-   // version.json の値がローダーで window.GAME_VERSION に入る
-   // ここでは fallback を持つ（ローダーが無い環境でも動くように）
-   const GAME_VERSION = (typeof window.GAME_VERSION === "string" && window.GAME_VERSION) ? window.GAME_VERSION : "0.2.1";
- 
-   const gameData = {
-     floor: 1,
-     battleFloor: null,
-     pendingFloorAfterWin: null,
- 
-     player: {
-       level: 1,
-       exp: 0,
-       hp: 100,
-       maxHp: 100,
-       job: "swordsman",
-       jobKills: {},
-       totalKills: 0,
-       totalEvades: 0,
-       namedKills: 0,
-       nakedDefeats: 0,
-+      totalDefeats: 0,
-       maxReachedFloor: 1,
-       achievements: {},
- 
-       // 上級職解放の進捗 / 解放済み
-       jobUnlockProgress: {},
-       unlockedJobs: {},
- 
-       // 基本ステータス（基準値 5）
-       baseStats: {
-         strength: 5,
-         vitality: 5,
-         intelligence: 5,
-         agility: 5,
-         dexterity: 5,
-       },
- 
-       // 振り分けステータス
-       allocatedStats: {
-         strength: 0,
-         vitality: 0,
-         intelligence: 0,
-         agility: 0,
-         dexterity: 0,
-       },
- 
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+           }
+           if (
+             typeof a.bonus.evasionCapBonus === "number" &&
+             a.bonus.evasionCapBonus > 0
+           ) {
+             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
+           }
+           if (
+             typeof a.bonus.itemDropRate === "number" &&
+             a.bonus.itemDropRate > 0

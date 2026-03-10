@@ -1914,9 +1914,17 @@
         };
       });
 
-    const list = rows
-      .filter((row) => !row.done)
-      .concat(rows.filter((row) => row.done));
+    const isDeathBeyondAchievement = (row) =>
+      row &&
+      (row.id === "defeated_10_times" ||
+        String(row.title || "").includes("死を超える"));
+
+    const undone = rows.filter((row) => !row.done);
+    const done = rows.filter((row) => row.done);
+    const list = undone
+      .filter((row) => !isDeathBeyondAchievement(row))
+      .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
+      .concat(done);
 
     el.innerHTML = list
       .map((a) => {
