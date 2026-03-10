@@ -98,11 +98,11 @@
   const RELIC_DROP_CHANCE = 0.001;
   const RELIC_FAMILY_NAME = "秘宝";
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
-  const MAP_FRAGMENT_DROP_CHANCE = 1 / 10000000;
+  const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
   const ASURA_ENEMY_STAT_MULTIPLIER = 5;
   const ASURA_ITEM_STAT_MULTIPLIER = 2;
-  const ASURA_ITEM_BASE_FLOOR_OFFSET = 5000;
+  const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
 
   const RELIC_DEFS = [
     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },

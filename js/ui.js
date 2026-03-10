@@ -888,15 +888,20 @@
   function buildTwoHandCompareBase(slot1, slot2) {
     const val = (item, key) => Math.round(Number(item?.[key]) || 0);
     const parts = [];
-    if (slot1) parts.push(`装備1:${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}`);
-    if (slot2) parts.push(`装備2:${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}`);
+    if (slot1)
+      parts.push(`装備1:${slot1.name}${slot1.hands === 2 ? "（両手）" : ""}`);
+    if (slot2)
+      parts.push(`装備2:${slot2.name}${slot2.hands === 2 ? "（両手）" : ""}`);
     return {
       name: parts.length > 0 ? parts.join(" / ") : "空",
       attack: val(slot1, "attack") + val(slot2, "attack"),
       defense: val(slot1, "defense") + val(slot2, "defense"),
       magicAttack: val(slot1, "magicAttack") + val(slot2, "magicAttack"),
       healPower: val(slot1, "healPower") + val(slot2, "healPower"),
-      fixedEffects: [...getFixedEffectTexts(slot1), ...getFixedEffectTexts(slot2)],
+      fixedEffects: [
+        ...getFixedEffectTexts(slot1),
+        ...getFixedEffectTexts(slot2),
+      ],
       randomOptionDetails: [
         ...getRandomOptionTexts(slot1).map((text) => ({ text })),
         ...getRandomOptionTexts(slot2).map((text) => ({ text })),
@@ -986,7 +991,8 @@
       ];
       const currentText =
         currentEffects.length > 0 ? currentEffects.join(" / ") : "なし";
-      const nextText = nextEffects.length > 0 ? nextEffects.join(" / ") : "なし";
+      const nextText =
+        nextEffects.length > 0 ? nextEffects.join(" / ") : "なし";
       effectsEl.textContent = `効果: ${currentText} → ${nextText}`;
     }
   }
@@ -1104,12 +1110,10 @@
   function updateEffectSortButtonsUI() {
     const controlsEl = document.getElementById("effectSortControls");
     if (!controlsEl) return;
-    controlsEl
-      .querySelectorAll(".effect-sort-btn")
-      .forEach((btn) => {
-        const isActive = btn?.dataset?.effectSort === bagEffectSortKey;
-        btn.classList.toggle("is-active", isActive);
-      });
+    controlsEl.querySelectorAll(".effect-sort-btn").forEach((btn) => {
+      const isActive = btn?.dataset?.effectSort === bagEffectSortKey;
+      btn.classList.toggle("is-active", isActive);
+    });
   }
 
   function sortInventoryByAcquireOrder(inv) {
@@ -1184,7 +1188,13 @@
   }
 
   function setBagEffectSortKey(key) {
-    const sortKeys = new Set(["attack", "healPower", "magicAttack", "defense", "acquire"]);
+    const sortKeys = new Set([
+      "attack",
+      "healPower",
+      "magicAttack",
+      "defense",
+      "acquire",
+    ]);
     if (!sortKeys.has(key)) return;
 
     bagEffectSortKey = key;
@@ -1316,7 +1326,8 @@
     });
 
     if (weaponsList && weaponsList.innerHTML.trim() === "") {
-      const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
+      const handTypeLabel =
+        currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
       weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
     }
 
@@ -1655,6 +1666,17 @@
       return;
     }
 
+    const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
+    if (
+      !isAsuraNow &&
+      typeof window.confirm === "function" &&
+      !window.confirm(
+        "敵の強さが5倍になるがドロップするアイテムのステータスが2倍になる。旅立ちますか？",
+      )
+    ) {
+      return;
+    }
+
     let movedToAsura = null;
     if (typeof window.toggleAsuraWorldByMapFragment === "function") {
       const result = window.toggleAsuraWorldByMapFragment();
@@ -1670,16 +1692,18 @@
     }
 
     if (typeof window.showRareEnemyPopup === "function") {
-      const title = movedToAsura === true
-        ? "修羅の国"
-        : movedToAsura === false
-          ? "元の世界"
-          : "地図の切れ端";
-      const body = movedToAsura === true
-        ? "世界が歪み、修羅の国に飲み込まれた…"
-        : movedToAsura === false
-          ? "歪みが晴れ、元の世界に戻った"
-          : "5つ集めた…！";
+      const title =
+        movedToAsura === true
+          ? "修羅の国"
+          : movedToAsura === false
+            ? "元の世界"
+            : "地図の切れ端";
+      const body =
+        movedToAsura === true
+          ? "世界が歪み、修羅の国に飲み込まれた…"
+          : movedToAsura === false
+            ? "歪みが晴れ、元の世界に戻った"
+            : "5つ集めた…！";
       window.showRareEnemyPopup(title, body, {
         autoClose: false,
         allowOverlayClose: false,
@@ -1997,7 +2021,9 @@
             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
             a.bonus.asuraBaseStatMultiplierBonus > 0
           ) {
-            parts.push(`修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`);
+            parts.push(
+              `修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`,
+            );
           }
           if (
             typeof a.bonus.evasionCapBonus === "number" &&
@@ -2009,7 +2035,9 @@
             typeof a.bonus.itemDropRate === "number" &&
             a.bonus.itemDropRate > 0
           ) {
-            parts.push(`アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`);
+            parts.push(
+              `アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`,
+            );
           }
           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
         }
@@ -2341,7 +2369,12 @@
     const baseKeys = keys.filter(
       (k) =>
         (!jobs[k] || jobs[k].tier !== "advanced") &&
-        !(jobs[k] && jobs[k].unlock && jobs[k].unlock.hidden && !getUnlockInfo(k).unlocked),
+        !(
+          jobs[k] &&
+          jobs[k].unlock &&
+          jobs[k].unlock.hidden &&
+          !getUnlockInfo(k).unlocked
+        ),
     );
     const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
 
@@ -2508,7 +2541,10 @@
         if (!p.jobSkillStates[g] || typeof p.jobSkillStates[g] !== "object") {
           p.jobSkillStates[g] = {
             build: p.jobSkillBuilds[g],
-            remainingSkillPoints: Math.max(0, Math.floor(Number(p.skillPoints || 0))),
+            remainingSkillPoints: Math.max(
+              0,
+              Math.floor(Number(p.skillPoints || 0)),
+            ),
           };
         }
       }
@@ -2695,7 +2731,9 @@
     const p = gameData && gameData.player ? gameData.player : null;
     if (!p) return;
     p.autoAllocateStatPoints = !!enabled;
-    log(`⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`);
+    log(
+      `⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`,
+    );
     updateSkillUI();
     if (typeof requestAutosave === "function") requestAutosave();
   }
@@ -2703,7 +2741,13 @@
   function setAutoAllocateStatTarget(target) {
     const p = gameData && gameData.player ? gameData.player : null;
     if (!p) return;
-    const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
+    const allowed = [
+      "strength",
+      "vitality",
+      "intelligence",
+      "agility",
+      "dexterity",
+    ];
     if (!allowed.includes(target)) return;
     p.autoAllocateStatTarget = target;
     const labels = {
@@ -2798,10 +2842,13 @@
     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
     const autoToggle = document.getElementById("autoAllocateExpUpToggle");
     if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
-    const autoStatToggle = document.getElementById("autoAllocateStatPointsToggle");
+    const autoStatToggle = document.getElementById(
+      "autoAllocateStatPointsToggle",
+    );
     if (autoStatToggle) autoStatToggle.checked = !!p.autoAllocateStatPoints;
     const autoStatTarget = document.getElementById("autoAllocateStatTarget");
-    if (autoStatTarget) autoStatTarget.value = p.autoAllocateStatTarget || "strength";
+    if (autoStatTarget)
+      autoStatTarget.value = p.autoAllocateStatTarget || "strength";
 
     const commonList = document.getElementById("commonSkillsList");
     const passiveList = document.getElementById("passiveSkillsList");

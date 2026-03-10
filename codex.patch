@@ -1,8 +1,8 @@
 diff --git a/js/ui.js b/js/ui.js
-index 01091f7901e1b744b68db39944009b10a58e7a5e..8c66c1845c8c9922c06eb26f27673a04c1963c36 100644
+index 8c66c1845c8c9922c06eb26f27673a04c1963c36..df98d699499782394f9d82741c26c703893dfa78 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1633,53 +1633,76 @@
+@@ -1633,50 +1633,61 @@
        eq.accessory = item;
        log(`${item.name}を装飾品に装備した`);
        getCombatStats();
@@ -28,56 +28,39 @@ index 01091f7901e1b744b68db39944009b10a58e7a5e..8c66c1845c8c9922c06eb26f27673a04
        return;
      }
  
--    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
-+    let movedToAsura = null;
-+    if (typeof window.toggleAsuraWorldByMapFragment === "function") {
-+      const result = window.toggleAsuraWorldByMapFragment();
-+      if (result && result.ok) movedToAsura = !!result.movedToAsura;
++    const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
++    if (
++      !isAsuraNow &&
++      typeof window.confirm === "function" &&
++      !window.confirm(
++        "敵の強さが5倍になるがドロップするアイテムのステータスが1.5倍になる。旅立ちますか？",
++      )
++    ) {
++      return;
 +    }
 +
-+    if (movedToAsura === true) {
-+      log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
-+    } else if (movedToAsura === false) {
-+      log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
-+    } else {
-+      log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
-+    }
-+
+     let movedToAsura = null;
+     if (typeof window.toggleAsuraWorldByMapFragment === "function") {
+       const result = window.toggleAsuraWorldByMapFragment();
+       if (result && result.ok) movedToAsura = !!result.movedToAsura;
+     }
+ 
+     if (movedToAsura === true) {
+       log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
+     } else if (movedToAsura === false) {
+       log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
+     } else {
+       log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
+     }
+ 
      if (typeof window.showRareEnemyPopup === "function") {
--      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
-+      const title = movedToAsura === true
-+        ? "修羅の国"
-+        : movedToAsura === false
-+          ? "元の世界"
-+          : "地図の切れ端";
-+      const body = movedToAsura === true
-+        ? "世界が歪み、修羅の国に飲み込まれた…"
-+        : movedToAsura === false
-+          ? "歪みが晴れ、元の世界に戻った"
-+          : "5つ集めた…！";
-+      window.showRareEnemyPopup(title, body, {
-         autoClose: false,
-         allowOverlayClose: false,
-         showCloseButton: true,
-         hintText: "不思議な力で切れ端は残っている",
-       });
-     }
-     updateBagUI();
-     updateUI();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   function useItem(name) {
-     const item = gameData.player.items.find((i) => i.name === name);
-     if (!item) return;
- 
-     item.count--;
-     if (item.count <= 0) {
-       gameData.player.items = gameData.player.items.filter(
-         (i) => i.name !== name,
-       );
-     }
- 
-     let heal = Number(item.heal || 0);
- 
-     gameData.player.hp = Math.min(
+       const title = movedToAsura === true
+         ? "修羅の国"
+         : movedToAsura === false
+           ? "元の世界"
+           : "地図の切れ端";
+       const body = movedToAsura === true
+         ? "世界が歪み、修羅の国に飲み込まれた…"
+         : movedToAsura === false
+           ? "歪みが晴れ、元の世界に戻った"
+           : "5つ集めた…！";
