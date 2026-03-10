@@ -100,6 +100,9 @@
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
   const MAP_FRAGMENT_DROP_CHANCE = 1 / 10000000;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
+  const ASURA_ENEMY_STAT_MULTIPLIER = 5;
+  const ASURA_ITEM_STAT_MULTIPLIER = 2;
+  const ASURA_ITEM_BASE_FLOOR_OFFSET = 5000;
 
   const RELIC_DEFS = [
     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
@@ -140,10 +143,22 @@
     };
     const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
     p.autoSell = {
-      armorDefenseMax: Math.max(0, Math.floor(Number(src.armorDefenseMax || 0))),
-      weaponAttackMax: Math.max(0, Math.floor(Number(src.weaponAttackMax || 0))),
-      weaponHealPowerMax: Math.max(0, Math.floor(Number(src.weaponHealPowerMax || 0))),
-      weaponMagicAttackMax: Math.max(0, Math.floor(Number(src.weaponMagicAttackMax || 0))),
+      armorDefenseMax: Math.max(
+        0,
+        Math.floor(Number(src.armorDefenseMax || 0)),
+      ),
+      weaponAttackMax: Math.max(
+        0,
+        Math.floor(Number(src.weaponAttackMax || 0)),
+      ),
+      weaponHealPowerMax: Math.max(
+        0,
+        Math.floor(Number(src.weaponHealPowerMax || 0)),
+      ),
+      weaponMagicAttackMax: Math.max(
+        0,
+        Math.floor(Number(src.weaponMagicAttackMax || 0)),
+      ),
     };
     for (const k of Object.keys(base)) {
       if (!(k in p.autoSell)) p.autoSell[k] = base[k];
@@ -159,17 +174,74 @@
     if (!p || typeof p !== "object") return;
     p.autoAllocateStatPoints = !!p.autoAllocateStatPoints;
 
-    const allowed = ["strength", "vitality", "intelligence", "agility", "dexterity"];
-    const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
+    const allowed = [
+      "strength",
+      "vitality",
+      "intelligence",
+      "agility",
+      "dexterity",
+    ];
+    const target =
+      typeof p.autoAllocateStatTarget === "string"
+        ? p.autoAllocateStatTarget
+        : "";
     p.autoAllocateStatTarget = allowed.includes(target) ? target : "strength";
   }
 
   function ensureSerialOptionsConfig(p) {
     if (!p || typeof p !== "object") return;
-    const src = p.serialOptions && typeof p.serialOptions === "object" ? p.serialOptions : {};
+    const src =
+      p.serialOptions && typeof p.serialOptions === "object"
+        ? p.serialOptions
+        : {};
     p.serialOptions = {
       stayBattleCurrentFloor: !!src.stayBattleCurrentFloor,
     };
+  }
+
+  function ensureWorldStateConfig(p) {
+    if (!p || typeof p !== "object") return;
+    const src =
+      p.worldState && typeof p.worldState === "object" ? p.worldState : {};
+    const toFloor = (v, fallback = 1) =>
+      Math.max(1, Math.floor(Number(v || fallback)));
+    p.worldState = {
+      isAsura: !!src.isAsura,
+      normalFloor: toFloor(src.normalFloor, p.floor || gameData?.floor || 1),
+      normalMaxReachedFloor: toFloor(
+        src.normalMaxReachedFloor,
+        p.maxReachedFloor || 1,
+      ),
+      asuraFloor: toFloor(src.asuraFloor, 1),
+      asuraMaxReachedFloor: toFloor(src.asuraMaxReachedFloor, 1),
+    };
+  }
+
+  function isInAsuraWorld() {
+    return !!gameData?.player?.worldState?.isAsura;
+  }
+
+  function getWorldAwareFloorForScaling() {
+    const p = gameData?.player;
+    const ws = p?.worldState;
+    if (!p || !ws) return null;
+
+    if (
+      gameData?.gameState === "BATTLE" &&
+      Number.isFinite(Number(gameData?.battleFloor))
+    ) {
+      const battleFloor = Math.max(1, Math.floor(Number(gameData.battleFloor)));
+      if (ws.isAsura) return ASURA_ITEM_BASE_FLOOR_OFFSET + battleFloor;
+      return battleFloor;
+    }
+
+    if (ws.isAsura) {
+      const f = Number(gameData?.floor || ws.asuraFloor || 1);
+      return ASURA_ITEM_BASE_FLOOR_OFFSET + Math.max(1, Math.floor(f));
+    }
+
+    const f = Number(gameData?.floor || ws.normalFloor || 1);
+    return Math.max(1, Math.floor(f));
   }
 
   function normalizeValuables(p) {
@@ -178,7 +250,9 @@
       .filter((v) => v && typeof v === "object")
       .map((v) => {
         const id = typeof v.id === "string" ? v.id : "";
-        const def = RELIC_DEFS.concat([MAP_FRAGMENT_DEF]).find((d) => d.id === id) || null;
+        const def =
+          RELIC_DEFS.concat([MAP_FRAGMENT_DEF]).find((d) => d.id === id) ||
+          null;
         const count = Number(v.count || 0);
         const desc =
           typeof v.description === "string" && v.description
@@ -331,6 +405,14 @@
    * @returns {number}
    */
   function getScalingFloor() {
+    const worldAwareFloor = getWorldAwareFloorForScaling();
+    if (
+      Number.isFinite(Number(worldAwareFloor)) &&
+      Number(worldAwareFloor) > 0
+    ) {
+      return Math.max(1, Math.floor(Number(worldAwareFloor)));
+    }
+
     const bf = Number(gameData && gameData.battleFloor);
     if (
       gameData &&
@@ -375,7 +457,6 @@
     } catch (e) {}
   }
 
-
   let pendingAutosaveTimer = null;
   let pendingThrottledSaveTimer = null;
   let autosaveDirty = true;
@@ -415,6 +496,7 @@
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
     ensureSerialOptionsConfig(gameData.player);
+    ensureWorldStateConfig(gameData.player);
     // テスト上限を越えたセーブが来ても破綻しないように丸める
     try {
       if (gameData && gameData.player) {
@@ -451,7 +533,10 @@
       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
         if (!pendingThrottledSaveTimer) {
-          const delay = Math.max(0, MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave);
+          const delay = Math.max(
+            0,
+            MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave,
+          );
           pendingThrottledSaveTimer = setTimeout(() => {
             pendingThrottledSaveTimer = null;
             saveGameNow();
@@ -601,7 +686,8 @@
       const isHiddenUnlock = !!unlock.hidden;
       const unlocked = isHiddenUnlock
         ? !!p.unlockedJobs[key]
-        : !!p.unlockedJobs[key] || (levelOk && cur >= Number(unlock.target || 0));
+        : !!p.unlockedJobs[key] ||
+          (levelOk && cur >= Number(unlock.target || 0));
 
       // 条件（レベル + カウント）を満たした瞬間に解放フラグを立てる
       if (unlocked && !p.unlockedJobs[key]) {
@@ -611,6 +697,54 @@
         }
       }
     }
+  }
+
+  function toggleAsuraWorldByMapFragment() {
+    const p = gameData && gameData.player ? gameData.player : null;
+    if (!p) return { ok: false, reason: "no_player" };
+
+    ensureWorldStateConfig(p);
+    const ws = p.worldState;
+
+    if (!ws.isAsura) {
+      ws.normalFloor = Math.max(
+        1,
+        Math.floor(Number(gameData.floor || ws.normalFloor || 1)),
+      );
+      ws.normalMaxReachedFloor = Math.max(
+        1,
+        Math.floor(Number(p.maxReachedFloor || ws.normalMaxReachedFloor || 1)),
+      );
+
+      ws.isAsura = true;
+      gameData.floor = Math.max(1, Math.floor(Number(ws.asuraFloor || 1)));
+      p.maxReachedFloor = Math.max(
+        1,
+        Math.floor(Number(ws.asuraMaxReachedFloor || 1)),
+      );
+      gameData.floor = clampFloor(gameData.floor);
+      p.maxReachedFloor = clampFloor(p.maxReachedFloor);
+      return { ok: true, movedToAsura: true };
+    }
+
+    ws.asuraFloor = Math.max(
+      1,
+      Math.floor(Number(gameData.floor || ws.asuraFloor || 1)),
+    );
+    ws.asuraMaxReachedFloor = Math.max(
+      1,
+      Math.floor(Number(p.maxReachedFloor || ws.asuraMaxReachedFloor || 1)),
+    );
+
+    ws.isAsura = false;
+    gameData.floor = Math.max(1, Math.floor(Number(ws.normalFloor || 1)));
+    p.maxReachedFloor = Math.max(
+      1,
+      Math.floor(Number(ws.normalMaxReachedFloor || 1)),
+    );
+    gameData.floor = clampFloor(gameData.floor);
+    p.maxReachedFloor = clampFloor(p.maxReachedFloor);
+    return { ok: true, movedToAsura: false };
   }
 
   // -------------------
@@ -643,6 +777,7 @@
     ensureAutoAllocateExpUpConfig(gameData.player);
     ensureAutoAllocateStatPointsConfig(gameData.player);
     ensureSerialOptionsConfig(gameData.player);
+    ensureWorldStateConfig(gameData.player);
     if (typeof window.promptGoogleLoginAtStart === "function") {
       try {
         await window.promptGoogleLoginAtStart();
@@ -1625,7 +1760,11 @@
     combat.magicPower = Math.round(combat.magicPower);
     combat.healPower = Math.round(combat.healPower || 0);
     combat.accuracy = Math.round(combat.accuracy);
-    combat.evasion = clamp(Math.round(combat.evasion), 0, getPlayerEvasionCap());
+    combat.evasion = clamp(
+      Math.round(combat.evasion),
+      0,
+      getPlayerEvasionCap(),
+    );
     combat.critRate = Math.round(combat.critRate);
     // 索敵は 0〜150 に丸める（100以上は二つ名確定。150以上で強力な二つ名も出現）
     combat.search = clamp(combat.search, 0, 150);
@@ -1692,7 +1831,8 @@
   }
 
   function isFullyUnequipped(p) {
-    const eq = p && p.equipment && typeof p.equipment === "object" ? p.equipment : {};
+    const eq =
+      p && p.equipment && typeof p.equipment === "object" ? p.equipment : {};
     return !eq.slot1 && !eq.slot2 && !eq.accessory;
   }
 
@@ -1722,7 +1862,6 @@
     return Math.round(getAchievementExpBonusRate() * 100);
   }
 
-
   function getAchievementSearchBonus() {
     const p = gameData.player;
     const map =
@@ -1741,7 +1880,6 @@
     }
     return bonus;
   }
-
 
   function getAchievementItemDropRateBonus() {
     const p = gameData.player;
@@ -1849,7 +1987,8 @@
       }
 
       if (Array.isArray(r.unlockJobs)) {
-        if (!p.unlockedJobs || typeof p.unlockedJobs !== "object") p.unlockedJobs = {};
+        if (!p.unlockedJobs || typeof p.unlockedJobs !== "object")
+          p.unlockedJobs = {};
         for (const jobKeyRaw of r.unlockJobs) {
           const jobKey = String(jobKeyRaw || "");
           if (!jobKey || !jobs[jobKey]) continue;
@@ -2308,6 +2447,7 @@
 
     // フロア補正（常に強くなる）
     const floorMul = Math.min(3.5, 1 + (floor - 1) * 0.06);
+    const isAsuraWorld = isInAsuraWorld();
     enemy.hp = Math.round(enemy.hp * floorMul);
     enemy.str = Math.round(enemy.str * floorMul);
     enemy.vit = Math.round(enemy.vit * floorMul);
@@ -2328,6 +2468,19 @@
       enemy.agi = Math.round(enemy.agi * statBoostMul);
       enemy.dex = Math.round(enemy.dex * statBoostMul);
       enemy.exp = Math.round(enemy.exp * expBoostMul);
+    }
+
+    if (isAsuraWorld) {
+      enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
+      enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
+      if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
+        enemy.name = `修羅${enemy.name}`;
+      }
     }
 
     // 二つ名判定（索敵が 0 の場合は出ない）
@@ -4199,6 +4352,14 @@
         const item = generateEquipment({
           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
         });
+        if (isInAsuraWorld() && item && typeof item === "object") {
+          ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
+            const v = Number(item[k]);
+            if (Number.isFinite(v) && v > 0) {
+              item[k] = Math.max(1, Math.round(v * ASURA_ITEM_STAT_MULTIPLIER));
+            }
+          });
+        }
         const soldByAutoSell = evaluateAutoSellDropItem(item);
 
         if (soldByAutoSell) {
@@ -4251,7 +4412,10 @@
 
       // 地図の切れ端ドロップ（通常ドロップとは別判定 / 固定 1/10,000,000）
       // 5個持っている場合はドロップしない。
-      const mapFragmentCount = getValuableCountById(gameData.player, MAP_FRAGMENT_ID);
+      const mapFragmentCount = getValuableCountById(
+        gameData.player,
+        MAP_FRAGMENT_ID,
+      );
       if (
         mapFragmentCount < MAP_FRAGMENT_MAX_STACK_FOR_DROP &&
         Math.random() < MAP_FRAGMENT_DROP_CHANCE
@@ -4272,7 +4436,11 @@
       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
         const stayCurrentFloor =
           isStayBattleUnlocked() &&
-          !!(gameData.player && gameData.player.serialOptions && gameData.player.serialOptions.stayBattleCurrentFloor);
+          !!(
+            gameData.player &&
+            gameData.player.serialOptions &&
+            gameData.player.serialOptions.stayBattleCurrentFloor
+          );
         const nf = clampFloor(Number(gameData.pendingFloorAfterWin));
         gameData.pendingFloorAfterWin = null;
 
@@ -4326,7 +4494,11 @@
 
       const stayCurrentFloor =
         isStayBattleUnlocked() &&
-        !!(gameData.player && gameData.player.serialOptions && gameData.player.serialOptions.stayBattleCurrentFloor);
+        !!(
+          gameData.player &&
+          gameData.player.serialOptions &&
+          gameData.player.serialOptions.stayBattleCurrentFloor
+        );
       log("☠ 力尽きた…");
       gameData.player.hp = gameData.player.maxHp;
       if (stayCurrentFloor) {
@@ -4376,27 +4548,45 @@
       if (!p || !p.autoAllocateExpUp) return false;
       const def = skills && skills.exp_up;
       if (!def) return false;
-      const curLv = Math.max(0, Math.floor(Number((p.skills && p.skills.exp_up) || 0)));
-      if (def.maxLevel !== Infinity && curLv >= Number(def.maxLevel || 0)) return false;
+      const curLv = Math.max(
+        0,
+        Math.floor(Number((p.skills && p.skills.exp_up) || 0)),
+      );
+      if (def.maxLevel !== Infinity && curLv >= Number(def.maxLevel || 0))
+        return false;
       const costRaw = Number(def.requiredPoints);
-      const cost = !Number.isFinite(costRaw) || costRaw <= 0 ? 1 : Math.max(1, Math.floor(costRaw));
+      const cost =
+        !Number.isFinite(costRaw) || costRaw <= 0
+          ? 1
+          : Math.max(1, Math.floor(costRaw));
       return Math.floor(Number(p.skillPoints || 0)) >= cost;
     };
 
     const doAutoAllocateExpUp = () => {
       const def = skills.exp_up;
       const costRaw = Number(def.requiredPoints);
-      const cost = !Number.isFinite(costRaw) || costRaw <= 0 ? 1 : Math.max(1, Math.floor(costRaw));
+      const cost =
+        !Number.isFinite(costRaw) || costRaw <= 0
+          ? 1
+          : Math.max(1, Math.floor(costRaw));
       if (!p.skills || typeof p.skills !== "object") p.skills = {};
       const curLv = Math.max(0, Math.floor(Number(p.skills.exp_up || 0)));
       p.skills.exp_up = curLv + 1;
-      p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);
-      log(`⚙️ 経験値増加に自動割り振り（Lv.${p.skills.exp_up} / ポイント-${cost}）`);
+      p.skillPoints = Math.max(
+        0,
+        Math.floor(Number(p.skillPoints || 0)) - cost,
+      );
+      log(
+        `⚙️ 経験値増加に自動割り振り（Lv.${p.skills.exp_up} / ポイント-${cost}）`,
+      );
     };
 
     const canAutoAllocateStatPoints = () => {
       if (!p || !p.autoAllocateStatPoints) return false;
-      const target = typeof p.autoAllocateStatTarget === "string" ? p.autoAllocateStatTarget : "";
+      const target =
+        typeof p.autoAllocateStatTarget === "string"
+          ? p.autoAllocateStatTarget
+          : "";
       if (!(target in (p.allocatedStats || {}))) return false;
       return Math.floor(Number(p.statPoints || 0)) > 0;
     };
@@ -4404,7 +4594,8 @@
     const doAutoAllocateStatPoints = () => {
       const target = p.autoAllocateStatTarget;
       if (!p.allocatedStats || typeof p.allocatedStats !== "object") return;
-      p.allocatedStats[target] = Math.max(0, Math.floor(Number(p.allocatedStats[target] || 0))) + 1;
+      p.allocatedStats[target] =
+        Math.max(0, Math.floor(Number(p.allocatedStats[target] || 0))) + 1;
       p.statPoints = Math.max(0, Math.floor(Number(p.statPoints || 0)) - 1);
       const labels = {
         strength: "⚔️ 力",
@@ -5321,7 +5512,13 @@
 
       const rerollIfSameAsPrevious = (rollFn, maxRetry = 3) => {
         let value = rollFn();
-        for (let i = 0; i < maxRetry && lastRolledOptionValue != null && value === lastRolledOptionValue; i++) {
+        for (
+          let i = 0;
+          i < maxRetry &&
+          lastRolledOptionValue != null &&
+          value === lastRolledOptionValue;
+          i++
+        ) {
           value = rollFn();
         }
         lastRolledOptionValue = value;
@@ -5368,10 +5565,20 @@
               getEquipmentEffectWeight(category, item.type, e.type),
             ) || pool[Math.floor(Math.random() * pool.length)];
           const scaledEff = makeScaledAccessoryEffect(eff, floor, rarity);
-          const baseValue = Math.max(1, Math.round((Number(scaledEff.value) || 0) * 0.5));
+          const baseValue = Math.max(
+            1,
+            Math.round((Number(scaledEff.value) || 0) * 0.5),
+          );
           const variance = Math.max(1, Math.round(baseValue * 0.3));
           const value = rerollIfSameAsPrevious(
-            () => clamp(baseValue + Math.floor(Math.random() * (variance * 2 + 1)) - variance, 1, 9999),
+            () =>
+              clamp(
+                baseValue +
+                  Math.floor(Math.random() * (variance * 2 + 1)) -
+                  variance,
+                1,
+                9999,
+              ),
             4,
           );
           const finalEff = {
@@ -5467,7 +5674,8 @@
   window.getMaxPlayerBarrier = getMaxPlayerBarrier;
   window.getAchievementExpBonusRate = getAchievementExpBonusRate;
   window.getAchievementExpBonusPercent = getAchievementExpBonusPercent;
-  window.getAchievementEvasionCapBonusPercent = getAchievementEvasionCapBonusPercent;
+  window.getAchievementEvasionCapBonusPercent =
+    getAchievementEvasionCapBonusPercent;
   window.getPlayerEvasionCap = getPlayerEvasionCap;
   window.checkAndUnlockAchievements = checkAndUnlockAchievements;
 
@@ -5484,6 +5692,8 @@
   window.attack = attack;
   window.defend = defend;
   window.useSkill = useSkill;
+  window.toggleAsuraWorldByMapFragment = toggleAsuraWorldByMapFragment;
+  window.isInAsuraWorld = isInAsuraWorld;
 
   // 転移
   window.teleportToFloor = teleportToFloor;

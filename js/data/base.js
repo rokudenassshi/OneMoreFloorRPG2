@@ -104,6 +104,15 @@ stunTurns: 0,
 
       // 貴重品（秘宝）
       valuables: [],
+
+      // 異世界（修羅の国）進行状態
+      worldState: {
+        isAsura: false,
+        normalFloor: 1,
+        normalMaxReachedFloor: 1,
+        asuraFloor: 1,
+        asuraMaxReachedFloor: 1,
+      },
     },
 
     enemy: null,

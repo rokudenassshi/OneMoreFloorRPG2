@@ -1,86 +1,8 @@
 diff --git a/js/ui.js b/js/ui.js
-index c831b24cfe7853306b8ea06eda20a8da74537688..01091f7901e1b744b68db39944009b10a58e7a5e 100644
+index 01091f7901e1b744b68db39944009b10a58e7a5e..8c66c1845c8c9922c06eb26f27673a04c1963c36 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1318,55 +1318,64 @@
-     if (weaponsList && weaponsList.innerHTML.trim() === "") {
-       const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
-       weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
-     }
- 
-     // アイテム（貴重品）
-     if (valuablesList) {
-       const vals = Array.isArray(gameData.player.valuables)
-         ? gameData.player.valuables
-         : [];
-       if (vals.length === 0) {
-         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
-       } else {
-         const statName = {
-           strength: "⚔️ 力",
-           vitality: "❤️ 体力",
-           intelligence: "🧙 賢さ",
-           agility: "⚡ 素早さ",
-           dexterity: "🎯 器用さ",
-         };
-         vals.forEach((v) => {
-           const cnt = Number(v.count || 0);
-           if (!Number.isFinite(cnt) || cnt <= 0) return;
-           const key = String(v.statKey || "");
-           const sname = statName[key] || "ステータス";
-+          const hasStatEffect = !!key && key in statName;
-           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
-+          const description =
-+            typeof v.description === "string" && v.description
-+              ? v.description
-+              : "";
-+          const canUseMapFragment =
-+            v.id === "ancient_map_fragment" && Number(cnt) >= 5;
-           valuablesList.innerHTML += `
-             <div class="item-card">
-               <div class="item-name">✨ ${v.name} x${cnt}</div>
--              <div class="item-stats">所持効果：${effect}</div>
-+              ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
-+              ${description ? `<div class="item-stats">${description}</div>` : ""}
-+              ${canUseMapFragment ? `<button type="button" class="item-action-btn" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
-             </div>
-           `;
-         });
-       }
-     }
-   }
- 
-   // -------------------
-   // 装備品：ロック / 捨てる
-   // -------------------
-   function toggleItemLock(ev, idx) {
-     if (ev) {
-       ev.stopPropagation();
-       ev.preventDefault();
-     }
-     const item = gameData.player.inventory[idx];
-     if (!item) return;
- 
-     item.locked = !item.locked;
-     log(item.locked ? "🔒 ロックした" : "🔓 ロック解除した");
-     updateBagUI();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   function discardEquipment(ev, idx) {
-@@ -1612,50 +1621,76 @@
-     if (sameItem(eq.slot2, item)) {
-       eq.slot2 = null;
-       log(`${item.name}を外した`);
-       getCombatStats();
-       updateBagUI();
-       updateUI();
-       if (typeof requestAutosave === "function") requestAutosave();
-       return;
-     }
- 
-     // 装飾品は専用スロットへ
-     if (item.category === "accessory") {
+@@ -1633,53 +1633,76 @@
        eq.accessory = item;
        log(`${item.name}を装飾品に装備した`);
        getCombatStats();
@@ -94,32 +16,57 @@ index c831b24cfe7853306b8ea06eda20a8da74537688..01091f7901e1b744b68db39944009b10
      openEquipSlotPicker(idx);
    }
  
-+  function useValuableById(id) {
-+    if (id !== "ancient_map_fragment") return;
-+    const vals = Array.isArray(gameData?.player?.valuables)
-+      ? gameData.player.valuables
-+      : [];
-+    const target = vals.find((v) => v && v.id === id);
-+    const cnt = Number(target?.count || 0);
-+    if (!Number.isFinite(cnt) || cnt < 5) {
-+      log("地図の切れ端が足りない");
-+      return;
+   function useValuableById(id) {
+     if (id !== "ancient_map_fragment") return;
+     const vals = Array.isArray(gameData?.player?.valuables)
+       ? gameData.player.valuables
+       : [];
+     const target = vals.find((v) => v && v.id === id);
+     const cnt = Number(target?.count || 0);
+     if (!Number.isFinite(cnt) || cnt < 5) {
+       log("地図の切れ端が足りない");
+       return;
+     }
+ 
+-    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
++    let movedToAsura = null;
++    if (typeof window.toggleAsuraWorldByMapFragment === "function") {
++      const result = window.toggleAsuraWorldByMapFragment();
++      if (result && result.ok) movedToAsura = !!result.movedToAsura;
 +    }
 +
-+    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
-+    if (typeof window.showRareEnemyPopup === "function") {
-+      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
-+        autoClose: false,
-+        allowOverlayClose: false,
-+        showCloseButton: true,
-+        hintText: "不思議な力で切れ端は残っている",
-+      });
++    if (movedToAsura === true) {
++      log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
++    } else if (movedToAsura === false) {
++      log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
++    } else {
++      log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
 +    }
-+    updateBagUI();
-+    updateUI();
-+    if (typeof requestAutosave === "function") requestAutosave();
-+  }
 +
+     if (typeof window.showRareEnemyPopup === "function") {
+-      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
++      const title = movedToAsura === true
++        ? "修羅の国"
++        : movedToAsura === false
++          ? "元の世界"
++          : "地図の切れ端";
++      const body = movedToAsura === true
++        ? "世界が歪み、修羅の国に飲み込まれた…"
++        : movedToAsura === false
++          ? "歪みが晴れ、元の世界に戻った"
++          : "5つ集めた…！";
++      window.showRareEnemyPopup(title, body, {
+         autoClose: false,
+         allowOverlayClose: false,
+         showCloseButton: true,
+         hintText: "不思議な力で切れ端は残っている",
+       });
+     }
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
    function useItem(name) {
      const item = gameData.player.items.find((i) => i.name === name);
      if (!item) return;
@@ -134,66 +81,3 @@ index c831b24cfe7853306b8ea06eda20a8da74537688..01091f7901e1b744b68db39944009b10
      let heal = Number(item.heal || 0);
  
      gameData.player.hp = Math.min(
-       gameData.player.maxHp,
-       gameData.player.hp + heal,
-     );
-     log(`${name}を使用！ ${heal}HP回復した！`);
- 
-     updateBagUI();
-     updateUI();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   // -------------------
-@@ -3165,50 +3200,51 @@
- 
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-+  window.useValuableById = useValuableById;
-   // =====================
-   // セーブ設定
-   // =====================
-   function toggleAutosave(enabled) {
-     setAutosaveEnabled(!!enabled);
-     updateOptionsUI();
-     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
-   }
- 
-   let loginPromptPromise = null;
-   let resolveLoginPrompt = null;
-   let loginPromptResolved = false;
- 
-   function finishLoginPrompt() {
-     if (loginPromptResolved) return;
-     loginPromptResolved = true;
- 
-     const modal = document.getElementById("loginModal");
-     if (modal) {
-       modal.classList.add("hidden");
-       modal.setAttribute("aria-hidden", "true");
-     }
- 
-     if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
-     resolveLoginPrompt = null;

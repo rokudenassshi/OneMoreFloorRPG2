@@ -1655,9 +1655,32 @@
       return;
     }
 
-    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
+    let movedToAsura = null;
+    if (typeof window.toggleAsuraWorldByMapFragment === "function") {
+      const result = window.toggleAsuraWorldByMapFragment();
+      if (result && result.ok) movedToAsura = !!result.movedToAsura;
+    }
+
+    if (movedToAsura === true) {
+      log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
+    } else if (movedToAsura === false) {
+      log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
+    } else {
+      log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
+    }
+
     if (typeof window.showRareEnemyPopup === "function") {
-      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
+      const title = movedToAsura === true
+        ? "修羅の国"
+        : movedToAsura === false
+          ? "元の世界"
+          : "地図の切れ端";
+      const body = movedToAsura === true
+        ? "世界が歪み、修羅の国に飲み込まれた…"
+        : movedToAsura === false
+          ? "歪みが晴れ、元の世界に戻った"
+          : "5つ集めた…！";
+      window.showRareEnemyPopup(title, body, {
         autoClose: false,
         allowOverlayClose: false,
         showCloseButton: true,
