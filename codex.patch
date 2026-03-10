@@ -1,57 +1,199 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index 6d01f468c1b2f9a319d2e89f51f47600a8fc5057..a9638e8311cae8bb11d8b104ce9ed1e27f5299d1 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -67,51 +67,51 @@
+diff --git a/js/ui.js b/js/ui.js
+index c831b24cfe7853306b8ea06eda20a8da74537688..01091f7901e1b744b68db39944009b10a58e7a5e 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1318,55 +1318,64 @@
+     if (weaponsList && weaponsList.innerHTML.trim() === "") {
+       const handTypeLabel = currentWeaponHandsTab === "twoHand" ? "両手" : "片手";
+       weaponsList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">${handTypeLabel}装備がありません</div>`;
+     }
  
-     floorCapLift250: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.floorCapLift250) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.floorCapLift250 = true;
-         saveStore(s);
+     // アイテム（貴重品）
+     if (valuablesList) {
+       const vals = Array.isArray(gameData.player.valuables)
+         ? gameData.player.valuables
+         : [];
+       if (vals.length === 0) {
+         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
+       } else {
+         const statName = {
+           strength: "⚔️ 力",
+           vitality: "❤️ 体力",
+           intelligence: "🧙 賢さ",
+           agility: "⚡ 素早さ",
+           dexterity: "🎯 器用さ",
+         };
+         vals.forEach((v) => {
+           const cnt = Number(v.count || 0);
+           if (!Number.isFinite(cnt) || cnt <= 0) return;
+           const key = String(v.statKey || "");
+           const sname = statName[key] || "ステータス";
++          const hasStatEffect = !!key && key in statName;
+           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
++          const description =
++            typeof v.description === "string" && v.description
++              ? v.description
++              : "";
++          const canUseMapFragment =
++            v.id === "ancient_map_fragment" && Number(cnt) >= 5;
+           valuablesList.innerHTML += `
+             <div class="item-card">
+               <div class="item-name">✨ ${v.name} x${cnt}</div>
+-              <div class="item-stats">所持効果：${effect}</div>
++              ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
++              ${description ? `<div class="item-stats">${description}</div>` : ""}
++              ${canUseMapFragment ? `<button type="button" class="item-action-btn" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
+             </div>
+           `;
+         });
+       }
+     }
+   }
  
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.floorCapLift250 = true;
-         }
+   // -------------------
+   // 装備品：ロック / 捨てる
+   // -------------------
+   function toggleItemLock(ev, idx) {
+     if (ev) {
+       ev.stopPropagation();
+       ev.preventDefault();
+     }
+     const item = gameData.player.inventory[idx];
+     if (!item) return;
  
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
-         }
-       },
-       logMessage:
--        "✨ シリアルコードを確認しました。階層上限を2001階に解放しました。",
-+        "✨ シリアルコードを確認しました。階層上限を5001階に解放しました。",
-     },
+     item.locked = !item.locked;
+     log(item.locked ? "🔒 ロックした" : "🔓 ロック解除した");
+     updateBagUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
  
-     // 前世の記憶（実績解除：経験値+20%）
-     pastLifeMemory: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.pastLifeMemory) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
-       },
-       unlock: () => {
-         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
-         const s = loadStore();
-         s.pastLifeMemory = true;
-         saveStore(s);
+   function discardEquipment(ev, idx) {
+@@ -1612,50 +1621,76 @@
+     if (sameItem(eq.slot2, item)) {
+       eq.slot2 = null;
+       log(`${item.name}を外した`);
+       getCombatStats();
+       updateBagUI();
+       updateUI();
+       if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
  
-         // 2) セーブデータ側にも保存（実績用）
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.pastLifeMemory = true;
-         }
+     // 装飾品は専用スロットへ
+     if (item.category === "accessory") {
+       eq.accessory = item;
+       log(`${item.name}を装飾品に装備した`);
+       getCombatStats();
+       updateBagUI();
+       updateUI();
+       if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
  
-         // 3) 実績解除チェック（ログもここで出る）
+     // 武器/防具は装備先を選択
+     openEquipSlotPicker(idx);
+   }
+ 
++  function useValuableById(id) {
++    if (id !== "ancient_map_fragment") return;
++    const vals = Array.isArray(gameData?.player?.valuables)
++      ? gameData.player.valuables
++      : [];
++    const target = vals.find((v) => v && v.id === id);
++    const cnt = Number(target?.count || 0);
++    if (!Number.isFinite(cnt) || cnt < 5) {
++      log("地図の切れ端が足りない");
++      return;
++    }
++
++    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
++    if (typeof window.showRareEnemyPopup === "function") {
++      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
++        autoClose: false,
++        allowOverlayClose: false,
++        showCloseButton: true,
++        hintText: "不思議な力で切れ端は残っている",
++      });
++    }
++    updateBagUI();
++    updateUI();
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
++
+   function useItem(name) {
+     const item = gameData.player.items.find((i) => i.name === name);
+     if (!item) return;
+ 
+     item.count--;
+     if (item.count <= 0) {
+       gameData.player.items = gameData.player.items.filter(
+         (i) => i.name !== name,
+       );
+     }
+ 
+     let heal = Number(item.heal || 0);
+ 
+     gameData.player.hp = Math.min(
+       gameData.player.maxHp,
+       gameData.player.hp + heal,
+     );
+     log(`${name}を使用！ ${heal}HP回復した！`);
+ 
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // -------------------
+@@ -3165,50 +3200,51 @@
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
++  window.useValuableById = useValuableById;
+   // =====================
+   // セーブ設定
+   // =====================
+   function toggleAutosave(enabled) {
+     setAutosaveEnabled(!!enabled);
+     updateOptionsUI();
+     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
+   }
+ 
+   let loginPromptPromise = null;
+   let resolveLoginPrompt = null;
+   let loginPromptResolved = false;
+ 
+   function finishLoginPrompt() {
+     if (loginPromptResolved) return;
+     loginPromptResolved = true;
+ 
+     const modal = document.getElementById("loginModal");
+     if (modal) {
+       modal.classList.add("hidden");
+       modal.setAttribute("aria-hidden", "true");
+     }
+ 
+     if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
+     resolveLoginPrompt = null;

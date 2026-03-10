@@ -1340,11 +1340,20 @@
           if (!Number.isFinite(cnt) || cnt <= 0) return;
           const key = String(v.statKey || "");
           const sname = statName[key] || "ステータス";
+          const hasStatEffect = !!key && key in statName;
           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
+          const description =
+            typeof v.description === "string" && v.description
+              ? v.description
+              : "";
+          const canUseMapFragment =
+            v.id === "ancient_map_fragment" && Number(cnt) >= 5;
           valuablesList.innerHTML += `
             <div class="item-card">
               <div class="item-name">✨ ${v.name} x${cnt}</div>
-              <div class="item-stats">所持効果：${effect}</div>
+              ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
+              ${description ? `<div class="item-stats">${description}</div>` : ""}
+              ${canUseMapFragment ? `<button type="button" class="item-action-btn" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
             </div>
           `;
         });
@@ -1632,6 +1641,32 @@
 
     // 武器/防具は装備先を選択
     openEquipSlotPicker(idx);
+  }
+
+  function useValuableById(id) {
+    if (id !== "ancient_map_fragment") return;
+    const vals = Array.isArray(gameData?.player?.valuables)
+      ? gameData.player.valuables
+      : [];
+    const target = vals.find((v) => v && v.id === id);
+    const cnt = Number(target?.count || 0);
+    if (!Number.isFinite(cnt) || cnt < 5) {
+      log("地図の切れ端が足りない");
+      return;
+    }
+
+    log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
+    if (typeof window.showRareEnemyPopup === "function") {
+      window.showRareEnemyPopup("地図の切れ端", "5つ集めた…！", {
+        autoClose: false,
+        allowOverlayClose: false,
+        showCloseButton: true,
+        hintText: "不思議な力で切れ端は残っている",
+      });
+    }
+    updateBagUI();
+    updateUI();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   function useItem(name) {
@@ -3187,6 +3222,7 @@
   window.closeEquipSlotPicker = closeEquipSlotPicker;
   window.chooseEquipSlot = chooseEquipSlot;
   window.useItem = useItem;
+  window.useValuableById = useValuableById;
   // =====================
   // セーブ設定
   // =====================

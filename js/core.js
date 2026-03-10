@@ -97,6 +97,9 @@
   // 敵を倒すと 1/1000 の確率でドロップ
   const RELIC_DROP_CHANCE = 0.001;
   const RELIC_FAMILY_NAME = "秘宝";
+  const MAP_FRAGMENT_ID = "ancient_map_fragment";
+  const MAP_FRAGMENT_DROP_CHANCE = 1 / 10000000;
+  const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
 
   const RELIC_DEFS = [
     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
@@ -105,6 +108,22 @@
     { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
     { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
   ];
+
+  const MAP_FRAGMENT_DEF = {
+    id: MAP_FRAGMENT_ID,
+    name: "地図の切れ端",
+    statKey: "",
+    description: "5つ集めると・・・",
+  };
+
+  function getValuableCountById(p, id) {
+    if (!p || !Array.isArray(p.valuables) || typeof id !== "string" || !id)
+      return 0;
+    const found = p.valuables.find((v) => v && v.id === id);
+    const cnt = Number(found?.count || 0);
+    if (!Number.isFinite(cnt) || cnt <= 0) return 0;
+    return Math.floor(cnt);
+  }
 
   function ensureValuables(p) {
     if (!p || typeof p !== "object") return;
@@ -159,8 +178,14 @@
       .filter((v) => v && typeof v === "object")
       .map((v) => {
         const id = typeof v.id === "string" ? v.id : "";
-        const def = RELIC_DEFS.find((d) => d.id === id) || null;
+        const def = RELIC_DEFS.concat([MAP_FRAGMENT_DEF]).find((d) => d.id === id) || null;
         const count = Number(v.count || 0);
+        const desc =
+          typeof v.description === "string" && v.description
+            ? v.description
+            : def && typeof def.description === "string"
+              ? def.description
+              : "";
         return {
           id: def ? def.id : id,
           name:
@@ -175,6 +200,7 @@
               : def
                 ? def.statKey
                 : "",
+          description: desc,
           count: Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0,
         };
       })
@@ -193,11 +219,19 @@
       found.count = Math.max(0, Math.floor(Number(found.count || 0)) + add);
       found.name = def.name;
       found.statKey = def.statKey;
+      found.description =
+        typeof def.description === "string" && def.description
+          ? def.description
+          : "";
     } else {
       p.valuables.push({
         id: def.id,
         name: def.name,
         statKey: def.statKey,
+        description:
+          typeof def.description === "string" && def.description
+            ? def.description
+            : "",
         count: add,
       });
     }
@@ -4215,6 +4249,25 @@
         log(`✨${RELIC_FAMILY_NAME}を発見！ ${def.name}を手に入れた！`);
       }
 
+      // 地図の切れ端ドロップ（通常ドロップとは別判定 / 固定 1/10,000,000）
+      // 5個持っている場合はドロップしない。
+      const mapFragmentCount = getValuableCountById(gameData.player, MAP_FRAGMENT_ID);
+      if (
+        mapFragmentCount < MAP_FRAGMENT_MAX_STACK_FOR_DROP &&
+        Math.random() < MAP_FRAGMENT_DROP_CHANCE
+      ) {
+        addValuableByDef(MAP_FRAGMENT_DEF, 1);
+        log(`🗺️ 地図の切れ端を手に入れた！ (${mapFragmentCount + 1}/5)`);
+        if (typeof window.showRareEnemyPopup === "function") {
+          window.showRareEnemyPopup("地図の切れ端", "超低確率ドロップ！", {
+            autoClose: false,
+            allowOverlayClose: false,
+            showCloseButton: true,
+            hintText: "とても珍しい発見だ…",
+          });
+        }
+      }
+
       // 敵を倒したら階層が上がる（進行待ちがある場合）
       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
         const stayCurrentFloor =
@@ -4460,7 +4513,7 @@
       if (f >= 420) v++;
       if (rarity === "epic") v++;
       if (rarity === "legendary") v++;
-      return clamp(v, 1, 3);
+      return clamp(v, 1, 2);
     }
 
     // 例外：数値固定のトリガー系
@@ -4584,7 +4637,7 @@
     let v = Math.round(raw);
 
     // タイプ別の安全上限（暴れ防止）。min/max だけで足りるが、念のため clmap を残す。
-    if (effect.type === "cooldownReduction") v = clamp(v, 1, 3);
+    if (effect.type === "cooldownReduction") v = clamp(v, 1, 2);
     if (effect.type === "deathAvoidOnce") v = 1;
     if (effect.type === "firstHitPursuit" || effect.type === "firstHitCrit")
       v = 1;
