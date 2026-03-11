@@ -25,7 +25,7 @@
       job: "all",
       maxLevel: 50,
       requiredPoints: 5,
-      desc: ""索敵+{value}（最大Lv.50）",
+      desc: "索敵+{value}（最大Lv.50）",
       effect: (lv) => ({ searchBonus: lv }),
     },
 
