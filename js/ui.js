@@ -1229,9 +1229,16 @@
     accessoriesList.innerHTML = "";
     if (valuablesList) valuablesList.innerHTML = "";
 
+    // 装備中アイテムは常に先頭に表示し、未装備は現在順を維持する
+    const displayInventory = gameData.player.inventory
+      .map((item, idx) => ({ item, idx, equipped: isEquipped(item) }))
+      .sort((a, b) => {
+        if (a.equipped !== b.equipped) return a.equipped ? -1 : 1;
+        return a.idx - b.idx;
+      });
+
     // 装備品
-    gameData.player.inventory.forEach((item, idx) => {
-      const equipped = isEquipped(item);
+    displayInventory.forEach(({ item, idx, equipped }) => {
       const locked = !!item.locked;
       const lockIcon = locked ? "🔒" : "🔓";
       const canDiscard = !locked && !equipped;
