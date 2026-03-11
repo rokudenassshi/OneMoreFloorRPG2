@@ -1,57 +1,315 @@
 diff --git a/js/core.js b/js/core.js
-index a88d38f990180923f719c77a250f8e484e411a9c..a45ce52017eafd76de66c6ce485428513e4fce2e 100644
+index a45ce52017eafd76de66c6ce485428513e4fce2e..4f5ccf17043644502017df5f030ebbcf08679cc3 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -4161,51 +4161,51 @@
+@@ -4375,50 +4375,51 @@
+       log(`${exp}EXPを獲得！`);
+ 
+       checkLevelUp();
+ 
+       // ドロップ判定
+       let dropChance = 30;
+       dropChance += getAccessoryBonus("dropRate");
+       dropChance += getAchievementItemDropRateBonus();
+       dropChance +=
+         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
+           ? jobs[gameData.player.job].traits.dropRateBonus
+           : 0;
+ 
+       const willDrop = Math.random() * 100 < dropChance;
+ 
+       if (willDrop) {
+         const isNamedEnemy = !!enemy.isNamed;
+         const isHighSearchNamedEnemy =
+           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
+         const forcedSpecialPrefixRarityPool = isNamedEnemy
+           ? isHighSearchNamedEnemy
+             ? ["rare", "epic", "legendary"]
+             : ["rare", "epic"]
+           : null;
+         const item = generateEquipment({
++          player: gameData.player,
+           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
+         });
+         if (isInAsuraWorld() && item && typeof item === "object") {
+           ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
+             const v = Number(item[k]);
+             if (Number.isFinite(v) && v > 0) {
+               item[k] = Math.max(1, Math.round(v * ASURA_ITEM_STAT_MULTIPLIER));
+             }
+           });
+         }
+         const soldByAutoSell = evaluateAutoSellDropItem(item);
+ 
+         if (soldByAutoSell) {
+           log(`💸 ${item.name}を自動売却した。`);
+         } else {
+           gameData.player.inventory.push(item);
+           log(`${item.name}を手に入れた！`);
+         }
+ 
+         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
+         if (
+           !soldByAutoSell &&
+           item &&
+           typeof item._specialPrefixName === "string" &&
+           item._specialPrefixName &&
+@@ -4890,50 +4891,94 @@
+     if (effect.type === "overhealBarrierCap") v = clamp(v, 0, 60);
+ 
+     if (effect.type === "critRate") v = clamp(v, 0, 40);
+     if (effect.type === "critDamage") v = clamp(v, 0, 200);
+     if (effect.type === "dropRate") v = clamp(v, 0, 150);
+     if (effect.type === "search") v = clamp(v, 1, 12);
+ 
+     // min/max の範囲は厳守
+     v = clamp(v, Math.min(min, max), Math.max(min, max));
+     return v;
    }
  
-   function tryCounterAttack() {
-     if (gameData.gameState !== "BATTLE") return;
-     const enemy = gameData.enemy;
-     if (!enemy) return;
-     if (enemy.hp <= 0) return;
-     if (gameData.player.hp <= 0) return;
- 
-     const bsC = ensurePlayerBattleState();
-     const accChance = Number(getAccessoryBonus("counterChance") || 0);
-     const passiveChance = Number(bsC.counterChanceBonus || 0);
-     const chance =
-       (Number.isFinite(accChance) ? accChance : 0) +
-       (Number.isFinite(passiveChance) ? passiveChance : 0);
-     if (!Number.isFinite(chance) || chance <= 0) return;
-     const roll = Math.random() * 100;
-     if (roll >= Math.min(45, chance)) return;
- 
-     const combat = getCombatStats();
-     const dmgPct = Number(getAccessoryBonus("counterDamage") || 0);
-     const passivePct = Number(bsC.counterDamageBonus || 0);
-     const mul =
-       1 +
-       (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100 +
--      (Number.isFinite(passivePct) ? Math.min(200, passivePct) : 0) / 100;
-+      (Number.isFinite(passivePct) ? passivePct : 0) / 100;
- 
-     let damage = Math.max(
-       1,
-       (combat.attack - enemy.defense * 0.35) * 0.65 * mul,
-     );
-     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
-     damage = applyEnemyIncomingReduction(enemy, damage);
- 
-     damage = applyEnemyVulnerableTaken(enemy, damage);
-     enemy.hp -= damage;
-     recordPlayerDamage(damage);
-     log(`↩️ 反撃！ ${damage}ダメージ`);
- 
-     // 特殊接頭語（onHit）
-     applyPlayerOnHitSpecialEffects(enemy);
-     onPlayerHit({ kind: "physical", isCrit: false });
-     checkBattleEnd();
+   /**
+    * 装飾品（アクセ）用：min/max レンジから抽選した value を付与して返す。
+    * @param {any} effect
+    * @param {number} floor
+    * @param {string} rarity
+    * @returns {any}
+    */
+   function makeAccessoryEffectByRange(effect, floor, rarity) {
+     const e = { ...effect };
+     e.value = rollAccessoryEffectValueByRange(e, floor, rarity);
+     return e;
    }
  
-   function performEnemyAttack() {
-     const enemy = gameData.enemy;
++  function getAccessoryEffectSignature(typeKey, effect) {
++    if (!typeKey || !effect || typeof effect !== "object") return "";
++    const effType = String(effect.type || "");
++    if (!effType) return "";
++    const cond = effect.cond || effect.condition || "";
++    return `${String(typeKey)}::${effType}::${String(cond)}`;
++  }
++
++  function getOwnedAccessories(player) {
++    const p = player && typeof player === "object" ? player : null;
++    if (!p) return [];
++
++    const items = [];
++    if (Array.isArray(p.inventory)) {
++      for (const it of p.inventory) {
++        if (it && it.category === "accessory") items.push(it);
++      }
++    }
++
++    const eq = p.equipment && typeof p.equipment === "object" ? p.equipment : {};
++    if (eq.accessory && eq.accessory.category === "accessory") {
++      items.push(eq.accessory);
++    }
++
++    return items;
++  }
++
++  function getBlockedAccessoryDropSignatures(player) {
++    const blocked = new Set();
++    const accessories = getOwnedAccessories(player);
++    for (const item of accessories) {
++      const eff = Array.isArray(item.effects) ? item.effects[0] : null;
++      if (!eff || typeof eff !== "object") continue;
++
++      const max = Number(eff.max);
++      const value = Number(eff.value);
++      if (!Number.isFinite(max) || !Number.isFinite(value) || value < max) continue;
++
++      const sig = getAccessoryEffectSignature(item.type, eff);
++      if (sig) blocked.add(sig);
++    }
++    return blocked;
++  }
++
+   // -------------------
+   // 装備品オプション：種別ごとの付きやすさ（重み付け）
+   // -------------------
+   /**
+    * @template T
+    * @param {T[]} items
+    * @param {(item: T) => number} weightFn
+    * @returns {T|null}
+    */
+   function pickWeighted(items, weightFn) {
+     if (!Array.isArray(items) || items.length === 0) return null;
+     let total = 0;
+     const weights = items.map((it) => {
+       const w = Number(weightFn(it));
+       const ww = Number.isFinite(w) ? Math.max(0, w) : 0;
+       total += ww;
+       return ww;
+     });
+     if (total <= 0) {
+       // フォールバック：等確率
+       return items[Math.floor(Math.random() * items.length)] || null;
+     }
+     let r = Math.random() * total;
+     for (let i = 0; i < items.length; i++) {
+       r -= weights[i];
+@@ -5320,60 +5365,103 @@
+       // - 杖/ワンド：魔法攻撃力
+       // - メイス/聖杖：回復力
+       // - それ以外：攻撃力
+       const type = String(item.type || "");
+       let key = "attack";
+       if (type === "staff" || type === "wand") key = "magicAttack";
+       if (type === "mace" || type === "holy_staff") key = "healPower";
  
-     if (!enemyDidHit(0)) {
-       addJobProgress("evade", 1);
-       gameData.player.totalEvades = (gameData.player.totalEvades || 0) + 1;
+       const top = key === "magicAttack" ? m : key === "healPower" ? h : a;
+ 
+       const tmpl = pickTierTemplate(EQUIPMENT_NAME_TIERS.weapon[key], top);
+       return String(tmpl).replace("{base}", b);
+     }
+ 
+     if (item.category === "armor") {
+       const d = Number(item.defense) || 0;
+       const tmpl = pickTierTemplate(EQUIPMENT_NAME_TIERS.armor.defense, d);
+       return String(tmpl).replace("{base}", b);
+     }
+ 
+     return b;
+   }
+ 
+   function generateEquipment(options = {}) {
+     const floor = getScalingFloor();
++    const blockedAccessorySignatures = getBlockedAccessoryDropSignatures(
++      options?.player,
++    );
+ 
+     // カテゴリー選択
+     const categories = ["weapon", "armor", "accessory"];
+-    const category = categories[Math.floor(Math.random() * categories.length)];
++    let category = categories[Math.floor(Math.random() * categories.length)];
++
++    const getAccessoryPoolByFloor = () => {
++      const poolRaw = Array.isArray(window.accessoryOptionEffects)
++        ? window.accessoryOptionEffects
++        : [];
++      if (!poolRaw.length) return [];
++      const poolFiltered = poolRaw.filter((e) => {
++        if (!e || typeof e !== "object") return false;
++        const mf = Number(e.minFloor);
++        return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
++      });
++      return poolFiltered.length ? poolFiltered : poolRaw;
++    };
++
++    if (category === "accessory" && blockedAccessorySignatures.size > 0) {
++      const accessoryTypeKeys = Object.keys(equipTypes || {}).filter(
++        (k) => equipTypes[k]?.category === "accessory",
++      );
++      const pool = getAccessoryPoolByFloor();
++      const hasAvailableAccessory = accessoryTypeKeys.some((k) =>
++        pool.some((e) => !blockedAccessorySignatures.has(getAccessoryEffectSignature(k, e))),
++      );
++      if (!hasAvailableAccessory) {
++        category = Math.random() < 0.5 ? "weapon" : "armor";
++      }
++    }
+ 
+     let typeOptions = [];
+     for (let key in equipTypes) {
+       if (equipTypes[key].category === category) typeOptions.push(key);
+     }
+ 
++    if (category === "accessory" && blockedAccessorySignatures.size > 0) {
++      const pool = getAccessoryPoolByFloor();
++      typeOptions = typeOptions.filter((k) =>
++        pool.some((e) => !blockedAccessorySignatures.has(getAccessoryEffectSignature(k, e))),
++      );
++      if (!typeOptions.length) {
++        category = Math.random() < 0.5 ? "weapon" : "armor";
++        typeOptions = [];
++        for (let key in equipTypes) {
++          if (equipTypes[key].category === category) typeOptions.push(key);
++        }
++      }
++    }
++
+     const typeKey = typeOptions[Math.floor(Math.random() * typeOptions.length)];
+     const type = equipTypes[typeKey];
+ 
+     const rarity = getRarity(floor);
+ 
+     const item = {
+       baseName: type.name,
+       name: type.name,
+       type: typeKey,
+       category: type.category,
+       hands: type.hands,
+       rarity,
+       locked: false,
+     };
+ 
+     // UI表示用（固有能力/ランダムオプションの内訳）
+     item.fixedEffects = [];
+     item.randomOptionDetails = [];
+ 
+     // 特殊接頭語（固有効果付きの追加接頭語）
+     // - weapon/armor のみに付与（accessory は元から効果が多いため対象外）
+     // - 見た目: item.name の先頭に接頭語を付ける
+     // - 効果: item.effects に付与（既存の集計ロジックで反映される）
+     // - UI: 固有能力（fixedEffects）として表示
+     if (
+@@ -5489,51 +5577,57 @@
+           if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+           // UIは effect の整形に任せる
+           item.fixedEffects.push(eff);
+         });
+       }
+ 
+       // 防具でも命中補正を持てる（例：篭手、盾など）
+       if (typeof bias.accuracy !== "undefined")
+         item.accuracy = Math.round(getBias("accuracy", 0));
+     } else {
+       item.effects = [];
+       // 装飾品の効果は常に1つ（多効果は廃止）
+       const numEffects = 1;
+       for (let i = 0; i < numEffects; i++) {
+         const poolRaw = Array.isArray(window.accessoryOptionEffects)
+           ? window.accessoryOptionEffects
+           : [];
+         if (!poolRaw.length) continue;
+ 
+         // minFloor を持つ効果は、到達階層以降でのみ候補に入れる
+         const poolFiltered = poolRaw.filter((e) => {
+           if (!e || typeof e !== "object") return false;
+           const mf = Number(e.minFloor);
+           return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
+         });
+-        const pool = poolFiltered.length ? poolFiltered : poolRaw;
++        const pool = (poolFiltered.length ? poolFiltered : poolRaw).filter(
++          (e) =>
++            !blockedAccessorySignatures.has(
++              getAccessoryEffectSignature(typeKey, e),
++            ),
++        );
++        if (!pool.length) continue;
+ 
+         const effect =
+           pickWeighted(pool, (e) => getAccessoryEffectWeight(e.type)) ||
+           pool[Math.floor(Math.random() * pool.length)];
+         item.effects.push(makeAccessoryEffectByRange(effect, floor, rarity));
+       }
+ 
+       // 生成時の参照（将来の再計算やデバッグ用。UIには出さない）
+       item.generatedFloor = floor;
+ 
+       // UI表示用：アクセサリーは効果=ランダムオプション
+       item.randomOptionDetails = (
+         Array.isArray(item.effects) ? item.effects : []
+       ).map((eff) => ({ kind: "effect", effect: eff }));
+     }
+ 
+     // ランダムオプション（表示の「+」＝オプション数）
+     // - UI側で「装備固有能力 / ランダムオプション」を分けて表示できるよう、内訳も保持する
+     let optionCount = 0;
+ 
+     if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+     if (!Array.isArray(item.randomOptionDetails)) item.randomOptionDetails = [];
+ 
+     // アクセサリー：効果数＝オプション数（effects と同じ）
+     if (category === "accessory") {

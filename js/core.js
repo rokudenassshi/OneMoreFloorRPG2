@@ -4397,6 +4397,7 @@
             : ["rare", "epic"]
           : null;
         const item = generateEquipment({
+          player: gameData.player,
           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
         });
         if (isInAsuraWorld() && item && typeof item === "object") {
@@ -4912,6 +4913,50 @@
     return e;
   }
 
+  function getAccessoryEffectSignature(typeKey, effect) {
+    if (!typeKey || !effect || typeof effect !== "object") return "";
+    const effType = String(effect.type || "");
+    if (!effType) return "";
+    const cond = effect.cond || effect.condition || "";
+    return `${String(typeKey)}::${effType}::${String(cond)}`;
+  }
+
+  function getOwnedAccessories(player) {
+    const p = player && typeof player === "object" ? player : null;
+    if (!p) return [];
+
+    const items = [];
+    if (Array.isArray(p.inventory)) {
+      for (const it of p.inventory) {
+        if (it && it.category === "accessory") items.push(it);
+      }
+    }
+
+    const eq = p.equipment && typeof p.equipment === "object" ? p.equipment : {};
+    if (eq.accessory && eq.accessory.category === "accessory") {
+      items.push(eq.accessory);
+    }
+
+    return items;
+  }
+
+  function getBlockedAccessoryDropSignatures(player) {
+    const blocked = new Set();
+    const accessories = getOwnedAccessories(player);
+    for (const item of accessories) {
+      const eff = Array.isArray(item.effects) ? item.effects[0] : null;
+      if (!eff || typeof eff !== "object") continue;
+
+      const max = Number(eff.max);
+      const value = Number(eff.value);
+      if (!Number.isFinite(max) || !Number.isFinite(value) || value < max) continue;
+
+      const sig = getAccessoryEffectSignature(item.type, eff);
+      if (sig) blocked.add(sig);
+    }
+    return blocked;
+  }
+
   // -------------------
   // 装備品オプション：種別ごとの付きやすさ（重み付け）
   // -------------------
@@ -5342,14 +5387,57 @@
 
   function generateEquipment(options = {}) {
     const floor = getScalingFloor();
+    const blockedAccessorySignatures = getBlockedAccessoryDropSignatures(
+      options?.player,
+    );
 
     // カテゴリー選択
     const categories = ["weapon", "armor", "accessory"];
-    const category = categories[Math.floor(Math.random() * categories.length)];
+    let category = categories[Math.floor(Math.random() * categories.length)];
+
+    const getAccessoryPoolByFloor = () => {
+      const poolRaw = Array.isArray(window.accessoryOptionEffects)
+        ? window.accessoryOptionEffects
+        : [];
+      if (!poolRaw.length) return [];
+      const poolFiltered = poolRaw.filter((e) => {
+        if (!e || typeof e !== "object") return false;
+        const mf = Number(e.minFloor);
+        return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
+      });
+      return poolFiltered.length ? poolFiltered : poolRaw;
+    };
+
+    if (category === "accessory" && blockedAccessorySignatures.size > 0) {
+      const accessoryTypeKeys = Object.keys(equipTypes || {}).filter(
+        (k) => equipTypes[k]?.category === "accessory",
+      );
+      const pool = getAccessoryPoolByFloor();
+      const hasAvailableAccessory = accessoryTypeKeys.some((k) =>
+        pool.some((e) => !blockedAccessorySignatures.has(getAccessoryEffectSignature(k, e))),
+      );
+      if (!hasAvailableAccessory) {
+        category = Math.random() < 0.5 ? "weapon" : "armor";
+      }
+    }
 
     let typeOptions = [];
     for (let key in equipTypes) {
       if (equipTypes[key].category === category) typeOptions.push(key);
+    }
+
+    if (category === "accessory" && blockedAccessorySignatures.size > 0) {
+      const pool = getAccessoryPoolByFloor();
+      typeOptions = typeOptions.filter((k) =>
+        pool.some((e) => !blockedAccessorySignatures.has(getAccessoryEffectSignature(k, e))),
+      );
+      if (!typeOptions.length) {
+        category = Math.random() < 0.5 ? "weapon" : "armor";
+        typeOptions = [];
+        for (let key in equipTypes) {
+          if (equipTypes[key].category === category) typeOptions.push(key);
+        }
+      }
     }
 
     const typeKey = typeOptions[Math.floor(Math.random() * typeOptions.length)];
@@ -5511,7 +5599,13 @@
           const mf = Number(e.minFloor);
           return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
         });
-        const pool = poolFiltered.length ? poolFiltered : poolRaw;
+        const pool = (poolFiltered.length ? poolFiltered : poolRaw).filter(
+          (e) =>
+            !blockedAccessorySignatures.has(
+              getAccessoryEffectSignature(typeKey, e),
+            ),
+        );
+        if (!pool.length) continue;
 
         const effect =
           pickWeighted(pool, (e) => getAccessoryEffectWeight(e.type)) ||
