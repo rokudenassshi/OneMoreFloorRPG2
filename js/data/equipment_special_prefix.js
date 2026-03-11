@@ -134,23 +134,25 @@
       name: "盗賊の",
       rarity: "legendary",
       effects: [
-        { type: "bonusPct", key: "expBonus", min: 20, max: 40 },
-        { type: "bonusPct", key: "dropRate", min: 18, max: 35 },
-        { type: "bonusPct", key: "search", min: 25, max: 45 },
+        { type: "bonusPct", key: "expBonus", min: 28, max: 50 },
+        { type: "bonusPct", key: "dropRate", min: 24, max: 42 },
+        { type: "bonusPct", key: "search", min: 35, max: 60 },
+        { type: "statPct", stat: "attack", min: 8, max: 14 },
       ],
       describe: (r) =>
-        `経験値+${pct(r.expBonus)} / ドロップ率+${pct(r.dropRate)} / 索敵+${Math.round(Number(r.search) || 0)}`,
+        `経験値+${pct(r.expBonus)} / ドロップ率+${pct(r.dropRate)} / 索敵+${Math.round(Number(r.search) || 0)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "永劫の",
       rarity: "legendary",
       effects: [
         { type: "statPct", stat: "maxHp", min: 14, max: 24 },
-        { type: "bonusPct", key: "regen", min: 4, max: 8 }, // regen は %/turn
-        { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
+        { type: "bonusPct", key: "regen", min: 5, max: 10 }, // regen は %/turn
+        { type: "bonusPct", key: "damageReduction", min: 12, max: 22 },
+        { type: "statPct", stat: "defense", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `最大HP+${pct(r.maxHpPct)} / 再生${pct(r.regen)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+        `最大HP+${pct(r.maxHpPct)} / 再生${pct(r.regen)} / 被ダメ軽減+${pct(r.damageReduction)} / 防御力+${pct(r.defensePct)}`,
     },
   ];
 
@@ -312,44 +314,48 @@
       rarity: "legendary",
       effects: [
         { type: "bonusPct", key: "pursuitChance", min: 22, max: 38 },
-        { type: "bonusPct", key: "pursuitDamagePct", min: 60, max: 110 },
-        { type: "statPct", stat: "attack", min: 10, max: 18 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 70, max: 130 },
+        { type: "statPct", stat: "attack", min: 12, max: 22 },
+        { type: "bonusPct", key: "critRate", min: 6, max: 12 },
       ],
       describe: (r) =>
-        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 攻撃力+${pct(r.attackPct)}`,
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 攻撃力+${pct(r.attackPct)} / クリティカル率+${pct(r.critRate)}`,
     },
     {
       name: "破滅の",
       rarity: "legendary",
       effects: [
-        { type: "bonusPct", key: "executeDamage", min: 25, max: 55 },
-        { type: "bonusPct", key: "critDamage", min: 60, max: 120 },
-        { type: "statPct", stat: "attack", min: 10, max: 18 },
+        { type: "bonusPct", key: "executeDamage", min: 32, max: 65 },
+        { type: "bonusPct", key: "critDamage", min: 75, max: 140 },
+        { type: "statPct", stat: "attack", min: 12, max: 22 },
+        { type: "bonusPct", key: "accuracy", min: 8, max: 16 },
       ],
       describe: (r) =>
-        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
+        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)} / 命中+${pct(r.accuracy)}`,
     },
     {
       name: "迅詠の",
       rarity: "legendary",
       effects: [
         { type: "bonusPct", key: "cooldownReduction", min: 1, max: 1 },
-        { type: "bonusPct", key: "skillPower", min: 25, max: 55 },
-        { type: "bonusPct", key: "accuracy", min: 10, max: 18 },
+        { type: "bonusPct", key: "skillPower", min: 32, max: 65 },
+        { type: "bonusPct", key: "accuracy", min: 12, max: 22 },
+        { type: "statPct", stat: "magicPower", min: 12, max: 20 },
       ],
       describe: (r) =>
-        `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)} / スキル威力+${pct(r.skillPower)} / 命中+${pct(r.accuracy)}`,
+        `CT短縮+${Math.round(Number(r.cooldownReduction) || 0)} / スキル威力+${pct(r.skillPower)} / 命中+${pct(r.accuracy)} / 魔力+${pct(r.magicPowerPct)}`,
     },
     {
       name: "天穿つ",
       rarity: "legendary",
       effects: [
         { type: "bonusPct", key: "accuracy", min: 12, max: 22 },
-        { type: "bonusPct", key: "critRate", min: 8, max: 16 },
-        { type: "bonusPct", key: "critDamage", min: 50, max: 100 },
+        { type: "bonusPct", key: "critRate", min: 10, max: 18 },
+        { type: "bonusPct", key: "critDamage", min: 65, max: 120 },
+        { type: "statPct", stat: "attack", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `命中+${pct(r.accuracy)} / クリティカル率+${pct(r.critRate)} / クリダメ+${pct(r.critDamage)}`,
+        `命中+${pct(r.accuracy)} / クリティカル率+${pct(r.critRate)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "雷鎖の",
@@ -364,32 +370,35 @@
           turnsMax: 2,
         },
         { type: "bonusPct", key: "pursuitChance", min: 18, max: 32 },
-        { type: "bonusPct", key: "accuracy", min: 10, max: 18 },
+        { type: "bonusPct", key: "accuracy", min: 12, max: 20 },
+        { type: "statPct", stat: "attack", min: 8, max: 16 },
       ],
       describe: (r) =>
-        `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T） / 追撃率+${pct(r.pursuitChance)} / 命中+${pct(r.accuracy)}`,
+        `攻撃時${pct(r.stunChance)}でスタン（${r.stunTurns}T） / 追撃率+${pct(r.pursuitChance)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "神速の",
       rarity: "legendary",
       effects: [
         { type: "bonusPct", key: "critRate", min: 6, max: 12 },
-        { type: "bonusPct", key: "accuracy", min: 6, max: 12 },
-        { type: "statPct", stat: "attack", min: 10, max: 16 },
+        { type: "bonusPct", key: "accuracy", min: 8, max: 14 },
+        { type: "statPct", stat: "attack", min: 12, max: 20 },
+        { type: "bonusPct", key: "pursuitChance", min: 10, max: 20 },
       ],
       describe: (r) =>
-        `クリティカル率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)}`,
+        `クリティカル率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)} / 追撃率+${pct(r.pursuitChance)}`,
     },
     {
       name: "災禍の",
       rarity: "legendary",
       effects: [
         { type: "bonusPct", key: "pursuitChance", min: 18, max: 30 },
-        { type: "bonusPct", key: "pursuitDamagePct", min: 40, max: 80 },
-        { type: "bonusPct", key: "critDamage", min: 40, max: 90 },
+        { type: "bonusPct", key: "pursuitDamagePct", min: 50, max: 95 },
+        { type: "bonusPct", key: "critDamage", min: 50, max: 105 },
+        { type: "statPct", stat: "attack", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / クリダメ+${pct(r.critDamage)}`,
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
     },
   ];
 
@@ -508,9 +517,10 @@
         { type: "bonusPct", key: "counterChance", min: 14, max: 24 },
         { type: "bonusPct", key: "counterDamage", min: 50, max: 100 },
         { type: "bonusPct", key: "damageReduction", min: 8, max: 16 },
+        { type: "statPct", stat: "defense", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+        `反撃率+${pct(r.counterChance)} / 反撃威力+${pct(r.counterDamage)} / 被ダメ軽減+${pct(r.damageReduction)} / 防御力+${pct(r.defensePct)}`,
     },
     {
       name: "不屈の",
@@ -519,9 +529,10 @@
         { type: "statPct", stat: "maxHp", min: 14, max: 24 },
         { type: "bonusPct", key: "healReceived", min: 15, max: 30 },
         { type: "bonusPct", key: "damageReduction", min: 8, max: 16 },
+        { type: "statPct", stat: "defense", min: 8, max: 16 },
       ],
       describe: (r) =>
-        `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)} / 被ダメ軽減+${pct(r.damageReduction)}`,
+        `最大HP+${pct(r.maxHpPct)} / 回復量+${pct(r.healReceived)} / 被ダメ軽減+${pct(r.damageReduction)} / 防御力+${pct(r.defensePct)}`,
     },
     {
       name: "不動の",
@@ -530,16 +541,22 @@
         { type: "statPct", stat: "defense", min: 12, max: 20 },
         { type: "bonusPct", key: "damageReduction", min: 10, max: 18 },
         { type: "bonusPct", key: "ailmentResist", min: 18, max: 35 },
+        { type: "statPct", stat: "maxHp", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)}`,
+        `防御力+${pct(r.defensePct)} / 軽減+${pct(r.damageReduction)} / 耐性+${pct(r.ailmentResist)} / 最大HP+${pct(r.maxHpPct)}`,
     },
 
     {
       name: "生還者の",
       rarity: "legendary",
-      effects: [{ type: "bonusPct", key: "deathAvoidOnce", min: 1, max: 1 }],
-      describe: () => `戦闘中1回だけ死亡回避`,
+      effects: [
+        { type: "bonusPct", key: "deathAvoidOnce", min: 1, max: 1 },
+        { type: "statPct", stat: "maxHp", min: 12, max: 20 },
+        { type: "bonusPct", key: "damageReduction", min: 8, max: 14 },
+      ],
+      describe: (r) =>
+        `戦闘中1回だけ死亡回避 / 最大HP+${pct(r.maxHpPct)} / 被ダメ軽減+${pct(r.damageReduction)}`,
     },
   ];
 
