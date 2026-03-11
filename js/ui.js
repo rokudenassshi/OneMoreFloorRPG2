@@ -1662,7 +1662,7 @@
     const target = vals.find((v) => v && v.id === id);
     const cnt = Number(target?.count || 0);
     if (!Number.isFinite(cnt) || cnt < 5) {
-      log("地図の切れ端が足りない");
+      log("謎のかけらが足りない");
       return;
     }
 
@@ -1684,11 +1684,11 @@
     }
 
     if (movedToAsura === true) {
-      log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
+      log("🗝️ 修羅の国への鍵を使い、修羅の国へ転移した！");
     } else if (movedToAsura === false) {
-      log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
+      log("🗝️ 修羅の国への鍵を使い、元の世界へ戻った！");
     } else {
-      log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
+      log("🗝️ 修羅の国への鍵を使った…しかし鍵は消えなかった");
     }
 
     if (typeof window.showRareEnemyPopup === "function") {
@@ -1697,18 +1697,18 @@
           ? "修羅の国"
           : movedToAsura === false
             ? "元の世界"
-            : "地図の切れ端";
+            : "修羅の国への鍵";
       const body =
         movedToAsura === true
           ? "世界が歪み、修羅の国に飲み込まれた…"
           : movedToAsura === false
             ? "歪みが晴れ、元の世界に戻った"
-            : "5つ集めた…！";
+            : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
       window.showRareEnemyPopup(title, body, {
         autoClose: false,
         allowOverlayClose: false,
         showCloseButton: true,
-        hintText: "不思議な力で切れ端は残っている",
+        hintText: "不思議な力で鍵は残っている",
       });
     }
     updateBagUI();

@@ -1,57 +1,109 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index cd25d11c2a743afeec1685a7ceeab36ea0715902..2de9f0119e1f97e8d79831a3529a2586b8ff2292 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -52,51 +52,51 @@
-       isDone: (p) => Number(p.totalKills || 0) >= 1000,
-       progress: (p) => `${Math.min(Number(p.totalKills || 0), 1000)}/1000`,
-       // 経験値 +10%
-       bonus: { expRate: 0.1 },
-     },
-     {
-       id: "level_50",
-       title: "力の芽生え",
-       desc: "プレイヤーレベル50に到達する",
-       isDone: (p) => Number(p.level || 1) >= 50,
-       progress: (p) => `${Math.min(Number(p.level || 1), 50)}/50`,
-       bonus: { expRate: 0.05 },
-     },
-     {
-       id: "serial_stay_battle",
-       title: "連戦の心得",
-       desc: "シリアルコード（連戦）を入力する",
-       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
-       progress: (p) =>
-         p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
-       bonus: {},
-     },
-     {
-       id: "serial_floor_cap_lift_250",
-       title: "深淵への通行証",
--      desc: "シリアルコード（250階制限解除）を入力する",
-+      desc: "シリアルコード（階層上限解放）を入力する",
-       isDone: (p) =>
-         !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
-       progress: (p) =>
-         p && p.serialUnlocks && p.serialUnlocks.floorCapLift250 ? "1/1" : "0/1",
-       bonus: {},
-     },
-     {
-       id: "past_life_memory",
-       title: "前世の記憶",
-       desc: "シリアルコードで解放する",
-       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
-       progress: (p) =>
-         p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory ? "1/1" : "0/1",
-       // 経験値 +20%
-       bonus: { expRate: 0.2 },
-     },
-     {
-       id: "named_hunter",
-       title: "二つ名狩り",
-       desc: "二つ名モンスターを10体倒す",
-       isDone: (p) => Number(p.namedKills || 0) >= 10,
-       progress: (p) => `${Math.min(Number(p.namedKills || 0), 10)}/10`,
-       bonus: {},
-     },
-     {
+diff --git a/js/ui.js b/js/ui.js
+index 6c97e29800177999496932962d316ef4a2d1fe17..7cbd893ebbe89a6c573f50634a837942eb7cce57 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1640,97 +1640,97 @@
+     }
+ 
+     // 装飾品は専用スロットへ
+     if (item.category === "accessory") {
+       eq.accessory = item;
+       log(`${item.name}を装飾品に装備した`);
+       getCombatStats();
+       updateBagUI();
+       updateUI();
+       if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
+ 
+     // 武器/防具は装備先を選択
+     openEquipSlotPicker(idx);
+   }
+ 
+   function useValuableById(id) {
+     if (id !== "ancient_map_fragment") return;
+     const vals = Array.isArray(gameData?.player?.valuables)
+       ? gameData.player.valuables
+       : [];
+     const target = vals.find((v) => v && v.id === id);
+     const cnt = Number(target?.count || 0);
+     if (!Number.isFinite(cnt) || cnt < 5) {
+-      log("地図の切れ端が足りない");
++      log("謎のかけらが足りない");
+       return;
+     }
+ 
+     const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
+     if (
+       !isAsuraNow &&
+       typeof window.confirm === "function" &&
+       !window.confirm(
+         "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
+       )
+     ) {
+       return;
+     }
+ 
+     let movedToAsura = null;
+     if (typeof window.toggleAsuraWorldByMapFragment === "function") {
+       const result = window.toggleAsuraWorldByMapFragment();
+       if (result && result.ok) movedToAsura = !!result.movedToAsura;
+     }
+ 
+     if (movedToAsura === true) {
+-      log("🗺️ 地図の切れ端を使い、修羅の国へ転移した！");
++      log("🗝️ 修羅の国への鍵を使い、修羅の国へ転移した！");
+     } else if (movedToAsura === false) {
+-      log("🗺️ 地図の切れ端を使い、元の世界へ戻った！");
++      log("🗝️ 修羅の国への鍵を使い、元の世界へ戻った！");
+     } else {
+-      log("🗺️ 地図の切れ端を使った…しかし切れ端は消えなかった");
++      log("🗝️ 修羅の国への鍵を使った…しかし鍵は消えなかった");
+     }
+ 
+     if (typeof window.showRareEnemyPopup === "function") {
+       const title =
+         movedToAsura === true
+           ? "修羅の国"
+           : movedToAsura === false
+             ? "元の世界"
+-            : "地図の切れ端";
++            : "修羅の国への鍵";
+       const body =
+         movedToAsura === true
+           ? "世界が歪み、修羅の国に飲み込まれた…"
+           : movedToAsura === false
+             ? "歪みが晴れ、元の世界に戻った"
+-            : "5つ集めた…！";
++            : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
+       window.showRareEnemyPopup(title, body, {
+         autoClose: false,
+         allowOverlayClose: false,
+         showCloseButton: true,
+-        hintText: "不思議な力で切れ端は残っている",
++        hintText: "不思議な力で鍵は残っている",
+       });
+     }
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function useItem(name) {
+     const item = gameData.player.items.find((i) => i.name === name);
+     if (!item) return;
+ 
+     item.count--;
+     if (item.count <= 0) {
+       gameData.player.items = gameData.player.items.filter(
+         (i) => i.name !== name,
+       );
+     }
+ 
+     let heal = Number(item.heal || 0);
+ 
+     gameData.player.hp = Math.min(
+       gameData.player.maxHp,
+       gameData.player.hp + heal,
+     );
+     log(`${name}を使用！ ${heal}HP回復した！`);

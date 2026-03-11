@@ -98,6 +98,8 @@
   const RELIC_DROP_CHANCE = 0.001;
   const RELIC_FAMILY_NAME = "秘宝";
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
+  const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
+  const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
@@ -113,10 +115,17 @@
 
   const MAP_FRAGMENT_DEF = {
     id: MAP_FRAGMENT_ID,
-    name: "地図の切れ端",
+    name: MAP_FRAGMENT_BASE_NAME,
     statKey: "",
     description: "5つ集めると・・・",
   };
+
+  function getMapFragmentDisplayName(count) {
+    const n = Number(count || 0);
+    return n >= MAP_FRAGMENT_MAX_STACK_FOR_DROP
+      ? MAP_FRAGMENT_READY_NAME
+      : MAP_FRAGMENT_BASE_NAME;
+  }
 
   function getValuableCountById(p, id) {
     if (!p || !Array.isArray(p.valuables) || typeof id !== "string" || !id)
@@ -262,11 +271,13 @@
         return {
           id: def ? def.id : id,
           name:
-            typeof v.name === "string" && v.name
-              ? v.name
-              : def
-                ? def.name
-                : "貴重品",
+            id === MAP_FRAGMENT_ID
+              ? getMapFragmentDisplayName(count)
+              : typeof v.name === "string" && v.name
+                ? v.name
+                : def
+                  ? def.name
+                  : "貴重品",
           statKey:
             typeof v.statKey === "string" && v.statKey
               ? v.statKey
@@ -290,7 +301,10 @@
     const found = p.valuables.find((v) => v && v.id === def.id);
     if (found) {
       found.count = Math.max(0, Math.floor(Number(found.count || 0)) + add);
-      found.name = def.name;
+      found.name =
+        def.id === MAP_FRAGMENT_ID
+          ? getMapFragmentDisplayName(found.count)
+          : def.name;
       found.statKey = def.statKey;
       found.description =
         typeof def.description === "string" && def.description
@@ -299,7 +313,10 @@
     } else {
       p.valuables.push({
         id: def.id,
-        name: def.name,
+        name:
+          def.id === MAP_FRAGMENT_ID
+            ? getMapFragmentDisplayName(add)
+            : def.name,
         statKey: def.statKey,
         description:
           typeof def.description === "string" && def.description
@@ -4495,14 +4512,20 @@
         Math.random() < MAP_FRAGMENT_DROP_CHANCE
       ) {
         addValuableByDef(MAP_FRAGMENT_DEF, 1);
-        log(`🗺️ 地図の切れ端を手に入れた！ (${mapFragmentCount + 1}/5)`);
+        log(
+          `🗺️ ${getMapFragmentDisplayName(mapFragmentCount + 1)}を手に入れた！ (${mapFragmentCount + 1}/5)`,
+        );
         if (typeof window.showRareEnemyPopup === "function") {
-          window.showRareEnemyPopup("地図の切れ端", "超低確率ドロップ！", {
-            autoClose: false,
-            allowOverlayClose: false,
-            showCloseButton: true,
-            hintText: "とても珍しい発見だ…",
-          });
+          window.showRareEnemyPopup(
+            getMapFragmentDisplayName(mapFragmentCount + 1),
+            "超低確率ドロップ！",
+            {
+              autoClose: false,
+              allowOverlayClose: false,
+              showCloseButton: true,
+              hintText: "とても珍しい発見だ…",
+            },
+          );
         }
       }
 
