@@ -295,7 +295,7 @@
 
   // 装備品（武器・防具）用：基本戦闘に関するオプションのみ
   const equipmentOptionEffects = [
-{ name: "経験値UP", type: "expBonus", value: 15 },
+    { name: "経験値UP", type: "expBonus", value: 15 },
     { name: "クリティカル率UP", type: "critRate", value: 5 },
     { name: "最大HP UP", type: "maxHpBonus", value: 20 },
     { name: "攻撃力UP", type: "attackBonus", value: 10 },
@@ -338,28 +338,76 @@
     // - deathAvoidOnce      : 戦闘中に1度だけ死亡を回避する
     // - overhealBarrierCap  : 回復のあふれをバリアに変換（最大HP%まで）
     // -------------------
-    { name: "CT踏倒し", type: "cooldownCheatChance", min: 6, max: 22, minFloor: 80 },
+    {
+      name: "CT踏倒し",
+      type: "cooldownCheatChance",
+      min: 6,
+      max: 22,
+      minFloor: 80,
+    },
     { name: "追撃", type: "pursuitChance", min: 10, max: 30, minFloor: 50 },
     { name: "致死耐え", type: "deathAvoidOnce", min: 1, max: 1, minFloor: 120 },
-    { name: "余剰回復盾", type: "overhealBarrierCap", min: 15, max: 60, minFloor: 30 },
+    {
+      name: "余剰回復盾",
+      type: "overhealBarrierCap",
+      min: 15,
+      max: 60,
+      minFloor: 30,
+    },
 
     // 追加：装飾品（戦闘テンポ/会心/追撃の拡張）
-    { name: "被弾短縮", type: "hitCdMinusChance", min: 8, max: 30, minFloor: 60 },
-    { name: "追撃強化", type: "pursuitDamagePct", min: 25, max: 80, minFloor: 90 },
-    { name: "初撃追撃", type: "firstHitPursuit", min: 1, max: 1, minFloor: 110 },
+    {
+      name: "被弾短縮",
+      type: "hitCdMinusChance",
+      min: 8,
+      max: 30,
+      minFloor: 60,
+    },
+    {
+      name: "追撃強化",
+      type: "pursuitDamagePct",
+      min: 25,
+      max: 80,
+      minFloor: 90,
+    },
+    {
+      name: "初撃追撃",
+      type: "firstHitPursuit",
+      min: 1,
+      max: 1,
+      minFloor: 110,
+    },
     { name: "会心率", type: "critRate", min: 8, max: 35, minFloor: 40 },
     { name: "会心威力", type: "critDamage", min: 25, max: 120, minFloor: 50 },
     { name: "初撃会心", type: "firstHitCrit", min: 1, max: 1, minFloor: 120 },
 
     { name: "素手回避", type: "evasion", min: 4, max: 10, cond: "unarmed" },
-    { name: "素手反撃", type: "counterChance", min: 10, max: 45, cond: "unarmed" },
+    {
+      name: "素手反撃",
+      type: "counterChance",
+      min: 10,
+      max: 45,
+      cond: "unarmed",
+    },
 
-    { name: "無防具追撃", type: "pursuitChance", min: 10, max: 60, cond: "noArmor" },
+    {
+      name: "無防具追撃",
+      type: "pursuitChance",
+      min: 10,
+      max: 60,
+      cond: "noArmor",
+    },
     { name: "無防具回避", type: "evasion", min: 4, max: 10, cond: "noArmor" },
 
-    { name: "両手攻撃", type: "attackBonus", min: 20, max: 80, cond: "twoHanded" },
+    {
+      name: "両手攻撃",
+      type: "attackBonus",
+      min: 20,
+      max: 80,
+      cond: "twoHanded",
+    },
 
-    { name: "索敵", type: "search", min: 1, max: 12 },
+    { name: "索敵", type: "search", min: 1, max: 50 },
     { name: "ドロ率", type: "dropRate", min: 5, max: 40 },
   ];
 
@@ -369,4 +417,3 @@
   window.equipmentOptionEffects = equipmentOptionEffects;
   window.accessoryOptionEffects = accessoryOptionEffects;
 })();
-
