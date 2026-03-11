@@ -19,6 +19,16 @@
       effect: (lv) => ({ searchBonus: lv }),
     },
 
+    search_up_kai: {
+      name: "索敵強化・改",
+      type: "passive",
+      job: "all",
+      maxLevel: 50,
+      requiredPoints: 5,
+      desc: ""索敵+{value}（最大Lv.50）",
+      effect: (lv) => ({ searchBonus: lv }),
+    },
+
     exp_up: {
       name: "経験値増加",
       type: "passive",
