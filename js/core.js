@@ -1445,8 +1445,8 @@
       maxHp: 100 + stats.vitality * 10,
 
       // 索敵（0 だと二つ名が出ない）
-      // 低レベル帯でも 0〜数程度になるように設計
-      search: clampMin0((stats.dexterity + stats.intelligence) / 20),
+      // 基礎値は0。索敵系のステータス効果でのみ上昇する
+      search: 0,
     };
 
     // 状態異常（命中低下）
