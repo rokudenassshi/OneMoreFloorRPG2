@@ -1503,6 +1503,14 @@
     }
 
     // パッシブスキルボーナス
+    // 上級職の常時スキルは、主要ステータス上昇を「加算」ではなく「乗算」で反映する
+    const advancedPassiveMult = {
+      attack: 1,
+      defense: 1,
+      magicPower: 1,
+      maxHp: 1,
+      healPower: 1,
+    };
     for (let skillKey in gameData.player.skills) {
       const skillDef = skills[skillKey];
       if (!skillDef) continue;
@@ -1516,19 +1524,46 @@
       const level = gameData.player.skills[skillKey];
       const effect = skillDef.effect(level);
 
-      if (effect.attackBonus) combat.attack += effect.attackBonus;
-      if (effect.defenseBonus) combat.defense += effect.defenseBonus;
+      const skillJobDef = skillDef.job ? jobs?.[skillDef.job] : null;
+      const isAdvancedPassive = skillJobDef && skillJobDef.tier === "advanced";
+
+      const applyAdvancedMul = (key, raw) => {
+        const v = Number(raw);
+        if (!Number.isFinite(v) || v === 0) return false;
+        if (!isAdvancedPassive) return false;
+        // 例: +12 => x1.12, -15 => x0.85
+        const mul = 1 + v / 100;
+        if (!Number.isFinite(mul) || mul <= 0) return false;
+        advancedPassiveMult[key] *= mul;
+        return true;
+      };
+
+      if (!applyAdvancedMul("attack", effect.attackBonus) && effect.attackBonus)
+        combat.attack += effect.attackBonus;
+      if (
+        !applyAdvancedMul("defense", effect.defenseBonus) &&
+        effect.defenseBonus
+      )
+        combat.defense += effect.defenseBonus;
       if (effect.evasionBonus) combat.evasion += effect.evasionBonus;
       if (effect.critBonus) combat.critRate += effect.critBonus;
-      if (effect.magicBonus) combat.magicPower += effect.magicBonus;
+      if (!applyAdvancedMul("magicPower", effect.magicBonus) && effect.magicBonus)
+        combat.magicPower += effect.magicBonus;
       if (effect.allStatsBonus) {
-        combat.attack += effect.allStatsBonus;
-        combat.defense += effect.allStatsBonus;
+        if (!applyAdvancedMul("attack", effect.allStatsBonus))
+          combat.attack += effect.allStatsBonus;
+        if (!applyAdvancedMul("defense", effect.allStatsBonus))
+          combat.defense += effect.allStatsBonus;
       }
       if (effect.searchBonus) combat.search += effect.searchBonus;
       if (effect.accuracyBonus) combat.accuracy += effect.accuracyBonus;
-      if (effect.maxHpBonus) combat.maxHp += effect.maxHpBonus;
-      if (effect.healPowerBonus) combat.healPower += effect.healPowerBonus;
+      if (!applyAdvancedMul("maxHp", effect.maxHpBonus) && effect.maxHpBonus)
+        combat.maxHp += effect.maxHpBonus;
+      if (
+        !applyAdvancedMul("healPower", effect.healPowerBonus) &&
+        effect.healPowerBonus
+      )
+        combat.healPower += effect.healPowerBonus;
 
       // 反撃系（battleState で参照）
       if (effect.counterChanceBonus) {
@@ -1605,6 +1640,12 @@
           (bs.lifeStealPctBonus || 0) + (Number(effect.lifeStealPctBonus) || 0);
       }
     }
+
+    combat.attack *= advancedPassiveMult.attack;
+    combat.defense *= advancedPassiveMult.defense;
+    combat.magicPower *= advancedPassiveMult.magicPower;
+    combat.maxHp *= advancedPassiveMult.maxHp;
+    combat.healPower *= advancedPassiveMult.healPower;
 
     // 上級職などの職業特性（traits）
     if (jobTraits) {
