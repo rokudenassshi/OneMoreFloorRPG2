@@ -1,126 +1,57 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index d89efaa6ae8e1af7b05504748d69db13b9d28b9c..6f4a5fbbef37ad885b1e06d398e85932c3b3663a 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -17,50 +17,121 @@
-       maxLevel: 100,
-       desc: "索敵+{value}（最大Lv.100）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+diff --git a/js/core.js b/js/core.js
+index a88d38f990180923f719c77a250f8e484e411a9c..a45ce52017eafd76de66c6ce485428513e4fce2e 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -4161,51 +4161,51 @@
+   }
  
-     exp_up: {
-       name: "経験値増加",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       desc: "獲得経験値+{value}%（上限なし）",
-       effect: (lv) => ({ expBonus: lv }),
-     },
+   function tryCounterAttack() {
+     if (gameData.gameState !== "BATTLE") return;
+     const enemy = gameData.enemy;
+     if (!enemy) return;
+     if (enemy.hp <= 0) return;
+     if (gameData.player.hp <= 0) return;
  
-     common_heal: {
-       name: "ヒール",
-       type: "active",
-       accuracy: 100,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 6,
-       desc: "HPを20%回復する",
-       effect: (_lv) => ({ healRate: 0.2 }),
-     },
+     const bsC = ensurePlayerBattleState();
+     const accChance = Number(getAccessoryBonus("counterChance") || 0);
+     const passiveChance = Number(bsC.counterChanceBonus || 0);
+     const chance =
+       (Number.isFinite(accChance) ? accChance : 0) +
+       (Number.isFinite(passiveChance) ? passiveChance : 0);
+     if (!Number.isFinite(chance) || chance <= 0) return;
+     const roll = Math.random() * 100;
+     if (roll >= Math.min(45, chance)) return;
  
-+    common_attack_tuning: {
-+      name: "攻撃微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: Infinity,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "攻撃+{attackBonus}%（上限なし）",
-+      effect: (lv) => ({ attackBonus: lv * 0.1 }),
-+    },
-+    common_defense_tuning: {
-+      name: "防御微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: Infinity,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "防御+{defenseBonus}%（上限なし）",
-+      effect: (lv) => ({ defenseBonus: lv * 0.1 }),
-+    },
-+    common_counter_rate_tuning: {
-+      name: "反撃率微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: 90,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "反撃率+{counterChanceBonus}%（最大45%）",
-+      effect: (lv) => ({ counterChanceBonus: lv * 0.5 }),
-+    },
-+    common_counter_damage_tuning: {
-+      name: "反撃威力微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: Infinity,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "反撃威力+{counterDamageBonus}%（上限なし）",
-+      effect: (lv) => ({ counterDamageBonus: lv * 0.1 }),
-+    },
-+    common_followup_rate_tuning: {
-+      name: "追撃率微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: 120,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "追撃率+{skillFollowUpChance}%（最大60%）",
-+      effect: (lv) => ({ skillFollowUpChance: lv * 0.005 }),
-+    },
-+    common_followup_damage_tuning: {
-+      name: "追撃威力微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: Infinity,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "追撃威力+{followUpDamageMulBonus}%（上限なし）",
-+      effect: (lv) => ({ followUpDamageMulBonus: lv * 0.1 }),
-+    },
-+    common_crit_rate_tuning: {
-+      name: "会心率微強化",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: 200,
-+      requiredPoints: 10,
-+      requiredMaxReachedFloor: 5000,
-+      desc: "会心率+{critBonus}%（最大100%）",
-+      effect: (lv) => ({ critBonus: lv * 0.5 }),
-+    },
-+
-     // ===================================
-     // 剣士 (swordsman)
-     // ===================================
-     sword_mastery: {
-       name: "剣術マスタリー",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "物理攻撃力+{value}",
-       effect: (lv) => ({ attackBonus: lv * 5 }),
-     },
-     sword_focus: {
-       name: "剣の心得",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "命中率+{value}%",
-       effect: (lv) => ({ accuracyBonus: lv * 2 }),
-     },
-     power_slash: {
-       name: "パワースラッシュ",
-       type: "active",
-       accuracy: 100,
-       job: "swordsman",
-       maxLevel: 3,
+     const combat = getCombatStats();
+     const dmgPct = Number(getAccessoryBonus("counterDamage") || 0);
+     const passivePct = Number(bsC.counterDamageBonus || 0);
+     const mul =
+       1 +
+       (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100 +
+-      (Number.isFinite(passivePct) ? Math.min(200, passivePct) : 0) / 100;
++      (Number.isFinite(passivePct) ? passivePct : 0) / 100;
+ 
+     let damage = Math.max(
+       1,
+       (combat.attack - enemy.defense * 0.35) * 0.65 * mul,
+     );
+     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
+     damage = applyEnemyIncomingReduction(enemy, damage);
+ 
+     damage = applyEnemyVulnerableTaken(enemy, damage);
+     enemy.hp -= damage;
+     recordPlayerDamage(damage);
+     log(`↩️ 反撃！ ${damage}ダメージ`);
+ 
+     // 特殊接頭語（onHit）
+     applyPlayerOnHitSpecialEffects(enemy);
+     onPlayerHit({ kind: "physical", isCrit: false });
+     checkBattleEnd();
+   }
+ 
+   function performEnemyAttack() {
+     const enemy = gameData.enemy;
+ 
+     if (!enemyDidHit(0)) {
+       addJobProgress("evade", 1);
+       gameData.player.totalEvades = (gameData.player.totalEvades || 0) + 1;

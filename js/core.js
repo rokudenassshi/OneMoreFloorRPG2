@@ -4183,7 +4183,7 @@
     const mul =
       1 +
       (Number.isFinite(dmgPct) ? Math.min(200, dmgPct) : 0) / 100 +
-      (Number.isFinite(passivePct) ? Math.min(200, passivePct) : 0) / 100;
+      (Number.isFinite(passivePct) ? passivePct : 0) / 100;
 
     let damage = Math.max(
       1,
