@@ -2462,6 +2462,25 @@
     enemy.exp = Math.round(enemy.exp * floorMul);
 
     if (isAsuraWorld) {
+      const asuraBaseMul = 2;
+      enemy.hp = Math.round(enemy.hp * asuraBaseMul);
+      enemy.str = Math.round(enemy.str * asuraBaseMul);
+      enemy.vit = Math.round(enemy.vit * asuraBaseMul);
+      enemy.int = Math.round(enemy.int * asuraBaseMul);
+      enemy.agi = Math.round(enemy.agi * asuraBaseMul);
+      enemy.dex = Math.round(enemy.dex * asuraBaseMul);
+      enemy.exp = Math.round(enemy.exp * asuraBaseMul);
+
+      const asuraFloorSteps = Math.floor(Math.max(0, enemyScalingFloor - 1) / 50);
+      const asuraStepMul = 1 + asuraFloorSteps * 0.25;
+      enemy.hp = Math.round(enemy.hp * asuraStepMul);
+      enemy.str = Math.round(enemy.str * asuraStepMul);
+      enemy.vit = Math.round(enemy.vit * asuraStepMul);
+      enemy.int = Math.round(enemy.int * asuraStepMul);
+      enemy.agi = Math.round(enemy.agi * asuraStepMul);
+      enemy.dex = Math.round(enemy.dex * asuraStepMul);
+      enemy.exp = Math.round(enemy.exp * asuraStepMul);
+
       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
         enemy.name = `修羅${enemy.name}`;
       }

@@ -696,7 +696,7 @@
   // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
   // --------------------
   const asuraTierConfigs = [
-    { maxFloor: 100, target: { hp: 320000, str: 4500, vit: 7600, int: 3400, agi: 360, dex: 420, exp: 70000 } },
+    { maxFloor: 100, target: { hp: 280000, str: 4000, vit: 6800, int: 3000, agi: 330, dex: 390, exp: 62000 } },
     { maxFloor: 200, target: { hp: 380000, str: 5200, vit: 8400, int: 3800, agi: 390, dex: 450, exp: 78000 } },
     { maxFloor: 500, target: { hp: 450000, str: 6000, vit: 9400, int: 4300, agi: 420, dex: 480, exp: 90000 } },
     { maxFloor: 1000, target: { hp: 550000, str: 7000, vit: 10600, int: 5000, agi: 455, dex: 515, exp: 105000 } },
