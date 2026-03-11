@@ -156,24 +156,27 @@
     },
 
     warlord: {
-      name: "騎士",
-      desc: "防御寄りだが攻撃もこなす（上級職）",
+      name: "魔法騎士",
+      desc: "剣技と魔法を同時に極めた上級職。攻撃時に魔法攻撃力の50%を追加ダメージとして与える",
       tier: "advanced",
       skillGroup: "warrior",
       baseJob: "warrior",
-      // 槍＋盾で堅実。重鎧も得意にして“前線”感を出す
-      favoredType: ["spear", "shield", "heavy_armor"],
+      // 剣＋杖＋盾で近接/魔法を両立
+      favoredType: ["sword", "staff", "shield"],
       unlock: { type: "attack", target: 300, text: "戦士で攻撃を300回行う" },
-      // 体力を厚めにしつつ、力も残して“そこそこ高い攻撃”を担保
-      bonuses: { strength: 4, vitality: 6, intelligence: -1, agility: 0, dexterity: 1 },
+      // 近接火力と魔法火力を両立
+      bonuses: { strength: 4, vitality: 4, intelligence: 4, agility: 0, dexterity: 1 },
       traits: {
-        "attackMult": 1.12,
-        "defenseMult": 1.1,
-        "maxHpMult": 1.05,
-        // 防御時の被ダメ軽減も少し強い
+        "attackMult": 1.1,
+        "magicPowerMult": 1.15,
+        "defenseMult": 1.06,
+        "maxHpMult": 1.03,
+        // 防御時の被ダメ軽減
         "guardDamageMult": 0.6,
         "critRateBonus": 2,
         "expRate": 0.03,
+        // 通常攻撃・物理スキル命中時に魔法追撃（魔法攻撃力の50%）
+        "magicKnightBonusRate": 0.5,
         "favoredMultiplier": 1.25,
       },
     },

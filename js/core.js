@@ -2905,9 +2905,35 @@
 
     damage = applyEnemyVulnerableTaken(enemy, damage);
 
-    enemy.hp -= damage;
-    recordPlayerDamage(damage);
-    log(`${damage}のダメージ${isCrit ? " クリティカル！" : ""}`);
+    // 魔法騎士：通常攻撃時に魔法攻撃力の一部を追加ダメージ化
+    let magicKnightBonusDamage = 0;
+    if (typeof jt.magicKnightBonusRate === "number" && jt.magicKnightBonusRate > 0) {
+      magicKnightBonusDamage = Math.max(
+        0,
+        Math.round(
+          combat.magicPower * jt.magicKnightBonusRate * (0.9 + Math.random() * 0.2),
+        ),
+      );
+      if (magicKnightBonusDamage > 0) {
+        magicKnightBonusDamage = applyEnemyIncomingReduction(
+          enemy,
+          magicKnightBonusDamage,
+        );
+        magicKnightBonusDamage = applyEnemyVulnerableTaken(
+          enemy,
+          magicKnightBonusDamage,
+        );
+      }
+    }
+
+    const totalDamage = damage + magicKnightBonusDamage;
+
+    enemy.hp -= totalDamage;
+    recordPlayerDamage(totalDamage);
+    log(`${totalDamage}のダメージ${isCrit ? " クリティカル！" : ""}`);
+    if (magicKnightBonusDamage > 0) {
+      log(`✨ 魔法追撃 ${magicKnightBonusDamage}ダメージ`);
+    }
 
     // 特殊接頭語（onHit）
     applyPlayerOnHitSpecialEffects(enemy);
