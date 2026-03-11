@@ -2871,6 +2871,21 @@
     });
   }
 
+  function isSkillVisibleByProgress(skillKey) {
+    const gatedCommonSkills = new Set([
+      "common_attack_tuning",
+      "common_defense_tuning",
+      "common_counter_rate_tuning",
+      "common_counter_damage_tuning",
+      "common_followup_rate_tuning",
+      "common_followup_damage_tuning",
+      "common_crit_rate_tuning",
+    ]);
+    if (!gatedCommonSkills.has(String(skillKey || ""))) return true;
+    const maxReached = Math.floor(Number(gameData?.player?.maxReachedFloor || 1));
+    return maxReached >= 3000;
+  }
+
   function updateSkillUI() {
     const p = gameData.player;
     const currentJob = p.job;
@@ -3005,6 +3020,7 @@
       const skill = skills[key];
       const isCommon = skill.job === "all";
       if (skill.job && !isCommon && skill.job !== currentJob) continue;
+      if (!isSkillVisibleByProgress(key)) continue;
 
       const level = p.skills[key] || 0;
       const maxLv =
@@ -3120,6 +3136,10 @@
 
     const skill = skills[key];
     if (!skill) return;
+    if (!isSkillVisibleByProgress(key)) {
+      log("🔒 このスキルは3000階層クリア後に解放されます");
+      return;
+    }
 
     const cost = getSkillPointCost(skill);
     if (Math.floor(Number(p.skillPoints || 0)) < cost) return;

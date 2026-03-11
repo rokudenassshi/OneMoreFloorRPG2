@@ -170,19 +170,6 @@
       effect: (lv) => ({ damageMultiplier: 1.4 + lv * 0.3, healPercent: 0.3 }),
     },
 
-    // ---- 固有ギミック ----
-
-    swordsman_kensei: {
-      name: "剣星",
-      type: "active",
-      accuracy: 110,
-      job: "swordsman",
-      maxLevel: 3,
-      cooldown: 4,
-      desc: "会心を狙う鋭い斬撃（ダメージ{value}倍）",
-      effect: (lv) => ({ damageMultiplier: 1.47 + lv * 0.35 }),
-    },
-
     // ---- 上級職：剣聖 (blademaster) ----
     blademaster_stance_mastery: {
       name: "構えの極意",
@@ -1057,7 +1044,11 @@
       maxLevel: 5,
       requiredPoints: 3,
       desc: "攻撃+{attackBonus}%、防御+{defenseBonus}%、魔法+{magicBonus}%",
-      effect: (lv) => ({ attackBonus: lv * 2, defenseBonus: lv * 2, magicBonus: lv * 2 }),
+      effect: (lv) => ({
+        attackBonus: lv * 2,
+        defenseBonus: lv * 2,
+        magicBonus: lv * 2,
+      }),
     },
     warlord_charge: {
       name: "魔槍突撃",
@@ -1076,7 +1067,11 @@
       maxLevel: 5,
       requiredPoints: 3,
       desc: "防御力+{defenseBonus}%（命中+{accuracyBonus}%、魔法+{magicBonus}%）",
-      effect: (lv) => ({ defenseBonus: lv * 3, accuracyBonus: lv * 1, magicBonus: lv * 2 }),
+      effect: (lv) => ({
+        defenseBonus: lv * 3,
+        accuracyBonus: lv * 1,
+        magicBonus: lv * 2,
+      }),
     },
     warlord_judgement: {
       name: "魔断罪",
@@ -1852,7 +1847,11 @@
       requiredPoints: 3,
       exclusiveGroup: "warlord_style",
       desc: "防御力+{defenseBonus}%（反撃率+{counterChanceBonus}%、魔法+{magicBonus}%）",
-      effect: (lv) => ({ defenseBonus: lv * 3, counterChanceBonus: lv * 2, magicBonus: lv * 2 }),
+      effect: (lv) => ({
+        defenseBonus: lv * 3,
+        counterChanceBonus: lv * 2,
+        magicBonus: lv * 2,
+      }),
     },
 
     warlord_impale: {

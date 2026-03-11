@@ -1,57 +1,177 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 4aec225007e5098b620d61602e20488433bed9b2..b5987b8ba46f4a158b0b5b945e7c61da03796203 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -3,51 +3,51 @@
- // ===================
+diff --git a/js/ui.js b/js/ui.js
+index 4ea5109c5013d398e705f37cb280ee502c391f83..4d10676b700ca5c0a188938fe0041cf3730c7e91 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2849,50 +2849,65 @@
+     const group = skillDef?.exclusiveGroup;
+     if (group) {
+       for (const k in skills) {
+         const def = skills[k];
+         if (!def || def.exclusiveGroup !== group) continue;
+         addName(String(k));
+       }
+     }
  
- (function () {
-   "use strict";
+     return names;
+   }
+   function isSkillPrereqMet(skillDef, playerSkills) {
+     const reqs = skillDef?.requires;
+     if (!Array.isArray(reqs) || reqs.length === 0) return true;
+     const ps =
+       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
+     return reqs.every((r) => {
+       if (!r) return true;
+       const k = String(r.key || "");
+       if (!k) return true;
+       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
+       return Math.floor(Number(ps[k] || 0)) >= needLv;
+     });
+   }
  
-   // スキル定義
-   const skills = {
-     // ===================================
-     // 共通スキル（どの職業でも取得できる）
-     // ===================================
-     search_up: {
-       name: "索敵強化",
-       type: "passive",
-       job: "all",
-       maxLevel: 100,
-       desc: "索敵+{value}（最大Lv.100）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
++  function isSkillVisibleByProgress(skillKey) {
++    const gatedCommonSkills = new Set([
++      "common_attack_tuning",
++      "common_defense_tuning",
++      "common_counter_rate_tuning",
++      "common_counter_damage_tuning",
++      "common_followup_rate_tuning",
++      "common_followup_damage_tuning",
++      "common_crit_rate_tuning",
++    ]);
++    if (!gatedCommonSkills.has(String(skillKey || ""))) return true;
++    const maxReached = Math.floor(Number(gameData?.player?.maxReachedFloor || 1));
++    return maxReached >= 3000;
++  }
++
+   function updateSkillUI() {
+     const p = gameData.player;
+     const currentJob = p.job;
+     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
+     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
  
-     search_up_kai: {
-       name: "索敵強化・改",
-       type: "passive",
-       job: "all",
-       maxLevel: 50,
-       requiredPoints: 5,
--      desc: ""索敵+{value}（最大Lv.50）",
-+      desc: "索敵+{value}（最大Lv.50）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
+     const autoToggle = document.getElementById("autoAllocateExpUpToggle");
+     if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
+     const autoStatToggle = document.getElementById(
+       "autoAllocateStatPointsToggle",
+     );
+     if (autoStatToggle) autoStatToggle.checked = !!p.autoAllocateStatPoints;
+     const autoStatTarget = document.getElementById("autoAllocateStatTarget");
+     if (autoStatTarget)
+       autoStatTarget.value = p.autoAllocateStatTarget || "strength";
  
-     exp_up: {
-       name: "経験値増加",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       desc: "獲得経験値+{value}%（上限なし）",
-       effect: (lv) => ({ expBonus: lv }),
-     },
+     const commonList = document.getElementById("commonSkillsList");
+     const passiveList = document.getElementById("passiveSkillsList");
+     const activeList = document.getElementById("activeSkillsList");
  
-     common_heal: {
-       name: "ヒール",
-       type: "active",
-       accuracy: 100,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 6,
-       desc: "HPを20%回復する",
-       effect: (_lv) => ({ healRate: 0.2 }),
-     },
+     if (commonList) commonList.innerHTML = "";
+     passiveList.innerHTML = "";
+     activeList.innerHTML = "";
  
-     common_attack_tuning: {
-       name: "攻撃強化",
+@@ -2983,50 +2998,51 @@
+           v = eff?.[key];
+         }
+         if (!Number.isFinite(v)) return "-";
+ 
+         let rep = formatNumber(
+           maybePercent(v, actualKey, offset, String(_m).length, str),
+         );
+         if (!rep) return "-";
+ 
+         // 回避上昇は % として表示（説明文側に % が無い場合でも付与）
+         // 例: "回避+{evasionBonus}" -> "回避+3%"
+         if (actualKey === "evasionBonus") {
+           const base = String(str || raw);
+           const nextChar = base.charAt(offset + String(_m).length);
+           if (nextChar !== "%" && nextChar !== "％") rep += "%";
+         }
+ 
+         return rep;
+       });
+     };
+ 
+     for (let key in skills) {
+       const skill = skills[key];
+       const isCommon = skill.job === "all";
+       if (skill.job && !isCommon && skill.job !== currentJob) continue;
++      if (!isSkillVisibleByProgress(key)) continue;
+ 
+       const level = p.skills[key] || 0;
+       const maxLv =
+         skill.maxLevel === Infinity ? Infinity : Number(skill.maxLevel);
+       const cost = getSkillPointCost(skill);
+       const prereqOk = isSkillPrereqMet(skill, p.skills);
+       const conflictKey =
+         level <= 0 ? findExclusiveConflict(key, skill, p.skills) : null;
+ 
+       const canLevelUp =
+         (maxLv === Infinity || level < maxLv) &&
+         p.skillPoints >= cost &&
+         prereqOk &&
+         !conflictKey;
+       const canLevelDown = level > 0;
+ 
+       // 命中率表示（攻撃系スキルのみ）
+       const shownLvForAcc = level > 0 ? level : 1;
+       let previewEff = {};
+       try {
+         if (typeof skill.effect === "function")
+           previewEff = skill.effect(shownLvForAcc) || {};
+       } catch (e) {
+         previewEff = {};
+       }
+@@ -3098,50 +3114,54 @@
+           </div>
+         </div>
+       `;
+ 
+       if (isCommon) {
+         if (commonList) commonList.innerHTML += html;
+       } else if (skill.type === "passive") {
+         passiveList.innerHTML += html;
+       } else {
+         activeList.innerHTML += html;
+       }
+     }
+ 
+     if (commonList && commonList.innerHTML.trim() === "") {
+       commonList.innerHTML =
+         '<div style="font-size:12px; color:#aaa; padding:8px;">（共通スキルはまだありません）</div>';
+     }
+   }
+ 
+   function levelUpSkill(key) {
+     const p = gameData.player;
+     if (!p) return;
+ 
+     const skill = skills[key];
+     if (!skill) return;
++    if (!isSkillVisibleByProgress(key)) {
++      log("🔒 このスキルは3000階層クリア後に解放されます");
++      return;
++    }
+ 
+     const cost = getSkillPointCost(skill);
+     if (Math.floor(Number(p.skillPoints || 0)) < cost) return;
+ 
+     const currentLevel = Math.floor(Number((p.skills && p.skills[key]) || 0));
+     if (skill.maxLevel !== Infinity && currentLevel >= skill.maxLevel) return;
+ 
+     // 分岐・前提チェック（未習得→習得の瞬間だけ）
+     if (currentLevel <= 0) {
+       const conflictKey = findExclusiveConflict(key, skill, p.skills);
+       if (conflictKey) {
+         log(
+           `❌ ${skill.name}は「${skills[conflictKey]?.name || conflictKey}」と同時に取得できません`,
+         );
+         return;
+       }
+       if (!isSkillPrereqMet(skill, p.skills)) {
+         log(`🔒 前提スキルが足りません`);
+         return;
+       }
+     }
+ 
+     if (!p.skills || typeof p.skills !== "object") p.skills = {};
+     p.skills[key] = currentLevel + 1;
+     p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);
