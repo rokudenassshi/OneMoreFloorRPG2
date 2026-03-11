@@ -1758,6 +1758,7 @@
 
     document.getElementById("statusScreen").style.display = "block";
     document.getElementById("optionsScreen").style.display = "none";
+    document.getElementById("helpScreen").style.display = "none";
     document.getElementById("exploreButtons").style.display = "none";
     document.getElementById("battleButtons").style.display = "none";
     setStatusTab(currentStatusTab || "status");
@@ -1771,6 +1772,7 @@
     // ステータス画面のタブではなく、独立したオプション画面を開く
     document.getElementById("optionsScreen").style.display = "block";
     document.getElementById("statusScreen").style.display = "none";
+    document.getElementById("helpScreen").style.display = "none";
     document.getElementById("bagScreen").style.display = "none";
     document.getElementById("exploreButtons").style.display = "none";
     document.getElementById("battleButtons").style.display = "none";
@@ -1780,6 +1782,16 @@
   function closeOptions() {
     document.getElementById("optionsScreen").style.display = "none";
     updateUI();
+  }
+
+  function openHelpScreen() {
+    document.getElementById("helpScreen").style.display = "block";
+    document.getElementById("optionsScreen").style.display = "none";
+  }
+
+  function closeHelpScreen() {
+    document.getElementById("helpScreen").style.display = "none";
+    document.getElementById("optionsScreen").style.display = "block";
   }
 
   function closeStatus() {
@@ -3428,6 +3440,8 @@
   window.openStatus = openStatus;
   window.openOptions = openOptions;
   window.closeOptions = closeOptions;
+  window.openHelpScreen = openHelpScreen;
+  window.closeHelpScreen = closeHelpScreen;
   window.closeStatus = closeStatus;
   window.updateStatusUI = updateStatusUI;
 

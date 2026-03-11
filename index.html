@@ -294,6 +294,52 @@
           <a href="https://note.com/rokudenassshi" target="_blank" rel="noopener noreferrer">note: rokudenassshi</a>
         </div>
       </div>
+
+      <div class="status-section">
+        <a href="#" onclick="openHelpScreen(); return false;">ヘルプ（各名称の説明）</a>
+      </div>
+    </div>
+
+    <!-- ヘルプ画面 -->
+    <div id="helpScreen" style="display:none;">
+      <div class="screen-header">
+        <h3>ヘルプ</h3>
+        <button class="back-button" onclick="closeHelpScreen()">戻る</button>
+      </div>
+
+      <div class="status-section">
+        <h4>用語説明</h4>
+        <div class="status-note">索敵は、より強い二つ名モンスターとの遭遇率です。100で必ず二つ名モンスターに遭遇します。</div>
+
+        <h4>基本ステータス</h4>
+        <ul>
+          <li><strong>力</strong>: 物理攻撃の威力に影響します。</li>
+          <li><strong>体力</strong>: 最大HPや打たれ強さに影響します。</li>
+          <li><strong>賢さ</strong>: 魔法威力や回復力に影響します。</li>
+          <li><strong>素早さ</strong>: 回避率などの行動性能に影響します。</li>
+          <li><strong>器用さ</strong>: 命中率やクリティカル率に影響します。</li>
+        </ul>
+
+        <h4>計算後ステータス</h4>
+        <ul>
+          <li><strong>最大HP</strong>: 戦闘中に受けられるダメージの上限です。</li>
+          <li><strong>攻撃力</strong>: 通常攻撃・物理スキルのダメージに影響します。</li>
+          <li><strong>防御力</strong>: 受けるダメージを軽減します。</li>
+          <li><strong>魔法威力</strong>: 魔法系スキルのダメージに影響します。</li>
+          <li><strong>回復力</strong>: 回復スキルの回復量に影響します。</li>
+          <li><strong>命中率</strong>: 攻撃やスキルが命中する確率です。</li>
+          <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（上限あり）。</li>
+          <li><strong>クリティカル</strong>: クリティカルヒットが発生する確率です。</li>
+          <li><strong>索敵</strong>: 二つ名モンスターの遭遇率です。1で1%、100で確定遭遇です。</li>
+        </ul>
+
+        <h4>追加効果</h4>
+        <ul>
+          <li><strong>得意装備補正</strong>: 職業の得意装備を付けたときの性能ボーナスです。</li>
+          <li><strong>経験値増加</strong>: 戦闘で獲得する経験値へのボーナスです。</li>
+          <li><strong>ドロップ率</strong>: 戦闘後にアイテムを入手できる確率へのボーナスです。</li>
+        </ul>
+      </div>
     </div>
 
 

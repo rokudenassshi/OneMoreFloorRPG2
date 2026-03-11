@@ -1,78 +1,144 @@
-diff --git a/style_new.css b/style_new.css
-index 1b817f3b78dd57f0c5b88c70ba1c012b7725ce20..d8364d66673202cbbcd300d34a486e4a17bb63f7 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -1081,50 +1081,73 @@ button.item-action-btn.item-action-btn-text {
- }
- .achievement-card{
-   padding:10px 12px;
-   border-radius:12px;
-   border:1px solid rgba(255,255,255,0.10);
-   background:rgba(255,255,255,0.04);
- }
- .achievement-card .small{
-   margin-top:4px;
-   opacity:0.85;
-   font-size:12px;
- }
+diff --git a/js/ui.js b/js/ui.js
+index b04d83171788f9643028ba34a0dad3504a77ce95..4ea5109c5013d398e705f37cb280ee502c391f83 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1736,74 +1736,86 @@
  
- .record-list{
-   display:flex;
-   flex-direction:column;
-   gap:8px;
- }
- .record-item{
-   padding:10px 12px;
-   border-radius:12px;
-   border:1px solid rgba(255,255,255,0.10);
-   background:rgba(255,255,255,0.04);
- }
+     let heal = Number(item.heal || 0);
  
-+.records-header{
-+  display:flex;
-+  align-items:center;
-+  gap:8px;
-+}
+     gameData.player.hp = Math.min(
+       gameData.player.maxHp,
+       gameData.player.hp + heal,
+     );
+     log(`${name}を使用！ ${heal}HP回復した！`);
+ 
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // -------------------
+   // UI - ステータス
+   // -------------------
+   let currentStatusTab = "status";
+ 
+   function openStatus() {
+     // バージョン表示（記録タブ横）
+     applyGameVersionBadges();
+ 
+     document.getElementById("statusScreen").style.display = "block";
+     document.getElementById("optionsScreen").style.display = "none";
++    document.getElementById("helpScreen").style.display = "none";
+     document.getElementById("exploreButtons").style.display = "none";
+     document.getElementById("battleButtons").style.display = "none";
+     setStatusTab(currentStatusTab || "status");
+     updateStatusUI();
+     updateAchievementsUI();
+     updateRecordsUI();
+     updateOptionsUI();
+   }
+ 
+   function openOptions() {
+     // ステータス画面のタブではなく、独立したオプション画面を開く
+     document.getElementById("optionsScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
++    document.getElementById("helpScreen").style.display = "none";
+     document.getElementById("bagScreen").style.display = "none";
+     document.getElementById("exploreButtons").style.display = "none";
+     document.getElementById("battleButtons").style.display = "none";
+     updateOptionsUI();
+   }
+ 
+   function closeOptions() {
+     document.getElementById("optionsScreen").style.display = "none";
+     updateUI();
+   }
+ 
++  function openHelpScreen() {
++    document.getElementById("helpScreen").style.display = "block";
++    document.getElementById("optionsScreen").style.display = "none";
++  }
 +
-+.record-post-btn{
-+  margin-left:auto;
-+  flex-shrink:0;
-+  border:1px solid rgba(255,255,255,0.18);
-+  background:rgba(255,255,255,0.08);
-+  color:inherit;
-+  border-radius:999px;
-+  padding:6px 10px;
-+  font-size:12px;
-+  font-weight:700;
-+  cursor:pointer;
-+}
++  function closeHelpScreen() {
++    document.getElementById("helpScreen").style.display = "none";
++    document.getElementById("optionsScreen").style.display = "block";
++  }
 +
-+.record-post-btn:hover{
-+  background:rgba(255,255,255,0.16);
-+}
-+
+   function closeStatus() {
+     document.getElementById("statusScreen").style.display = "none";
+     updateUI();
+   }
  
- /* ===================
-    状態異常バッジ
-    =================== */
- .status-effects {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 6px;
-   margin: 6px 0;
-   min-height: 18px;
- }
+   // -------------------
+   // UI - 転移（50階層刻み）
+   // -------------------
+   let lastTeleportFocusEl = null;
  
- .status-badge {
-   font-size: 12px;
-   padding: 2px 8px;
-   border-radius: 999px;
-   background: rgba(0, 0, 0, 0.18);
-   border: 1px solid rgba(255, 255, 255, 0.15);
-   line-height: 1.4;
- }
+   function buildTeleportFloorList() {
+     const maxReached = Math.max(
+       1,
+       Math.floor(Number(gameData?.player?.maxReachedFloor || 1)),
+     );
  
- /* =========================
-    操作ボタンのUI揺れ対策
-    ========================= */
+     /** @type {number[]} */
+     const list = [1];
+     const cap = Math.floor(maxReached / 50) * 50;
+     for (let f = 50; f <= cap; f += 50) list.push(f);
+     return { list, maxReached };
+   }
  
+   function syncTeleportStayBattleUi() {
+     const row = document.getElementById("teleportStayBattleRow");
+@@ -3406,50 +3418,52 @@
+   }
+ 
+   // -------------------
+   // 初期化（モーダル外タップなど）
+   // -------------------
+   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
+   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
+   bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
+ 
+   // ステータス画面の記録タブ横にバージョンを表示
+   applyGameVersionBadges();
+ 
+   // グローバル公開（HTML onclick 用）
+   window.setStatusTab = setStatusTab;
+   window.postRecordToX = postRecordToX;
+   window.toggleAutosave = toggleAutosave;
+ 
+   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
+   window.startWithGoogleLogin = startWithGoogleLogin;
+   window.startWithoutLogin = startWithoutLogin;
+   window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
+ 
+   window.openStatus = openStatus;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
++  window.openHelpScreen = openHelpScreen;
++  window.closeHelpScreen = closeHelpScreen;
+   window.closeStatus = closeStatus;
+   window.updateStatusUI = updateStatusUI;
+ 
+   // シリアルコード（オプション画面）
+   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
+   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
+ 
+   window.openJobSelector = openJobSelector;
+   window.closeJobSelector = closeJobSelector;
+   window.selectJob = selectJob;
+ 
+   window.openStatAllocation = openStatAllocation;
+   window.closeStatAllocation = closeStatAllocation;
+   window.adjustStat = adjustStat;
+   window.resetStatAllocation = resetStatAllocation;
+ 
+   window.openSkillScreen = openSkillScreen;
+   window.closeSkillScreen = closeSkillScreen;
+   window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+   window.toggleAutoAllocateStatPoints = toggleAutoAllocateStatPoints;
+   window.setAutoAllocateStatTarget = setAutoAllocateStatTarget;
+   window.updateSkillUI = updateSkillUI;
+   window.levelUpSkill = levelUpSkill;
+   window.levelDownSkill = levelDownSkill;
+   // 新: 2枠スキル
