@@ -1671,7 +1671,7 @@
       !isAsuraNow &&
       typeof window.confirm === "function" &&
       !window.confirm(
-        "敵の強さが5倍になるがドロップするアイテムのステータスが2倍になる。旅立ちますか？",
+        "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
       )
     ) {
       return;

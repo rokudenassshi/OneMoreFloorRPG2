@@ -100,7 +100,7 @@
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
-  const ASURA_ITEM_STAT_MULTIPLIER = 2;
+  const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
 
   const RELIC_DEFS = [
@@ -2418,7 +2418,8 @@
       isAsuraWorld && Array.isArray(window.asuraMonsterTypes)
         ? window.asuraMonsterTypes
         : null;
-    const enemyTable = asuraPool && asuraPool.length > 0 ? asuraPool : monsterTypes;
+    const enemyTable =
+      asuraPool && asuraPool.length > 0 ? asuraPool : monsterTypes;
 
     // 敵生成：階層に応じて候補を絞る
     const candidates = enemyTable.filter((m) => {
@@ -2471,7 +2472,9 @@
       enemy.dex = Math.round(enemy.dex * asuraBaseMul);
       enemy.exp = Math.round(enemy.exp * asuraBaseMul);
 
-      const asuraFloorSteps = Math.floor(Math.max(0, enemyScalingFloor - 1) / 50);
+      const asuraFloorSteps = Math.floor(
+        Math.max(0, enemyScalingFloor - 1) / 50,
+      );
       const asuraStepMul = 1 + asuraFloorSteps * 0.25;
       enemy.hp = Math.round(enemy.hp * asuraStepMul);
       enemy.str = Math.round(enemy.str * asuraStepMul);
