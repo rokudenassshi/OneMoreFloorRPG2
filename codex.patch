@@ -1,59 +1,117 @@
 diff --git a/js/core.js b/js/core.js
-index c5717672953f4f331dbcfc5fd55b2ae1444a6777..a77a8dc10cacd6048ffe41d85ac7243ea92c6147 100644
+index a77a8dc10cacd6048ffe41d85ac7243ea92c6147..978068d563a8336e91349060f5b4dd6874920964 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -1423,52 +1423,52 @@
-     const favoredType = jobs?.[gameData.player?.job]?.favoredType || null;
-     const jobTraits = jobs?.[gameData.player?.job]?.traits || {};
+@@ -78,51 +78,50 @@
+   // 読み込み順や環境差で識別子 `jobs` が存在しないケースがあるため、
+   // ここで必ず参照先を確保して ReferenceError を防ぐ。
+   const jobs = window.jobs || window.JOBS || {};
+   // -------------------
+   // 状態異常: 追加ルール
+   // -------------------
+   // 毒：最大HP割合ダメージ（敵ターン開始時に1回）
+   const POISON_MAXHP_RATE = 0.03; // 3%
+   // 火傷：回復量が減少（回復時に適用）
+   const BURN_HEAL_MULT = 0.6; // 60%（=40%減少）
+   // 火傷：継続ダメージ（敵ターン開始時に1回、長めに継続）
+   const BURN_DOT_MAXHP_RATE = 0.015; // 最大HPの1.5%
+   const DEFAULT_BURN_TURNS = 6;
+   // 出血：継続ダメージ（最大HP割合。敵/プレイヤー共通で使用）
+   const BLEED_DOT_MAXHP_RATE = 0.02; // 最大HPの2%
  
-     // 装備制限：武器を装備できない職（修羅など）
-     // 旧データ等で武器が装備されている場合でも効果が乗らないよう外す
-     if (jobTraits && jobTraits.cannotEquipWeapon) {
-       const eq = gameData.player?.equipment;
-       if (eq && eq.slot1 && eq.slot1.category === "weapon") eq.slot1 = null;
-       if (eq && eq.slot2 && eq.slot2.category === "weapon") eq.slot2 = null;
+   // -------------------
+   // 貴重品（秘宝）：所持ボーナス
+   // -------------------
+   // 敵を倒すと 1/1000 の確率でドロップ
+   const RELIC_DROP_CHANCE = 0.001;
+   const RELIC_FAMILY_NAME = "秘宝";
+   const MAP_FRAGMENT_ID = "ancient_map_fragment";
+   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
+   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
+-  const ASURA_ENEMY_STAT_MULTIPLIER = 2;
+   const ASURA_ITEM_STAT_MULTIPLIER = 2;
+   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
+ 
+   const RELIC_DEFS = [
+     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
+     { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
+     { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
+     { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
+     { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
+   ];
+ 
+   const MAP_FRAGMENT_DEF = {
+     id: MAP_FRAGMENT_ID,
+     name: "地図の切れ端",
+     statKey: "",
+     description: "5つ集めると・・・",
+   };
+ 
+   function getValuableCountById(p, id) {
+     if (!p || !Array.isArray(p.valuables) || typeof id !== "string" || !id)
+       return 0;
+     const found = p.valuables.find((v) => v && v.id === id);
+     const cnt = Number(found?.count || 0);
+     if (!Number.isFinite(cnt) || cnt <= 0) return 0;
+     return Math.floor(cnt);
+@@ -2441,60 +2440,50 @@
+     const enemy = JSON.parse(JSON.stringify(baseMonster));
+ 
+     // 敵の状態異常格納を初期化
+     ensureEnemyStatus(enemy);
+ 
+     // 事前定義の特殊効果（ボスなど）を保持しておく
+     const presetEffects =
+       enemy && enemy.effects && typeof enemy.effects === "object"
+         ? JSON.parse(JSON.stringify(enemy.effects))
+         : {};
+ 
+     const combat = getCombatStats();
+     const search = combat.search;
+ 
+     // フロア補正（常に強くなる）
+     const floorMul = Math.min(3.5, 1 + (enemyScalingFloor - 1) * 0.06);
+     enemy.hp = Math.round(enemy.hp * floorMul);
+     enemy.str = Math.round(enemy.str * floorMul);
+     enemy.vit = Math.round(enemy.vit * floorMul);
+     enemy.int = Math.round(enemy.int * floorMul);
+     enemy.agi = Math.round(enemy.agi * floorMul);
+     enemy.dex = Math.round(enemy.dex * floorMul);
+     enemy.exp = Math.round(enemy.exp * floorMul);
+ 
+     if (isAsuraWorld) {
+-      const useLegacyAsuraMultiplier = !asuraPool || asuraPool.length <= 0;
+-      if (useLegacyAsuraMultiplier) {
+-        enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
+-        enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
+-      }
+       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
+         enemy.name = `修羅${enemy.name}`;
+       }
      }
  
-     const favoredMult = Number.isFinite(jobTraits.favoredMultiplier)
-       ? jobTraits.favoredMultiplier
-       : FAVORED_EQUIP_MULTIPLIER;
-     let combat = {
-       attack: stats.strength * 2,
-       defense: stats.vitality * 1.5,
-       magicPower: stats.intelligence * 2,
-       healPower: Math.round(stats.intelligence * 1.2),
-       accuracy: 70 + stats.dexterity * 1.5,
-       evasion: stats.agility * 1.2,
-       critRate: 5 + stats.dexterity * 0.8,
-       maxHp: 100 + stats.vitality * 10,
+     // 二つ名判定（索敵が 0 の場合は出ない）
+     // 索敵 1 = 1% で遭遇（索敵値%）。100以上で必ず遭遇。
+     const epithetChance =
+       enemy && enemy.isBoss
+         ? 0
+         : search >= 100
+           ? 1
+           : search > 0
+             ? clamp(search, 0, 100) * 0.01
+             : 0;
+     let epithet = null;
  
-       // 索敵（0 だと二つ名が出ない）
--      // 低レベル帯でも 0〜数程度になるように設計
--      search: clampMin0((stats.dexterity + stats.intelligence) / 20),
-+      // 基礎値は0。索敵系のステータス効果でのみ上昇する
-+      search: 0,
-     };
- 
-     // 状態異常（命中低下）
-     const st = gameData.player.status || {};
-     if (st.accuracyDownTurns > 0) {
-       const rate =
-         typeof st.accuracyDownRate === "number" ? st.accuracyDownRate : 0.2;
-       combat.accuracy = Math.max(1, combat.accuracy * (1 - rate));
-     }
- 
-     // 状態異常（鈍足：命中/回避ダウン）
-     if (st.slowTurns > 0) {
-       const rate = typeof st.slowRate === "number" ? st.slowRate : 0.2;
-       combat.accuracy = Math.max(1, combat.accuracy * (1 - rate));
-       combat.evasion = Math.max(0, combat.evasion * (1 - rate));
-     }
- 
-     // 装備品由来の「命中マイナス」は合計で最大 -30%（= -30pt）まで
-     // ※状態異常やスキルによる命中低下は対象外（別要素としてそのまま反映）
-     const baseAccuracyBeforeEquip = combat.accuracy;
-     // 武器/防具 2枠
-     applyEquipBonuses(
-       combat,
-       gameData.player.equipment.slot1,
-       favoredType,
+     if (Math.random() < epithetChance) {
+       const availableEpithets = epithets.filter((e) => {
+         const minSearch = Number(e && e.minSearch);
+         return Number.isFinite(minSearch) ? search >= minSearch : true;
+       });
+       const pool = availableEpithets.length > 0 ? availableEpithets : epithets;
+       epithet = pool[Math.floor(Math.random() * pool.length)];
+       enemy.isNamed = true;

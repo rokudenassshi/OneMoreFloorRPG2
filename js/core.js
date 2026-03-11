@@ -100,7 +100,6 @@
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
-  const ASURA_ENEMY_STAT_MULTIPLIER = 2;
   const ASURA_ITEM_STAT_MULTIPLIER = 2;
   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
 
@@ -2463,16 +2462,6 @@
     enemy.exp = Math.round(enemy.exp * floorMul);
 
     if (isAsuraWorld) {
-      const useLegacyAsuraMultiplier = !asuraPool || asuraPool.length <= 0;
-      if (useLegacyAsuraMultiplier) {
-        enemy.hp = Math.round(enemy.hp * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.str = Math.round(enemy.str * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.vit = Math.round(enemy.vit * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.int = Math.round(enemy.int * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.agi = Math.round(enemy.agi * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.dex = Math.round(enemy.dex * ASURA_ENEMY_STAT_MULTIPLIER);
-        enemy.exp = Math.round(enemy.exp * ASURA_ENEMY_STAT_MULTIPLIER);
-      }
       if (typeof enemy.name === "string" && !enemy.name.startsWith("修羅")) {
         enemy.name = `修羅${enemy.name}`;
       }
