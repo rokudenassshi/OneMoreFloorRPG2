@@ -1103,6 +1103,29 @@ button.item-action-btn.item-action-btn-text {
   background:rgba(255,255,255,0.04);
 }
 
+.records-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.record-post-btn{
+  margin-left:auto;
+  flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.08);
+  color:inherit;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.record-post-btn:hover{
+  background:rgba(255,255,255,0.16);
+}
+
 
 /* ===================
    状態異常バッジ

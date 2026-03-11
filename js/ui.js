@@ -1963,6 +1963,25 @@
     if (elMax) elMax.textContent = maxDamage;
   }
 
+  function postRecordToX() {
+    if (!gameData || !gameData.player) return;
+
+    const p = gameData.player;
+    const floor = Math.max(1, Math.floor(Number(gameData.floor || 1)));
+    const totalKills = Math.max(0, Math.floor(Number(p.totalKills || 0)));
+    const maxDamage = Math.max(0, Math.floor(Number(p.maxDamage || 0)));
+
+    const text = `OneMoreFloorRPG2
+これまで倒した敵の数: ${totalKills}体
+最大ダメージ: ${maxDamage}
+到達階層: ${floor}F
+#OneMoreFloorRPG2`;
+    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+
+
   function updateAchievementsUI() {
     const el = document.getElementById("achievementsContent");
     if (!el) return;
@@ -3398,6 +3417,7 @@
 
   // グローバル公開（HTML onclick 用）
   window.setStatusTab = setStatusTab;
+  window.postRecordToX = postRecordToX;
   window.toggleAutosave = toggleAutosave;
 
   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
