@@ -74,7 +74,7 @@
     {
       id: "serial_floor_cap_lift_250",
       title: "深淵への通行証",
-      desc: "シリアルコード（250階制限解除）を入力する",
+      desc: "シリアルコード（階層上限解放）を入力する",
       isDone: (p) =>
         !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
       progress: (p) =>

@@ -1,57 +1,57 @@
-diff --git a/js/ui.js b/js/ui.js
-index 78e3ecfbef000bd4b89f9356dacd07e30ff29477..6c97e29800177999496932962d316ef4a2d1fe17 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -691,51 +691,51 @@
-         return `${condPrefix}致死耐え(戦1)`;
-       case "firstHitCrit":
-         return `${condPrefix}初撃会心`;
-       case "overhealBarrierCap":
-         return hasV
-           ? `${condPrefix}余剰回復盾(上限${v}%)`
-           : `${condPrefix}余剰回復盾`;
- 
-       case "magicPower":
-         return hasV
-           ? `${condPrefix}魔法攻撃力${sign}${v}`
-           : `${condPrefix}魔法攻撃力`;
-       case "healPower":
-         return hasV ? `${condPrefix}回復力${sign}${v}` : `${condPrefix}回復力`;
-       case "healReceived":
-         return hasV ? `${condPrefix}回復量${sign}${v}%` : `${condPrefix}回復量`;
-       case "damageReduction":
-         return hasV
-           ? `${condPrefix}被ダメージ-${Math.abs(v)}%`
-           : `${condPrefix}被ダメージ軽減`;
-       case "critDamage":
-         return hasV
-           ? `${condPrefix}クリダメ${sign}${v}%`
-           : `${condPrefix}クリダメ`;
-       case "lifeSteal":
--        return hasV ? `${condPrefix}吸血${sign}${v}%` : `${condPrefix}吸血`;
-+        return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
-       case "regen":
-         return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
-       case "hitHeal":
-         return hasV
-           ? `${condPrefix}攻撃時HP回復${sign}${v}`
-           : `${condPrefix}攻撃時HP回復`;
-       case "counterChance":
-         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
-       case "counterDamage":
-         return hasV
-           ? `${condPrefix}反撃威力${sign}${v}%`
-           : `${condPrefix}反撃威力`;
-       case "desperationDamage":
-         return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
-       case "executeDamage":
-         return hasV
-           ? `${condPrefix}追い打ち${sign}${v}%`
-           : `${condPrefix}追い打ち`;
-       case "evadeHeal":
-         return hasV
-           ? `${condPrefix}回避回復${sign}${v}`
-           : `${condPrefix}回避回復`;
-       case "ailmentDurationDown":
-         return hasV
-           ? `${condPrefix}状態異常短縮${sign}${v}%`
+diff --git a/js/data/achievements.js b/js/data/achievements.js
+index cd25d11c2a743afeec1685a7ceeab36ea0715902..2de9f0119e1f97e8d79831a3529a2586b8ff2292 100644
+--- a/js/data/achievements.js
++++ b/js/data/achievements.js
+@@ -52,51 +52,51 @@
+       isDone: (p) => Number(p.totalKills || 0) >= 1000,
+       progress: (p) => `${Math.min(Number(p.totalKills || 0), 1000)}/1000`,
+       // 経験値 +10%
+       bonus: { expRate: 0.1 },
+     },
+     {
+       id: "level_50",
+       title: "力の芽生え",
+       desc: "プレイヤーレベル50に到達する",
+       isDone: (p) => Number(p.level || 1) >= 50,
+       progress: (p) => `${Math.min(Number(p.level || 1), 50)}/50`,
+       bonus: { expRate: 0.05 },
+     },
+     {
+       id: "serial_stay_battle",
+       title: "連戦の心得",
+       desc: "シリアルコード（連戦）を入力する",
+       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
+       bonus: {},
+     },
+     {
+       id: "serial_floor_cap_lift_250",
+       title: "深淵への通行証",
+-      desc: "シリアルコード（250階制限解除）を入力する",
++      desc: "シリアルコード（階層上限解放）を入力する",
+       isDone: (p) =>
+         !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.floorCapLift250 ? "1/1" : "0/1",
+       bonus: {},
+     },
+     {
+       id: "past_life_memory",
+       title: "前世の記憶",
+       desc: "シリアルコードで解放する",
+       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory ? "1/1" : "0/1",
+       // 経験値 +20%
+       bonus: { expRate: 0.2 },
+     },
+     {
+       id: "named_hunter",
+       title: "二つ名狩り",
+       desc: "二つ名モンスターを10体倒す",
+       isDone: (p) => Number(p.namedKills || 0) >= 10,
+       progress: (p) => `${Math.min(Number(p.namedKills || 0), 10)}/10`,
+       bonus: {},
+     },
+     {
