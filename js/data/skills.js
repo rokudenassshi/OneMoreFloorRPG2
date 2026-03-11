@@ -39,6 +39,77 @@
       effect: (_lv) => ({ healRate: 0.2 }),
     },
 
+    common_attack_tuning: {
+      name: "攻撃強化",
+      type: "passive",
+      job: "all",
+      maxLevel: Infinity,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "攻撃+{attackBonus}%（上限なし）",
+      effect: (lv) => ({ attackBonus: lv * 0.1 }),
+    },
+    common_defense_tuning: {
+      name: "防御強化",
+      type: "passive",
+      job: "all",
+      maxLevel: Infinity,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "防御+{defenseBonus}%（上限なし）",
+      effect: (lv) => ({ defenseBonus: lv * 0.1 }),
+    },
+    common_counter_rate_tuning: {
+      name: "反撃率強化",
+      type: "passive",
+      job: "all",
+      maxLevel: 90,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "反撃率+{counterChanceBonus}%（最大45%）",
+      effect: (lv) => ({ counterChanceBonus: lv * 0.5 }),
+    },
+    common_counter_damage_tuning: {
+      name: "反撃威力強化",
+      type: "passive",
+      job: "all",
+      maxLevel: Infinity,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "反撃威力+{counterDamageBonus}%（上限なし）",
+      effect: (lv) => ({ counterDamageBonus: lv * 0.1 }),
+    },
+    common_followup_rate_tuning: {
+      name: "追撃率強化",
+      type: "passive",
+      job: "all",
+      maxLevel: 120,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "追撃率+{skillFollowUpChance}%（最大60%）",
+      effect: (lv) => ({ skillFollowUpChance: lv * 0.005 }),
+    },
+    common_followup_damage_tuning: {
+      name: "追撃威力強化",
+      type: "passive",
+      job: "all",
+      maxLevel: Infinity,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "追撃威力+{followUpDamageMulBonus}%（上限なし）",
+      effect: (lv) => ({ followUpDamageMulBonus: lv * 0.1 }),
+    },
+    common_crit_rate_tuning: {
+      name: "会心率強化",
+      type: "passive",
+      job: "all",
+      maxLevel: 200,
+      requiredPoints: 10,
+      requiredMaxReachedFloor: 5000,
+      desc: "会心率+{critBonus}%（最大100%）",
+      effect: (lv) => ({ critBonus: lv * 0.5 }),
+    },
+
     // ===================================
     // 剣士 (swordsman)
     // ===================================
@@ -876,7 +947,12 @@
       maxLevel: 5,
       requiredPoints: 3,
       desc: "会心率+{critBonus}%、命中+{accuracyBonus}%、貫通+{piercePct}%",
-      effect: (lv) => ({ critBonus: lv * 3, accuracyBonus: lv * 2, pierceDefFactorReduction: lv * 0.03, piercePct: Math.round(lv * 3) }),
+      effect: (lv) => ({
+        critBonus: lv * 3,
+        accuracyBonus: lv * 2,
+        pierceDefFactorReduction: lv * 0.03,
+        piercePct: Math.round(lv * 3),
+      }),
     },
     sniper_piercing_shot: {
       name: "貫通射ち",
@@ -888,7 +964,11 @@
       desc: "貫通+会心寄りの一撃（{value}倍 / 防御適用率{defFactor}%）",
       effect: (lv) => {
         const defFactor = Math.max(0.28, 0.42 - lv * 0.04);
-        return { damageMultiplier: 1.57 + lv * 0.25, ignoreDef: defFactor, defFactor: Math.round(defFactor * 100) };
+        return {
+          damageMultiplier: 1.57 + lv * 0.25,
+          ignoreDef: defFactor,
+          defFactor: Math.round(defFactor * 100),
+        };
       },
     },
     sniper_headshot: {
@@ -902,7 +982,11 @@
       desc: "致命の一撃（{value}倍 / 防御適用率{defFactor}%）",
       effect: (lv) => {
         const defFactor = 0.25;
-        return { damageMultiplier: 1.95 + lv * 0.3, ignoreDef: defFactor, defFactor: Math.round(defFactor * 100) };
+        return {
+          damageMultiplier: 1.95 + lv * 0.3,
+          ignoreDef: defFactor,
+          defFactor: Math.round(defFactor * 100),
+        };
       },
     },
     sniper_camouflage: {
@@ -941,7 +1025,9 @@
       effect: (lv) => ({
         hits: 3,
         damageMultiplier: 0.54 + lv * 0.06,
-        enemyDebuffs: [{ type: "accuracyDown", turns: 2, rate: 0.25 + lv * 0.05 }],
+        enemyDebuffs: [
+          { type: "accuracyDown", turns: 2, rate: 0.25 + lv * 0.05 },
+        ],
       }),
     },
 
@@ -1041,7 +1127,11 @@
       maxLevel: 5,
       requiredPoints: 3,
       desc: "索敵+{value}（回避/会心も少し上がる）",
-      effect: (lv) => ({ searchBonus: lv * 5, evasionBonus: lv * 1, critBonus: lv * 1 }),
+      effect: (lv) => ({
+        searchBonus: lv * 5,
+        evasionBonus: lv * 1,
+        critBonus: lv * 1,
+      }),
     },
     trickster_poison_dart: {
       name: "奇毒の矢",
@@ -1473,10 +1563,13 @@
       desc: "要塞化（3T防御、最大HPの{value}%回復）",
       effect: (lv) => {
         const rate = 0.16 + lv * 0.05;
-        return { defendTurns: 3, healRate: rate, value: Math.round(rate * 100) };
+        return {
+          defendTurns: 3,
+          healRate: rate,
+          value: Math.round(rate * 100),
+        };
       },
     },
-
 
     guardian_earthshatter: {
       name: "大地砕き",
@@ -1490,7 +1583,6 @@
       desc: "粉砕の一撃（{value}倍、貫通）",
       effect: (lv) => ({ damageMultiplier: 2.1 + lv * 0.26, ignoreDef: 0.78 }),
     },
-
 
     guardian_counter_fortress: {
       name: "反攻陣",
@@ -1554,7 +1646,6 @@
       }),
     },
 
-
     assassin_silent_blades: {
       name: "無音連刃",
       type: "active",
@@ -1571,7 +1662,6 @@
         enemySilenceTurns: 2,
       }),
     },
-
 
     assassin_execution: {
       name: "断頭",
@@ -1645,7 +1735,6 @@
       effect: (lv) => ({ baseDamage: 120 + lv * 70, magicScale: 2.0 }),
     },
 
-
     archmage_thunder_roar: {
       name: "雷鳴",
       type: "active",
@@ -1703,7 +1792,6 @@
       }),
     },
 
-
     sniper_execution_shot: {
       name: "処刑弾",
       type: "active",
@@ -1716,7 +1804,6 @@
       desc: "狙撃処刑（{value}倍、貫通）",
       effect: (lv) => ({ damageMultiplier: 2.7 + lv * 0.33, ignoreDef: 0.75 }),
     },
-
 
     sniper_bullet_storm: {
       name: "弾幕",
@@ -1776,7 +1863,6 @@
       }),
     },
 
-
     warlord_royal_cleave: {
       name: "王の一閃",
       type: "active",
@@ -1789,7 +1875,6 @@
       desc: "決戦の一撃（{value}倍、貫通）",
       effect: (lv) => ({ damageMultiplier: 2.75 + lv * 0.32, ignoreDef: 0.75 }),
     },
-
 
     warlord_phalanx_charge: {
       name: "方陣突撃",
@@ -1864,7 +1949,6 @@
       }),
     },
 
-
     trickster_shadow_dance: {
       name: "影舞",
       type: "active",
@@ -1917,10 +2001,13 @@
       desc: "守護の大回復（最大HPの{value}%回復、2T防御）",
       effect: (lv) => {
         const rate = 0.18 + lv * 0.05;
-        return { healRate: rate, defendTurns: 2, value: Math.round(rate * 100) };
+        return {
+          healRate: rate,
+          defendTurns: 2,
+          value: Math.round(rate * 100),
+        };
       },
     },
-
 
     sage_holy_judgement: {
       name: "聖裁",
@@ -1939,7 +2026,6 @@
         enemyVulnerableRate: 0.25 + lv * 0.05,
       }),
     },
-
 
     sage_miracle_prayer: {
       name: "奇跡の祈り",
@@ -2103,7 +2189,12 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（攻撃+40%、会心+15%、命中+12%、構え上限+2）",
-      effect: (_lv) => ({ attackBonus: 40, critBonus: 15, accuracyBonus: 12, stanceMaxBonus: 2 }),
+      effect: (_lv) => ({
+        attackBonus: 40,
+        critBonus: 15,
+        accuracyBonus: 12,
+        stanceMaxBonus: 2,
+      }),
     },
     blademaster_zenith_iaigiri: {
       name: "絶空居合",
@@ -2124,7 +2215,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（防御+50%、最大HP+35%、反撃率+20%）",
-      effect: (_lv) => ({ defenseBonus: 50, maxHpBonus: 35, counterChanceBonus: 20 }),
+      effect: (_lv) => ({
+        defenseBonus: 50,
+        maxHpBonus: 35,
+        counterChanceBonus: 20,
+      }),
     },
     guardian_judgement_rampart: {
       name: "審判の城壁",
@@ -2135,7 +2230,11 @@
       requiredPoints: 100,
       cooldown: 11,
       desc: "防御を固めながら叩き潰す（3.2倍、2T防御、最大HP20%回復）",
-      effect: (_lv) => ({ damageMultiplier: 3.2, defendTurns: 2, healRate: 0.2 }),
+      effect: (_lv) => ({
+        damageMultiplier: 3.2,
+        defendTurns: 2,
+        healRate: 0.2,
+      }),
     },
 
     assassin_nightmare_instinct: {
@@ -2145,7 +2244,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（回避+20%、会心+18%、追撃率+20%）",
-      effect: (_lv) => ({ evasionBonus: 20, critBonus: 18, skillFollowUpChance: 0.2 }),
+      effect: (_lv) => ({
+        evasionBonus: 20,
+        critBonus: 18,
+        skillFollowUpChance: 0.2,
+      }),
     },
     assassin_zero_trace: {
       name: "零式断罪",
@@ -2156,7 +2259,11 @@
       requiredPoints: 100,
       cooldown: 9,
       desc: "姿なき必殺（4.0倍、1Tスタン、防御無視80%）",
-      effect: (_lv) => ({ damageMultiplier: 4.0, ignoreDef: 0.8, enemyStunTurns: 1 }),
+      effect: (_lv) => ({
+        damageMultiplier: 4.0,
+        ignoreDef: 0.8,
+        enemyStunTurns: 1,
+      }),
     },
 
     archmage_world_formula: {
@@ -2166,7 +2273,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（魔法威力+45%、回復力+25%、命中+10%）",
-      effect: (_lv) => ({ magicBonus: 45, healPowerBonus: 25, accuracyBonus: 10 }),
+      effect: (_lv) => ({
+        magicBonus: 45,
+        healPowerBonus: 25,
+        accuracyBonus: 10,
+      }),
     },
     archmage_apocalypse_sigil: {
       name: "終焉刻印",
@@ -2177,7 +2288,11 @@
       requiredPoints: 100,
       cooldown: 12,
       desc: "超高密度魔法（基礎260+魔法威力×2.4、封印2T）",
-      effect: (_lv) => ({ baseDamage: 260, magicScale: 2.4, enemySilenceTurns: 2 }),
+      effect: (_lv) => ({
+        baseDamage: 260,
+        magicScale: 2.4,
+        enemySilenceTurns: 2,
+      }),
     },
 
     sniper_hawk_cognition: {
@@ -2187,7 +2302,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（命中+25%、会心+15%、防御貫通+15%）",
-      effect: (_lv) => ({ accuracyBonus: 25, critBonus: 15, pierceDefFactorReduction: 0.15 }),
+      effect: (_lv) => ({
+        accuracyBonus: 25,
+        critBonus: 15,
+        pierceDefFactorReduction: 0.15,
+      }),
     },
     sniper_starlight_round: {
       name: "星穿弾",
@@ -2219,7 +2338,12 @@
       requiredPoints: 100,
       cooldown: 10,
       desc: "覇道を刻む一撃（3.7倍、体勢崩し2T、防御無視75%）",
-      effect: (_lv) => ({ damageMultiplier: 3.7, ignoreDef: 0.75, enemyVulnerableTurns: 2, enemyVulnerableRate: 0.3 }),
+      effect: (_lv) => ({
+        damageMultiplier: 3.7,
+        ignoreDef: 0.75,
+        enemyVulnerableTurns: 2,
+        enemyVulnerableRate: 0.3,
+      }),
     },
 
     trickster_fate_swindle: {
@@ -2271,7 +2395,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（攻撃+35%、会心+14%、追撃率+18%）",
-      effect: (_lv) => ({ attackBonus: 35, critBonus: 14, skillFollowUpChance: 0.18 }),
+      effect: (_lv) => ({
+        attackBonus: 35,
+        critBonus: 14,
+        skillFollowUpChance: 0.18,
+      }),
     },
     asura_samsara_fist: {
       name: "輪廻崩拳",
@@ -2292,7 +2420,11 @@
       maxLevel: 1,
       requiredPoints: 100,
       desc: "常時強化（攻撃+45%、HP吸収+20%、会心+10%）",
-      effect: (_lv) => ({ attackBonus: 45, lifeStealPctBonus: 20, critBonus: 10 }),
+      effect: (_lv) => ({
+        attackBonus: 45,
+        lifeStealPctBonus: 20,
+        critBonus: 10,
+      }),
     },
     warfiend_berserk_end: {
       name: "終焉暴走",
