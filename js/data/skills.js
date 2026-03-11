@@ -819,7 +819,7 @@
     },
 
     assassin_blood_drain: {
-      name: "吸血の刃",
+      name: "HP吸収の刃",
       type: "passive",
       job: "assassin",
       maxLevel: 5,
@@ -1337,7 +1337,7 @@
       job: "asura",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "吸血+{value}%（最大20%）",
+      desc: "HP吸収+{value}%（最大20%）",
       effect: (lv) => ({ lifeStealPctBonus: Math.min(20, lv * 4) }),
     },
 
@@ -1378,7 +1378,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{attackBonus}%（吸血+{lifeStealPctBonus}%）",
+      desc: "攻撃力+{attackBonus}%（HP吸収+{lifeStealPctBonus}%）",
       effect: (lv) => ({
         attackBonus: lv * 4,
         lifeStealPctBonus: Math.min(10, lv * 2),

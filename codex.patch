@@ -1,347 +1,57 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index e4f4940a618e42e6b08c051990d1bf9013861975..3d3ea040ec8de278dcae4bf7c9440706f995fb73 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -1009,122 +1009,122 @@
-       job: "sniper",
-       maxLevel: 5,
-       requiredPoints: 3,
-       desc: "最大HP+{value}%（命中も少し上がる）",
-       effect: (lv) => ({ maxHpBonus: lv * 10, accuracyBonus: lv * 2 }),
-     },
+diff --git a/js/ui.js b/js/ui.js
+index 78e3ecfbef000bd4b89f9356dacd07e30ff29477..6c97e29800177999496932962d316ef4a2d1fe17 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -691,51 +691,51 @@
+         return `${condPrefix}致死耐え(戦1)`;
+       case "firstHitCrit":
+         return `${condPrefix}初撃会心`;
+       case "overhealBarrierCap":
+         return hasV
+           ? `${condPrefix}余剰回復盾(上限${v}%)`
+           : `${condPrefix}余剰回復盾`;
  
-     sniper_suppressing_fire: {
-       name: "制圧射撃",
-       type: "active",
-       accuracy: 120,
-       job: "sniper",
-       maxLevel: 3,
-       requiredPoints: 4,
-       cooldown: 6,
-       desc: "牽制しながら射ち込む（{value}倍×3、命中低下2ターン）",
-       effect: (lv) => ({
-         hits: 3,
-         damageMultiplier: 0.54 + lv * 0.06,
-         enemyDebuffs: [
-           { type: "accuracyDown", turns: 2, rate: 0.25 + lv * 0.05 },
-         ],
-       }),
-     },
- 
--    // ---- 騎士 (warlord) ----
-+    // ---- 魔法騎士 (warlord) ----
-     warlord_command: {
--      name: "号令",
-+      name: "魔導号令",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
--      desc: "物理攻撃力+{value}%",
--      effect: (lv) => ({ attackBonus: lv * 4 }),
-+      desc: "攻撃力+{attackBonus}%、魔法攻撃力+{magicBonus}%",
-+      effect: (lv) => ({ attackBonus: lv * 3, magicBonus: lv * 3 }),
-     },
-     warlord_dominance: {
--      name: "覇気",
-+      name: "魔装覇気",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
-       requiredPoints: 3,
--      desc: "攻撃+{value}%、防御+{value}%",
--      effect: (lv) => ({ attackBonus: lv * 3, defenseBonus: lv * 3 }),
-+      desc: "攻撃+{attackBonus}%、防御+{defenseBonus}%、魔法+{magicBonus}%",
-+      effect: (lv) => ({ attackBonus: lv * 2, defenseBonus: lv * 2, magicBonus: lv * 2 }),
-     },
-     warlord_charge: {
--      name: "突撃",
-+      name: "魔槍突撃",
-       type: "active",
-       accuracy: 105,
-       job: "warlord",
-       maxLevel: 3,
-       cooldown: 5,
--      desc: "勢いよく斬り込む（{value}倍）",
-+      desc: "魔力を纏って斬り込む（{value}倍）",
-       effect: (lv) => ({ damageMultiplier: 1.72 + lv * 0.28 }),
-     },
-     warlord_banner: {
--      name: "軍旗",
-+      name: "魔導障壁",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
-       requiredPoints: 3,
--      desc: "防御力+{defenseBonus}%（Lvで増加。命中+{accuracyBonus}%）",
--      effect: (lv) => ({ defenseBonus: lv * 3, accuracyBonus: lv * 2 }),
-+      desc: "防御力+{defenseBonus}%（命中+{accuracyBonus}%、魔法+{magicBonus}%）",
-+      effect: (lv) => ({ defenseBonus: lv * 3, accuracyBonus: lv * 1, magicBonus: lv * 2 }),
-     },
-     warlord_judgement: {
--      name: "断罪撃",
-+      name: "魔断罪",
-       type: "active",
-       accuracy: 110,
-       job: "warlord",
-       maxLevel: 3,
-       requiredPoints: 5,
-       cooldown: 6,
--      desc: "重い一撃（{value}倍、防御無視60%）",
-+      desc: "魔力を込めた一撃（{value}倍、防御無視60%）",
-       effect: (lv) => ({ damageMultiplier: 1.74 + lv * 0.22, ignoreDef: 0.6 }),
-     },
- 
-     warlord_fortress_tactics: {
--      name: "要塞戦術",
-+      name: "魔鎧戦術",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
-       requiredPoints: 3,
--      desc: "防御力+{defenseBonus}%（最大HP+{maxHpBonus}%、命中{accuracyBonus}%）",
-+      desc: "防御力+{defenseBonus}%（最大HP+{maxHpBonus}%、魔法+{magicBonus}%）",
-       effect: (lv) => ({
--        defenseBonus: lv * 4,
--        maxHpBonus: lv * 10,
--        accuracyBonus: -lv * 1,
-+        defenseBonus: lv * 3,
-+        maxHpBonus: lv * 8,
-+        magicBonus: lv * 3,
-       }),
-     },
- 
-     warlord_suppress: {
--      name: "制圧斬",
-+      name: "制圧魔斬",
-       type: "active",
-       accuracy: 110,
-       job: "warlord",
-       maxLevel: 3,
-       requiredPoints: 5,
-       cooldown: 7,
--      desc: "戦線を押し切る（{value}倍×2、しびれ1ターン＋防御状態1ターン）",
-+      desc: "魔力で戦線を押し切る（{value}倍×2、しびれ1ターン＋防御状態1ターン）",
-       effect: (lv) => ({
-         hits: 2,
-         damageMultiplier: 0.78 + lv * 0.05,
-         enemyStunTurns: 1,
-         defendTurns: 1,
-       }),
-     },
- 
-     // ---- 奇術師 (trickster) ----
-     trickster_feint: {
-       name: "フェイント",
-       type: "passive",
-       job: "trickster",
-       maxLevel: 5,
-       desc: "回避+{value}",
-       effect: (lv) => ({ evasionBonus: lv * 3 }),
-     },
-     trickster_gambit: {
-       name: "一か八か",
-       type: "passive",
-       job: "trickster",
-       maxLevel: 5,
-       requiredPoints: 3,
-       desc: "索敵+{value}（回避/会心も少し上がる）",
-       effect: (lv) => ({
-@@ -1801,113 +1801,113 @@
-       requiredPoints: 7,
-       exclusiveGroup: "sniper_ultimate",
-       cooldown: 10,
-       desc: "狙撃処刑（{value}倍、貫通）",
-       effect: (lv) => ({ damageMultiplier: 2.7 + lv * 0.33, ignoreDef: 0.75 }),
-     },
- 
-     sniper_bullet_storm: {
-       name: "弾幕",
-       type: "active",
-       accuracy: 105,
-       job: "sniper",
-       maxLevel: 3,
-       requiredPoints: 7,
-       exclusiveGroup: "sniper_ultimate",
-       cooldown: 8,
-       desc: "六連射（{value}倍×6、体勢崩し2T）",
-       effect: (lv) => ({
-         hits: 6,
-         damageMultiplier: 0.42 + lv * 0.04,
-         enemyVulnerableTurns: 2,
-         enemyVulnerableRate: 0.18 + lv * 0.04,
-       }),
-     },
- 
--    // --- 覇王 (warlord)
-+    // --- 魔法騎士 (warlord)
-     warlord_style_lance: {
--      name: "槍武",
-+      name: "剣杖両道",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
-       requiredPoints: 3,
-       exclusiveGroup: "warlord_style",
--      desc: "攻撃力+{attackBonus}%（命中+{accuracyBonus}%）",
--      effect: (lv) => ({ attackBonus: lv * 4, accuracyBonus: lv * 2 }),
-+      desc: "攻撃力+{attackBonus}%（魔法+{magicBonus}%）",
-+      effect: (lv) => ({ attackBonus: lv * 3, magicBonus: lv * 3 }),
-     },
-     warlord_style_shield: {
--      name: "盾陣",
-+      name: "魔盾陣",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 5,
-       requiredPoints: 3,
-       exclusiveGroup: "warlord_style",
--      desc: "防御力+{defenseBonus}%（反撃率+{counterChanceBonus}%）",
--      effect: (lv) => ({ defenseBonus: lv * 4, counterChanceBonus: lv * 2 }),
-+      desc: "防御力+{defenseBonus}%（反撃率+{counterChanceBonus}%、魔法+{magicBonus}%）",
-+      effect: (lv) => ({ defenseBonus: lv * 3, counterChanceBonus: lv * 2, magicBonus: lv * 2 }),
-     },
- 
-     warlord_impale: {
--      name: "貫穿槍",
-+      name: "貫魔剣",
-       type: "active",
-       accuracy: 95,
-       job: "warlord",
-       maxLevel: 3,
-       requiredPoints: 7,
-       exclusiveGroup: "warlord_ultimate",
-       cooldown: 8,
--      desc: "貫く一撃（{value}倍、体勢崩し2T）",
-+      desc: "魔力で貫く一撃（{value}倍、体勢崩し2T）",
-       effect: (lv) => ({
-         damageMultiplier: 2.05 + lv * 0.24,
-         ignoreDef: 0.65,
-         enemyVulnerableTurns: 2,
-         enemyVulnerableRate: 0.22 + lv * 0.05,
-       }),
-     },
- 
-     warlord_royal_cleave: {
--      name: "王の一閃",
-+      name: "王の魔閃",
-       type: "active",
-       accuracy: 90,
-       job: "warlord",
-       maxLevel: 3,
-       requiredPoints: 7,
-       exclusiveGroup: "warlord_ultimate",
-       cooldown: 10,
-       desc: "決戦の一撃（{value}倍、貫通）",
-       effect: (lv) => ({ damageMultiplier: 2.75 + lv * 0.32, ignoreDef: 0.75 }),
-     },
- 
-     warlord_phalanx_charge: {
--      name: "方陣突撃",
-+      name: "方陣魔突",
-       type: "active",
-       accuracy: 100,
-       job: "warlord",
-       maxLevel: 3,
-       requiredPoints: 7,
-       exclusiveGroup: "warlord_ultimate",
-       cooldown: 7,
--      desc: "三連突き（{value}倍×3、与ダメの15%回復、1T防御）",
-+      desc: "三連魔突（{value}倍×3、与ダメの15%回復、1T防御）",
-       effect: (lv) => ({
-         hits: 3,
-         damageMultiplier: 0.72 + lv * 0.06,
-         healPercent: 0.15,
-         defendTurns: 1,
-       }),
-     },
- 
-     // --- 奇術師 (trickster)
-     trickster_style_greed: {
-       name: "略奪",
-       type: "passive",
-       job: "trickster",
-       maxLevel: 5,
-       requiredPoints: 3,
-       exclusiveGroup: "trickster_style",
-       desc: "索敵+{searchBonus}（会心率+{critBonus}%）",
-       effect: (lv) => ({ searchBonus: lv * 8, critBonus: lv * 1 }),
-     },
-     trickster_style_deceive: {
-       name: "幻惑",
-       type: "passive",
-       job: "trickster",
-       maxLevel: 5,
-       requiredPoints: 3,
-@@ -2299,67 +2299,67 @@
-       name: "鷹眼神経",
-       type: "passive",
-       job: "sniper",
-       maxLevel: 1,
-       requiredPoints: 100,
-       desc: "常時強化（命中+25%、会心+15%、防御貫通+15%）",
-       effect: (_lv) => ({
-         accuracyBonus: 25,
-         critBonus: 15,
-         pierceDefFactorReduction: 0.15,
-       }),
-     },
-     sniper_starlight_round: {
-       name: "星穿弾",
-       type: "active",
-       accuracy: 145,
-       job: "sniper",
-       maxLevel: 1,
-       requiredPoints: 100,
-       cooldown: 10,
-       desc: "必中級の極限狙撃（3.9倍、防御無視85%）",
-       effect: (_lv) => ({ damageMultiplier: 3.9, ignoreDef: 0.85 }),
-     },
- 
-     warlord_royal_command: {
--      name: "覇王号令",
-+      name: "魔騎号令",
-       type: "passive",
-       job: "warlord",
-       maxLevel: 1,
-       requiredPoints: 100,
--      desc: "常時強化（攻撃+28%、防御+28%、最大HP+18%）",
--      effect: (_lv) => ({ attackBonus: 28, defenseBonus: 28, maxHpBonus: 18 }),
-+      desc: "常時強化（攻撃+22%、防御+20%、魔法+28%）",
-+      effect: (_lv) => ({ attackBonus: 22, defenseBonus: 20, magicBonus: 28 }),
-     },
-     warlord_empire_break: {
--      name: "帝国破槍",
-+      name: "帝国魔断",
-       type: "active",
-       accuracy: 120,
-       job: "warlord",
-       maxLevel: 1,
-       requiredPoints: 100,
-       cooldown: 10,
--      desc: "覇道を刻む一撃（3.7倍、体勢崩し2T、防御無視75%）",
-+      desc: "魔力で覇道を刻む一撃（3.7倍、体勢崩し2T、防御無視75%）",
-       effect: (_lv) => ({
-         damageMultiplier: 3.7,
-         ignoreDef: 0.75,
-         enemyVulnerableTurns: 2,
-         enemyVulnerableRate: 0.3,
-       }),
-     },
- 
-     trickster_fate_swindle: {
-       name: "運命詐取",
-       type: "passive",
-       job: "trickster",
-       maxLevel: 1,
-       requiredPoints: 100,
-       desc: "常時強化（回避+18%、会心+12%、索敵+40）",
-       effect: (_lv) => ({ evasionBonus: 18, critBonus: 12, searchBonus: 40 }),
-     },
-     trickster_phantom_jackpot: {
-       name: "幻影大博打",
-       type: "active",
-       accuracy: 120,
-       job: "trickster",
-       maxLevel: 1,
-       requiredPoints: 100,
-       cooldown: 9,
+       case "magicPower":
+         return hasV
+           ? `${condPrefix}魔法攻撃力${sign}${v}`
+           : `${condPrefix}魔法攻撃力`;
+       case "healPower":
+         return hasV ? `${condPrefix}回復力${sign}${v}` : `${condPrefix}回復力`;
+       case "healReceived":
+         return hasV ? `${condPrefix}回復量${sign}${v}%` : `${condPrefix}回復量`;
+       case "damageReduction":
+         return hasV
+           ? `${condPrefix}被ダメージ-${Math.abs(v)}%`
+           : `${condPrefix}被ダメージ軽減`;
+       case "critDamage":
+         return hasV
+           ? `${condPrefix}クリダメ${sign}${v}%`
+           : `${condPrefix}クリダメ`;
+       case "lifeSteal":
+-        return hasV ? `${condPrefix}吸血${sign}${v}%` : `${condPrefix}吸血`;
++        return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
+       case "regen":
+         return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
+       case "hitHeal":
+         return hasV
+           ? `${condPrefix}攻撃時HP回復${sign}${v}`
+           : `${condPrefix}攻撃時HP回復`;
+       case "counterChance":
+         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
+       case "counterDamage":
+         return hasV
+           ? `${condPrefix}反撃威力${sign}${v}%`
+           : `${condPrefix}反撃威力`;
+       case "desperationDamage":
+         return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
+       case "executeDamage":
+         return hasV
+           ? `${condPrefix}追い打ち${sign}${v}%`
+           : `${condPrefix}追い打ち`;
+       case "evadeHeal":
+         return hasV
+           ? `${condPrefix}回避回復${sign}${v}`
+           : `${condPrefix}回避回復`;
+       case "ailmentDurationDown":
+         return hasV
+           ? `${condPrefix}状態異常短縮${sign}${v}%`

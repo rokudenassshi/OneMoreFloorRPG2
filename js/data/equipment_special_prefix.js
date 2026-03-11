@@ -110,7 +110,7 @@
     },
 
     // -------------------
-    // 追加：吸血/火力/耐久の組み合わせ
+    // 追加：HP吸収/火力/耐久の組み合わせ
     // -------------------
     {
       name: "不死鳥の",
@@ -119,7 +119,7 @@
         { type: "bonusPct", key: "lifeSteal", min: 6, max: 12 },
         { type: "bonusPct", key: "regen", min: 2, max: 5 },
       ],
-      describe: (r) => `吸血+${pct(r.lifeSteal)} / 再生${pct(r.regen)}`,
+      describe: (r) => `HP吸収+${pct(r.lifeSteal)} / 再生${pct(r.regen)}`,
     },
     {
       name: "剛力の",
@@ -157,7 +157,7 @@
   // 武器向け（攻撃的/手数/状態異常付与）
   const SPECIAL_PREFIXES_WEAPON = [
     // -------------------
-    // 追加：吸血×火力
+    // 追加：HP吸収×火力
     // -------------------
     {
       name: "渇血の",
@@ -166,7 +166,7 @@
         { type: "bonusPct", key: "lifeSteal", min: 4, max: 10 },
         { type: "statPct", stat: "attack", min: 6, max: 12 },
       ],
-      describe: (r) => `吸血+${pct(r.lifeSteal)} / 攻撃力+${pct(r.attackPct)}`,
+      describe: (r) => `HP吸収+${pct(r.lifeSteal)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "血宴の",
@@ -176,7 +176,7 @@
         { type: "bonusPct", key: "pursuitChance", min: 10, max: 22 },
       ],
       describe: (r) =>
-        `吸血+${pct(r.lifeSteal)} / 追撃率+${pct(r.pursuitChance)}`,
+        `HP吸収+${pct(r.lifeSteal)} / 追撃率+${pct(r.pursuitChance)}`,
     },
     {
       name: "屠りの",
@@ -186,7 +186,7 @@
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
       ],
       describe: (r) =>
-        `吸血+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
+        `HP吸収+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
     },
 
     {

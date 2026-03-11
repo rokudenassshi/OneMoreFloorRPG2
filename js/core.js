@@ -1074,7 +1074,7 @@
     bs.followUpNoCrit = false; // 追撃は会心しない
     bs.followUpOnAttack = false; // 通常攻撃でも追撃判定
     bs.pierceDefFactorReduction = 0; // 物理：防御適用率を減らす（=貫通強化、0〜0.4）
-    bs.lifeStealPctBonus = 0; // パッシブ吸血（%）
+    bs.lifeStealPctBonus = 0; // パッシブHP吸収（%）
 
     // 反撃/上限/ボーナス（getCombatStats のパッシブ集計で加算される）
     bs.counterChanceBonus = 0;
@@ -1633,7 +1633,7 @@
         );
       }
 
-      // パッシブ吸血（%）
+      // パッシブHP吸収（%）
       if (effect.lifeStealPctBonus) {
         const bs = ensurePlayerBattleState();
         bs.lifeStealPctBonus =
@@ -2943,15 +2943,15 @@
       isCrit: typeof isCrit !== "undefined" ? isCrit : false,
     });
 
-    // 装飾品：吸血（与えたダメージの%を回復）
+    // 装飾品：HP吸収（与えたダメージの%を回復）
     const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
       const r = applyPlayerHeal(baseHeal);
       if (r.healed > 0 && r.barrierGained > 0) {
-        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+        log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
       } else if (r.healed > 0) {
-        log(`🩸 吸血で${r.healed}回復`);
+        log(`🩸 HP吸収で${r.healed}回復`);
       } else if (r.barrierGained > 0) {
         log(`🛡 バリア+${r.barrierGained}`);
       }
@@ -3031,15 +3031,15 @@
     applyPlayerOnHitSpecialEffects(enemy);
     onPlayerHit({ kind: "physical", isCrit });
 
-    // 吸血（追撃分）
+    // HP吸収（追撃分）
     const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
       const r = applyPlayerHeal(baseHeal);
       if (r.healed > 0 && r.barrierGained > 0) {
-        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+        log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
       } else if (r.healed > 0) {
-        log(`🩸 吸血で${r.healed}回復`);
+        log(`🩸 HP吸収で${r.healed}回復`);
       } else if (r.barrierGained > 0) {
         log(`🛡 バリア+${r.barrierGained}`);
       }
@@ -3117,15 +3117,15 @@
     applyPlayerOnHitSpecialEffects(enemy);
     onPlayerHit({ kind: "physical", isCrit });
 
-    // 吸血（追撃分）
+    // HP吸収（追撃分）
     const lsPct = Number(getLifeStealPercent() || 0);
     if (Number.isFinite(lsPct) && lsPct > 0) {
       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
       const r = applyPlayerHeal(baseHeal);
       if (r.healed > 0 && r.barrierGained > 0) {
-        log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+        log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
       } else if (r.healed > 0) {
-        log(`🩸 吸血で${r.healed}回復`);
+        log(`🩸 HP吸収で${r.healed}回復`);
       } else if (r.barrierGained > 0) {
         log(`🛡 バリア+${r.barrierGained}`);
       }
@@ -3554,15 +3554,15 @@
           // 暗殺者：スキル追撃（命中してダメージを与えた後）
           trySkillFollowUp(enemy, combat);
 
-          // 装飾品：吸血（合計ダメージから）
+          // 装飾品：HP吸収（合計ダメージから）
           const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(total * (lsPct / 100)));
             const r = applyPlayerHeal(baseHeal);
             if (r.healed > 0 && r.barrierGained > 0) {
-              log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+              log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
             } else if (r.healed > 0) {
-              log(`🩸 吸血で${r.healed}回復`);
+              log(`🩸 HP吸収で${r.healed}回復`);
             } else if (r.barrierGained > 0) {
               log(`🛡 バリア+${r.barrierGained}`);
             }
@@ -3658,15 +3658,15 @@
             }
           }
 
-          // 装飾品：吸血
+          // 装飾品：HP吸収
           const lsPct = Number(getLifeStealPercent() || 0);
           if (Number.isFinite(lsPct) && lsPct > 0) {
             const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
             const r = applyPlayerHeal(baseHeal);
             if (r.healed > 0 && r.barrierGained > 0) {
-              log(`🩸 吸血で${r.healed}回復（🛡+${r.barrierGained}）`);
+              log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
             } else if (r.healed > 0) {
-              log(`🩸 吸血で${r.healed}回復`);
+              log(`🩸 HP吸収で${r.healed}回復`);
             } else if (r.barrierGained > 0) {
               log(`🛡 バリア+${r.barrierGained}`);
             }
@@ -4164,7 +4164,7 @@
 
   function getLifeStealPercent() {
     const bs = ensurePlayerBattleState();
-    // 装備/装飾品の吸血（%） + 戦闘中パッシブ加算（%）
+    // 装備/装飾品のHP吸収（%） + 戦闘中パッシブ加算（%）
     // ※ここで自分自身を呼ぶと再帰して落ちるので getAccessoryBonus を参照する
     const a = Number(getAccessoryBonus("lifeSteal") || 0);
     const p = Number(bs.lifeStealPctBonus || 0);

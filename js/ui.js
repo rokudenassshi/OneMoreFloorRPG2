@@ -713,7 +713,7 @@
           ? `${condPrefix}クリダメ${sign}${v}%`
           : `${condPrefix}クリダメ`;
       case "lifeSteal":
-        return hasV ? `${condPrefix}吸血${sign}${v}%` : `${condPrefix}吸血`;
+        return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
       case "regen":
         return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
       case "hitHeal":

@@ -306,7 +306,7 @@
     { name: "回復量UP", type: "healReceived", value: 15 },
     { name: "被ダメージ軽減", type: "damageReduction", value: 8 },
     { name: "クリダメUP", type: "critDamage", value: 20 },
-    { name: "吸血", type: "lifeSteal", value: 6 },
+    { name: "HP吸収", type: "lifeSteal", value: 6 },
     { name: "再生", type: "regen", value: 2 },
     // 連続攻撃/追撃を統一（名称は「追撃」）
     { name: "追撃", type: "pursuitChance", value: 6 },
