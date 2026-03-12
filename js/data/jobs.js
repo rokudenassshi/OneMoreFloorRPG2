@@ -228,6 +228,28 @@
       traits: {"attackMult": 1.22, "defenseMult": 0.9, "critRateBonus": 3, "favoredMultiplier": 1.3},
     },
 
+    reaper: {
+      name: "死神",
+      desc: "HP吸収と高防御を併せ持つ（上級職）",
+      tier: "advanced",
+      skillGroup: "have_not",
+      baseJob: "have_not",
+      favoredType: null,
+      unlock: {
+        type: "hidden_achievement",
+        target: 1,
+        minLevel: 1,
+        text: "？？？",
+        hidden: true,
+      },
+      bonuses: { strength: 1, vitality: 8, intelligence: 0, agility: 0, dexterity: 0 },
+      traits: {
+        defenseMult: 1.3,
+        maxHpMult: 1.15,
+        lifeSteal: 12,
+      },
+    },
+
 
   };
 

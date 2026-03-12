@@ -4195,11 +4195,16 @@
 
   function getLifeStealPercent() {
     const bs = ensurePlayerBattleState();
-    // 装備/装飾品のHP吸収（%） + 戦闘中パッシブ加算（%）
+    // 装備/装飾品のHP吸収（%） + 戦闘中パッシブ加算（%） + 職業特性（%）
     // ※ここで自分自身を呼ぶと再帰して落ちるので getAccessoryBonus を参照する
     const a = Number(getAccessoryBonus("lifeSteal") || 0);
     const p = Number(bs.lifeStealPctBonus || 0);
-    const sum = (Number.isFinite(a) ? a : 0) + (Number.isFinite(p) ? p : 0);
+    const jt = jobs?.[gameData.player?.job]?.traits || {};
+    const j = Number(jt.lifeSteal || 0);
+    const sum =
+      (Number.isFinite(a) ? a : 0) +
+      (Number.isFinite(p) ? p : 0) +
+      (Number.isFinite(j) ? j : 0);
     return Math.min(60, Math.max(0, sum));
   }
 
@@ -4594,6 +4599,16 @@
       gameData.player.totalDefeats = Number.isFinite(totalDefeats)
         ? Math.max(0, Math.floor(totalDefeats) + 1)
         : 1;
+
+      if (
+        !gameData.player.jobDefeats ||
+        typeof gameData.player.jobDefeats !== "object"
+      ) {
+        gameData.player.jobDefeats = {};
+      }
+      const curJobDef = Number(gameData.player.jobDefeats[gameData.player.job] || 0);
+      gameData.player.jobDefeats[gameData.player.job] =
+        (Number.isFinite(curJobDef) ? Math.max(0, Math.floor(curJobDef)) : 0) + 1;
 
       if (isFullyUnequipped(gameData.player)) {
         const cur = Number(gameData.player.nakedDefeats || 0);

@@ -21,6 +21,7 @@
       maxHp: 100,
       job: "swordsman",
       jobKills: {},
+      jobDefeats: {},
       totalKills: 0,
       totalEvades: 0,
       namedKills: 0,

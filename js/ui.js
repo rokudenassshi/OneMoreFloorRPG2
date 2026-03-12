@@ -2027,11 +2027,14 @@
         } catch (e) {
           progress = "";
         }
+        const useRevealedText = !!(def.revealAfterDone && done);
         return {
           idx,
           id: def.id,
-          title: def.title || def.id,
-          desc: def.desc || "",
+          title: useRevealedText
+            ? def.doneTitle || def.title || def.id
+            : def.title || def.id,
+          desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
           done,
           progress,
           bonus: def.bonus || {},

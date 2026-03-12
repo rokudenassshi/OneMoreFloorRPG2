@@ -1,86 +1,65 @@
-diff --git a/index.html b/index.html
-index 8c834d7bd7b01636f62cbb3193bd79d27d02f6d2..b56449a8a2e25add3c6e417a30c8dc0ecbec98ae 100644
---- a/index.html
-+++ b/index.html
-@@ -131,51 +131,51 @@
-       </div>
+diff --git a/js/ui.js b/js/ui.js
+index 094ef92b646fd1db49626cc02f2e001f2fc120dd..5476b668440cb27b9e6e3c4494d0bdf27f635f12 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2005,55 +2005,58 @@
+     const p = gameData.player;
+     if (!p.achievements || typeof p.achievements !== "object")
+       p.achievements = {};
  
-       <!-- アイテムタブ -->
-       <div id="itemsTab" style="display:none;">
+     const defs = Array.isArray(window.achievementDefs)
+       ? window.achievementDefs
+       : [];
  
-         <div id="valuablesSubTab">
-           <div id="valuablesList"></div>
-         </div>
-       </div>
+     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
+     const rows = defs
+       .filter((def) => {
+         try {
+           return typeof def.isVisible !== "function" || !!def.isVisible(p);
+         } catch (e) {
+           return true;
+         }
+       })
+       .map((def, idx) => {
+         const done = !!p.achievements[def.id];
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
++        const useRevealedText = !!(def.revealAfterDone && done);
+         return {
+           idx,
+           id: def.id,
+-          title: def.title || def.id,
+-          desc: def.desc || "",
++          title: useRevealedText
++            ? def.doneTitle || def.title || def.id
++            : def.title || def.id,
++          desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
+         };
+       });
  
-       <div class="inventory-footer">
-         <button class="scroll-top-button" onclick="closeBag()">戻る</button>
-       </div>
-     </div>
+     const isDeathBeyondAchievement = (row) =>
+       row &&
+       (row.id === "defeated_10_times" ||
+         String(row.title || "").includes("死を超える"));
  
-     <!-- ステータス画面 -->
-     <div id="statusScreen" style="display:none;">
-       <div class="screen-header">
-         <h3>ステータス</h3>
-         <button class="back-button" onclick="closeStatus()">戻る</button>
-       </div>
+     const undone = rows.filter((row) => !row.done);
+     const done = rows.filter((row) => row.done);
+     const list = undone
+       .filter((row) => !isDeathBeyondAchievement(row))
+       .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
+       .concat(done);
  
-       <div class="status-tabs">
-         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
-         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
--        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</span></button>
-+        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
-       </div>
- 
-       <div id="tabStatus">
-         <div class="status-section">
-           <div class="job-display">
-             <span>職業：<strong id="currentJob">剣士</strong></span>
-             <button class="small-btn" onclick="openJobSelector()">変更</button>
-           </div>
- 
-         </div>
-         <div class="status-section">
-           <h4>スキル</h4>
-           <div class="skill-points-display">
-             スキルポイント: <strong id="skillPoints">0</strong>
-           </div>
-           <div class="equipped-skill">
-             装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
-           </div>
-           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
-         </div>
-         <div class="status-section">
-           <h4>基本ステータス</h4>
-           <div class="stat-grid">
-             <div class="stat-item">
-               <span class="stat-name">⚔️ 力</span>
-@@ -679,26 +679,26 @@
-       getVersion()
-         .then((version) => {
-           // 他のJS（セーブ出力など）でも使えるように window に乗せる
-           window.GAME_VERSION = version;
- 
-           // 順番に読み込む（依存関係を壊さない）
-           let chain = Promise.resolve();
-           for (const p of scriptList) {
-             const src = p + "?v=" + encodeURIComponent(version);
-             chain = chain.then(() => loadScript(src));
-           }
-           return chain.then(() => {
-             if (typeof window.__consumeDeferredLoginStart === "function") {
-               window.__consumeDeferredLoginStart();
-             }
-           });
-         })
-         .catch((err) => {
-           console.error(err);
-           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
-         });
-     })();
-   </script>
- </body>
- 
--</html>
-\ No newline at end of file
-+</html>
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {

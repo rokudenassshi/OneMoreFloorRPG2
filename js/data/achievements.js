@@ -127,6 +127,51 @@
         text: "？？？",
       },
     },
+    {
+      id: "have_not_slayer_1000",
+      title: "持たざる刈り",
+      desc: "持たざる者で敵を1000体倒す",
+      isVisible: (p) => !!(p && p.unlockedJobs && p.unlockedJobs.have_not),
+      isDone: (p) => {
+        const map =
+          p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+        return Number(map.have_not || 0) >= 1000;
+      },
+      progress: (p) => {
+        const map =
+          p && p.jobKills && typeof p.jobKills === "object" ? p.jobKills : {};
+        return `${Math.min(Number(map.have_not || 0), 1000)}/1000`;
+      },
+      bonus: {},
+    },
+    {
+      id: "have_not_defeat_100",
+      title: "？？？",
+      desc: "？？？",
+      isVisible: (p) => !!(p && p.unlockedJobs && p.unlockedJobs.have_not),
+      revealAfterDone: true,
+      doneTitle: "百敗の刻印",
+      doneDesc: "持たざる者で100回戦闘に敗北する",
+      isDone: (p) => {
+        const map =
+          p && p.jobDefeats && typeof p.jobDefeats === "object"
+            ? p.jobDefeats
+            : {};
+        return Number(map.have_not || 0) >= 100;
+      },
+      progress: (p) => {
+        const map =
+          p && p.jobDefeats && typeof p.jobDefeats === "object"
+            ? p.jobDefeats
+            : {};
+        return `${Math.min(Number(map.have_not || 0), 100)}/100`;
+      },
+      bonus: {},
+      reward: {
+        unlockJobs: ["reaper"],
+        text: "死神",
+      },
+    },
   ];
 
   // 回避上限を段階的に引き上げる実績
