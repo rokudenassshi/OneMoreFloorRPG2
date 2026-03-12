@@ -116,6 +116,26 @@
       bonus: { search: 10 },
     },
     {
+      id: "asura_world_first_visit",
+      title: "さらなる冒険",
+      desc: "修羅の国に行く",
+      isVisible: (p) => !!(p && p.achievements && p.achievements.asura_world_first_visit),
+      isDone: (p) => !!(p && p.worldState && p.worldState.hasVisitedAsura),
+      progress: (p) =>
+        p && p.worldState && p.worldState.hasVisitedAsura ? "1/1" : "0/1",
+      bonus: {},
+      reward: {
+        valuables: [
+          { id: "emblem_strength", amount: 10 },
+          { id: "emblem_vitality", amount: 10 },
+          { id: "emblem_intelligence", amount: 10 },
+          { id: "emblem_agility", amount: 10 },
+          { id: "emblem_dexterity", amount: 10 },
+        ],
+        text: "各紋章 ×10",
+      },
+    },
+    {
       id: "the_have_not",
       title: "死を超える",
       desc: "？？？",

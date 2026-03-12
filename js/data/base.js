@@ -109,6 +109,7 @@ stunTurns: 0,
       // 異世界（修羅の国）進行状態
       worldState: {
         isAsura: false,
+        hasVisitedAsura: false,
         normalFloor: 1,
         normalMaxReachedFloor: 1,
         asuraFloor: 1,

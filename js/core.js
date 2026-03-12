@@ -215,6 +215,7 @@
       Math.max(1, Math.floor(Number(v || fallback)));
     p.worldState = {
       isAsura: !!src.isAsura,
+      hasVisitedAsura: !!src.hasVisitedAsura,
       normalFloor: toFloor(src.normalFloor, p.floor || gameData?.floor || 1),
       normalMaxReachedFloor: toFloor(
         src.normalMaxReachedFloor,
@@ -736,6 +737,7 @@
       );
 
       ws.isAsura = true;
+      ws.hasVisitedAsura = true;
       gameData.floor = Math.max(1, Math.floor(Number(ws.asuraFloor || 1)));
       p.maxReachedFloor = Math.max(
         1,
@@ -743,6 +745,7 @@
       );
       gameData.floor = clampFloor(gameData.floor);
       p.maxReachedFloor = clampFloor(p.maxReachedFloor);
+      checkAndUnlockAchievements();
       return { ok: true, movedToAsura: true };
     }
 
@@ -763,6 +766,7 @@
     );
     gameData.floor = clampFloor(gameData.floor);
     p.maxReachedFloor = clampFloor(p.maxReachedFloor);
+    checkAndUnlockAchievements();
     return { ok: true, movedToAsura: false };
   }
 
