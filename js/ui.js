@@ -2412,17 +2412,18 @@
     };
 
     const keys = Object.keys(jobs);
+    const shouldShowJob = (jobKey) => {
+      const jd = jobs[jobKey];
+      if (!jd || !jd.unlock || !jd.unlock.hidden) return true;
+      return getUnlockInfo(jobKey).unlocked;
+    };
     const baseKeys = keys.filter(
       (k) =>
-        (!jobs[k] || jobs[k].tier !== "advanced") &&
-        !(
-          jobs[k] &&
-          jobs[k].unlock &&
-          jobs[k].unlock.hidden &&
-          !getUnlockInfo(k).unlocked
-        ),
+        (!jobs[k] || jobs[k].tier !== "advanced") && shouldShowJob(k),
     );
-    const advKeys = keys.filter((k) => jobs[k] && jobs[k].tier === "advanced");
+    const advKeys = keys.filter(
+      (k) => jobs[k] && jobs[k].tier === "advanced" && shouldShowJob(k),
+    );
 
     const renderTitle = (title) => {
       grid.innerHTML += `<div class="job-section-title">${title}</div>`;
