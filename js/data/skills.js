@@ -15,7 +15,7 @@
       type: "passive",
       job: "all",
       maxLevel: 100,
-      desc: "索敵+{value}（最大Lv.100）",
+      desc: "索敵+{value}（最大レベル100）",
       effect: (lv) => ({ searchBonus: lv }),
     },
 
@@ -25,7 +25,7 @@
       job: "all",
       maxLevel: 50,
       requiredPoints: 5,
-      desc: "索敵+{value}（最大Lv.50）",
+      desc: "索敵+{value}（最大レベル50）",
       effect: (lv) => ({ searchBonus: lv }),
     },
 
@@ -197,7 +197,7 @@
       job: "blademaster",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "命中+{accuracyBonus}%（Lvで増加。会心率+{critBonus}%）",
+      desc: "命中+{accuracyBonus}%（レベルで増加。会心率+{critBonus}%）",
       effect: (lv) => ({ accuracyBonus: lv * 4, critBonus: lv * 2 }),
     },
     blademaster_tsubame: {
@@ -319,7 +319,7 @@
       name: "ジャスト回避",
       type: "passive",
       job: "thief",
-      // 仕様変更：最大Lv1、必要ポイント5
+      // 仕様変更：最大レベル1、必要ポイント5
       maxLevel: 1,
       requiredPoints: 5,
       desc: "回避成功時、次の攻撃が確定会心",
@@ -472,7 +472,7 @@
       type: "passive",
       job: "archer",
       maxLevel: 3,
-      desc: "戦闘開始時、確率で先制攻撃（Lvで確率/威力UP）",
+      desc: "戦闘開始時、確率で先制攻撃（レベルで確率/威力UP）",
       effect: (lv) => ({ accuracyBonus: lv * 2 }),
     },
 
@@ -599,7 +599,7 @@
       job: "blademaster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "攻撃力+{value}%、構え上限+1（Lv3）/+2（Lv5）",
+      desc: "攻撃力+{value}%、構え上限+1（レベル3）/+2（レベル5）",
       effect: (lv) => ({
         attackBonus: lv * 3,
         stanceMaxBonus: lv >= 5 ? 2 : lv >= 3 ? 1 : 0,
@@ -692,7 +692,7 @@
       job: "guardian",
       maxLevel: 5,
       requiredPoints: 4,
-      desc: "最大HP+{maxHpBonus}%（Lvで増加。防御力+{defenseBonus}%）",
+      desc: "最大HP+{maxHpBonus}%（レベルで増加。防御力+{defenseBonus}%）",
       effect: (lv) => ({ maxHpBonus: lv * 10, defenseBonus: lv * 3 }),
     },
     guardian_bulwark: {
@@ -795,7 +795,7 @@
       job: "assassin",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "回避+{evasionBonus}%（Lvで増加。命中+{accuracyBonus}%）",
+      desc: "回避+{evasionBonus}%（レベルで増加。命中+{accuracyBonus}%）",
       effect: (lv) => ({ evasionBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
@@ -894,7 +894,7 @@
       job: "archmage",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "魔法攻撃力+{magicBonus}%（Lvで増加。回復力+{healPowerBonus}%）",
+      desc: "魔法攻撃力+{magicBonus}%（レベルで増加。回復力+{healPowerBonus}%）",
       effect: (lv) => ({ magicBonus: lv * 3, healPowerBonus: lv * 2 }),
     },
 
@@ -1168,7 +1168,7 @@
       job: "trickster",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "索敵+{searchBonus}（Lvで増加。会心率+{critBonus}%）",
+      desc: "索敵+{searchBonus}（レベルで増加。会心率+{critBonus}%）",
       effect: (lv) => ({ searchBonus: lv * 2, critBonus: lv * 1 }),
     },
 
@@ -1332,7 +1332,7 @@
       job: "asura",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "会心率+{critBonus}%（Lvで増加。命中+{accuracyBonus}%）",
+      desc: "会心率+{critBonus}%（レベルで増加。命中+{accuracyBonus}%）",
       effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
     },
 
@@ -1420,7 +1420,7 @@
       job: "warfiend",
       maxLevel: 5,
       requiredPoints: 3,
-      desc: "物理攻撃力+{attackBonus}%（Lvで増加。防御力+{defenseBonus}%）",
+      desc: "物理攻撃力+{attackBonus}%（レベルで増加。防御力+{defenseBonus}%）",
       effect: (lv) => ({ attackBonus: lv * 5, defenseBonus: lv * 1 }),
     },
 

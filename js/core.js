@@ -1750,11 +1750,11 @@
         const stacks = clamp(Math.floor(Number(bs.rageStacks || 0)), 0, 10);
 
         if (stacks > 0) {
-          // 攻撃：スタック×2% + スキルLv×1%（最大+35%）
+          // 攻撃：スタック×2% + スキルレベル×1%（最大+35%）
           const atkMul = 1 + Math.min(0.35, stacks * 0.02 + rageSkillLv * 0.01);
           combat.attack *= atkMul;
 
-          // 会心：スタック×(1+0.5*Lv)%
+          // 会心：スタック×(1+0.5*レベル)%
           combat.critRate += Math.round(stacks * (1 + 0.5 * rageSkillLv));
         }
       }
@@ -4703,7 +4703,7 @@
         Math.floor(Number(p.skillPoints || 0)) - cost,
       );
       log(
-        `⚙️ 経験値増加に自動割り振り（Lv.${p.skills.exp_up} / ポイント-${cost}）`,
+        `⚙️ 経験値増加に自動割り振り（レベル${p.skills.exp_up} / ポイント-${cost}）`,
       );
     };
 
@@ -4747,7 +4747,7 @@
       const combat = getCombatStats();
       gameData.player.hp = combat.maxHp;
 
-      log(`レベルアップ！ Lv.${gameData.player.level}`);
+      log(`レベルアップ！ レベル${gameData.player.level}`);
       log("ステータスポイントとスキルポイントを獲得！");
 
       if (canAutoAllocateExpUp()) {

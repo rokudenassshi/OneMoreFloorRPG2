@@ -2406,7 +2406,7 @@
         return { unlocked, text: "？？？" };
       }
       const parts = [];
-      if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+      if (minLevel) parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
       return { unlocked, text: parts.join(" ＆ ") };
     };
@@ -2556,7 +2556,7 @@
 
       if (!unlocked) {
         const parts = [];
-        if (minLevel) parts.push(`Lv${Math.min(level, minLevel)}/${minLevel}`);
+        if (minLevel) parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
         return;
@@ -2921,7 +2921,7 @@
     activeList.innerHTML = "";
 
     // スキル説明文の {xxx} を実際の数値で埋める
-    // （未習得なら Lv1 相当をプレビュー表示）
+    // （未習得なら レベル1 相当をプレビュー表示）
     // 例: "命中+{accuracyBonus}%（会心+{critBonus}%）"
     const formatSkillDesc = (skill, level) => {
       const raw = String(skill?.desc || "");
@@ -2990,7 +2990,7 @@
           String(key || ""),
         );
         const shouldPercentize =
-          nextChar === "%" || nextChar === "％" || keyLooksPercent;
+          nextChar === "%" || keyLooksPercent;
         if (!shouldPercentize) return v;
         if (!Number.isFinite(v)) return v;
         if (v > 0 && v < 1) return v * 100;
@@ -3018,7 +3018,7 @@
         if (actualKey === "evasionBonus") {
           const base = String(str || raw);
           const nextChar = base.charAt(offset + String(_m).length);
-          if (nextChar !== "%" && nextChar !== "％") rep += "%";
+          if (nextChar !== "%") rep += "%";
         }
 
         return rep;
@@ -3109,7 +3109,7 @@
             }
           </div>
           <div class="skill-actions">
-            <div class="skill-level">Lv.${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
+            <div class="skill-level">レベル${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
             ${
               skill.type === "active" && level > 0
                 ? `
@@ -3195,7 +3195,7 @@
     if (nextLevel <= 0) {
       delete p.skills[key];
 
-      // 装備しているスキルがLv0になったら自動で外す
+      // 装備しているスキルがレベル0になったら自動で外す
       ensureEquippedSkillsArray(p);
       for (let i = 0; i < p.equippedSkills.length; i++) {
         if (p.equippedSkills[i] === key) p.equippedSkills[i] = null;
