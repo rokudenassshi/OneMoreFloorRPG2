@@ -536,15 +536,16 @@
 
   async function saveGameNow(opts = {}) {
     try {
-      if (!autosaveEnabled) return;
-      if (!autosaveDirty) return;
+      const manual = !!(opts && opts.manual === true);
+      if (!autosaveEnabled && !manual) return false;
+      if (!autosaveDirty && !manual) return false;
       const force = !!(opts && opts.force === true);
       const authBridge = window.firebaseAuthBridge || null;
       const currentUser =
         authBridge && typeof authBridge.getCurrentUser === "function"
           ? authBridge.getCurrentUser()
           : null;
-      if (!currentUser) return;
+      if (!currentUser) return false;
 
       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
@@ -563,7 +564,7 @@
 
       if (cloudSaveInFlight) {
         cloudSaveQueued = true;
-        return;
+        return false;
       }
 
       const payload = buildSavePayload();
@@ -573,7 +574,7 @@
       const httpsCallableFactory = window.firebaseHttpsCallable || null;
       if (!functionsInstance || typeof httpsCallableFactory !== "function") {
         autosaveDirty = true;
-        return;
+        return false;
       }
 
       cloudSaveInFlight = true;
@@ -592,8 +593,10 @@
         cloudSaveQueued = false;
         if (autosaveDirty) saveGameNow();
       }
+      return true;
     } catch (e) {
       autosaveDirty = true;
+      return false;
     }
   }
 

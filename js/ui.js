@@ -3360,6 +3360,24 @@
     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
   }
 
+  async function handleManualSave() {
+    try {
+      if (typeof saveGameNow !== "function") {
+        log("⚠️ セーブ機能を利用できません");
+        return;
+      }
+      const ok = await saveGameNow({ force: true, manual: true });
+      if (ok) {
+        log("💾 手動セーブしました");
+      } else {
+        log("⚠️ 手動セーブできませんでした（ログイン状態をご確認ください）");
+      }
+    } catch (e) {
+      console.error(e);
+      log("⚠️ 手動セーブに失敗しました");
+    }
+  }
+
   let loginPromptPromise = null;
   let resolveLoginPrompt = null;
   let loginPromptResolved = false;
@@ -3451,6 +3469,7 @@
   window.setStatusTab = setStatusTab;
   window.postRecordToX = postRecordToX;
   window.toggleAutosave = toggleAutosave;
+  window.handleManualSave = handleManualSave;
 
   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
   window.startWithGoogleLogin = startWithGoogleLogin;

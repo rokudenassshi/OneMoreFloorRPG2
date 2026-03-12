@@ -1,67 +1,125 @@
-diff --git a/js/data/equipment.js b/js/data/equipment.js
-index 9d57327958863b3748021133e0494b56e9171f58..bc9b395964e77f17dfa5f87b2f00c6d0ad1cc4b8 100644
---- a/js/data/equipment.js
-+++ b/js/data/equipment.js
-@@ -274,60 +274,60 @@
-       // 魔法攻撃力・回復力寄り（防御は低め）
-       bias: {
-         defenseMult: 0.65,
-         magicAttackMult: 1.25,
-         healPowerMult: 1.25,
-       },
-     },
+diff --git a/js/ui.js b/js/ui.js
+index 701f0ff1ae7b9976ba3eb2c1e3b8ac36468c06e2..44f0c393688f8eb68655e342a47c98df896e394d 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -3338,50 +3338,68 @@
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+   window.useValuableById = useValuableById;
+   // =====================
+   // セーブ設定
+   // =====================
+   function toggleAutosave(enabled) {
+     setAutosaveEnabled(!!enabled);
+     updateOptionsUI();
+     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
+   }
  
-     // -------------------
-     // 装飾品（アクセ枠）
-     // -------------------
-     // アクセは「指輪 / 耳飾り / 首飾り / 腕輪」の4種類のみ
-     ring: { name: "指輪", category: "accessory", hands: 0 },
-     earrings: { name: "耳飾り", category: "accessory", hands: 0 },
-     necklace: { name: "首飾り", category: "accessory", hands: 0 },
-     bracelet: { name: "腕輪", category: "accessory", hands: 0 },
-   };
++  async function handleManualSave() {
++    try {
++      if (typeof saveGameNow !== "function") {
++        log("⚠️ セーブ機能を利用できません");
++        return;
++      }
++      const ok = await saveGameNow({ force: true, manual: true });
++      if (ok) {
++        log("💾 手動セーブしました");
++      } else {
++        log("⚠️ 手動セーブできませんでした（ログイン状態をご確認ください）");
++      }
++    } catch (e) {
++      console.error(e);
++      log("⚠️ 手動セーブに失敗しました");
++    }
++  }
++
+   let loginPromptPromise = null;
+   let resolveLoginPrompt = null;
+   let loginPromptResolved = false;
+ 
+   function finishLoginPrompt() {
+     if (loginPromptResolved) return;
+     loginPromptResolved = true;
+ 
+     const modal = document.getElementById("loginModal");
+     if (modal) {
+       modal.classList.add("hidden");
+       modal.setAttribute("aria-hidden", "true");
+     }
+ 
+     if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
+     resolveLoginPrompt = null;
+     loginPromptPromise = null;
+   }
+ 
+   async function promptGoogleLoginAtStart() {
+     if (loginPromptPromise) return loginPromptPromise;
+ 
+     loginPromptResolved = false;
+     loginPromptPromise = new Promise((resolve) => {
+       resolveLoginPrompt = resolve;
+@@ -3429,50 +3447,51 @@
+   function startWithoutLogin() {
+     log("⚠️ ログインなしで開始します（クラウド保存は無効）");
+     finishLoginPrompt();
+   }
+ 
+   function handleFirebaseAuthChanged(user) {
+     if (user) {
+       finishLoginPrompt();
+     }
+   }
  
    // -------------------
-   // ランダムオプション（テーブルを分離）
+   // 初期化（モーダル外タップなど）
    // -------------------
+   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
+   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
+   bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
  
-   // 装備品（武器・防具）用：基本戦闘に関するオプションのみ
-   const equipmentOptionEffects = [
-     { name: "経験値UP", type: "expBonus", value: 15 },
--    { name: "クリティカル率UP", type: "critRate", value: 5 },
-+    { name: "会心率UP", type: "critRate", value: 5 },
-     { name: "最大HP UP", type: "maxHpBonus", value: 20 },
-     { name: "攻撃力UP", type: "attackBonus", value: 10 },
-     { name: "防御力UP", type: "defenseBonus", value: 10 },
-     { name: "命中率UP", type: "accuracy", value: 5 },
-     { name: "魔法攻撃力UP", type: "magicPower", value: 18 },
-     { name: "回復力UP", type: "healPower", value: 18 },
-     { name: "回復量UP", type: "healReceived", value: 15 },
-     { name: "被ダメージ軽減", type: "damageReduction", value: 8 },
--    { name: "クリダメUP", type: "critDamage", value: 20 },
-+    { name: "会心威力UP", type: "critDamage", value: 20 },
-     { name: "HP吸収", type: "lifeSteal", value: 6 },
-     { name: "再生", type: "regen", value: 2 },
-     // 連続攻撃/追撃を統一（名称は「追撃」）
-     { name: "追撃", type: "pursuitChance", value: 6 },
-     { name: "追撃強化", type: "pursuitDamagePct", value: 20 },
-     { name: "反撃率UP", type: "counterChance", value: 6 },
-     { name: "反撃威力UP", type: "counterDamage", value: 25 },
-     { name: "背水強化", type: "desperationDamage", value: 20 },
-     { name: "追い打ち", type: "executeDamage", value: 15 },
-     { name: "回避時HP回復", type: "evadeHeal", value: 2 },
-     { name: "状態異常短縮", type: "ailmentDurationDown", value: 20 },
-     { name: "状態異常耐性", type: "ailmentResist", value: 30 },
-   ];
+   // ステータス画面の記録タブ横にバージョンを表示
+   applyGameVersionBadges();
  
-   // 装飾品（アクセ）用：特殊な効果を発揮するもの
-   // - cond:
-   //   - "unarmed"   : 武器を装備していない時
-   //   - "noArmor"   : 防具を装備していない時
-   //   - "twoHanded" : 両手武器を装備している時
-   const accessoryOptionEffects = [
-     // 装飾品は「下限〜上限」のレンジで値を持つ。
-     // フロアが高いほど上限寄りが出やすい（core.js の rollAccessoryEffectValueByRange）。
-     { name: "スキル威力", type: "skillPower", min: 6, max: 28 },
-     { name: "CT短縮", type: "cooldownReduction", min: 1, max: 3 },
+   // グローバル公開（HTML onclick 用）
+   window.setStatusTab = setStatusTab;
+   window.postRecordToX = postRecordToX;
+   window.toggleAutosave = toggleAutosave;
++  window.handleManualSave = handleManualSave;
  
+   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
+   window.startWithGoogleLogin = startWithGoogleLogin;
+   window.startWithoutLogin = startWithoutLogin;
+   window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
+ 
+   window.openStatus = openStatus;
+   window.openOptions = openOptions;
+   window.closeOptions = closeOptions;
+   window.openHelpScreen = openHelpScreen;
+   window.closeHelpScreen = closeHelpScreen;
+   window.closeStatus = closeStatus;
+   window.updateStatusUI = updateStatusUI;
+ 
+   // シリアルコード（オプション画面）
+   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
+   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
+ 
+   window.openJobSelector = openJobSelector;
+   window.closeJobSelector = closeJobSelector;
+   window.selectJob = selectJob;
+ 
+   window.openStatAllocation = openStatAllocation;
+   window.closeStatAllocation = closeStatAllocation;
+   window.adjustStat = adjustStat;
