@@ -1,177 +1,67 @@
-diff --git a/js/ui.js b/js/ui.js
-index 4ea5109c5013d398e705f37cb280ee502c391f83..4d10676b700ca5c0a188938fe0041cf3730c7e91 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2849,50 +2849,65 @@
-     const group = skillDef?.exclusiveGroup;
-     if (group) {
-       for (const k in skills) {
-         const def = skills[k];
-         if (!def || def.exclusiveGroup !== group) continue;
-         addName(String(k));
-       }
-     }
+diff --git a/js/data/equipment.js b/js/data/equipment.js
+index 9d57327958863b3748021133e0494b56e9171f58..bc9b395964e77f17dfa5f87b2f00c6d0ad1cc4b8 100644
+--- a/js/data/equipment.js
++++ b/js/data/equipment.js
+@@ -274,60 +274,60 @@
+       // 魔法攻撃力・回復力寄り（防御は低め）
+       bias: {
+         defenseMult: 0.65,
+         magicAttackMult: 1.25,
+         healPowerMult: 1.25,
+       },
+     },
  
-     return names;
-   }
-   function isSkillPrereqMet(skillDef, playerSkills) {
-     const reqs = skillDef?.requires;
-     if (!Array.isArray(reqs) || reqs.length === 0) return true;
-     const ps =
-       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
-     return reqs.every((r) => {
-       if (!r) return true;
-       const k = String(r.key || "");
-       if (!k) return true;
-       const needLv = Math.max(1, Math.floor(Number(r.level || 1)));
-       return Math.floor(Number(ps[k] || 0)) >= needLv;
-     });
-   }
+     // -------------------
+     // 装飾品（アクセ枠）
+     // -------------------
+     // アクセは「指輪 / 耳飾り / 首飾り / 腕輪」の4種類のみ
+     ring: { name: "指輪", category: "accessory", hands: 0 },
+     earrings: { name: "耳飾り", category: "accessory", hands: 0 },
+     necklace: { name: "首飾り", category: "accessory", hands: 0 },
+     bracelet: { name: "腕輪", category: "accessory", hands: 0 },
+   };
  
-+  function isSkillVisibleByProgress(skillKey) {
-+    const gatedCommonSkills = new Set([
-+      "common_attack_tuning",
-+      "common_defense_tuning",
-+      "common_counter_rate_tuning",
-+      "common_counter_damage_tuning",
-+      "common_followup_rate_tuning",
-+      "common_followup_damage_tuning",
-+      "common_crit_rate_tuning",
-+    ]);
-+    if (!gatedCommonSkills.has(String(skillKey || ""))) return true;
-+    const maxReached = Math.floor(Number(gameData?.player?.maxReachedFloor || 1));
-+    return maxReached >= 3000;
-+  }
-+
-   function updateSkillUI() {
-     const p = gameData.player;
-     const currentJob = p.job;
-     const curJobDef = jobs && jobs[currentJob] ? jobs[currentJob] : null;
-     const currentGroup = currentJob; // 上位職は下位職スキルを共有しない
+   // -------------------
+   // ランダムオプション（テーブルを分離）
+   // -------------------
  
-     document.getElementById("skillPointsInSkill").textContent = p.skillPoints;
-     const autoToggle = document.getElementById("autoAllocateExpUpToggle");
-     if (autoToggle) autoToggle.checked = !!p.autoAllocateExpUp;
-     const autoStatToggle = document.getElementById(
-       "autoAllocateStatPointsToggle",
-     );
-     if (autoStatToggle) autoStatToggle.checked = !!p.autoAllocateStatPoints;
-     const autoStatTarget = document.getElementById("autoAllocateStatTarget");
-     if (autoStatTarget)
-       autoStatTarget.value = p.autoAllocateStatTarget || "strength";
+   // 装備品（武器・防具）用：基本戦闘に関するオプションのみ
+   const equipmentOptionEffects = [
+     { name: "経験値UP", type: "expBonus", value: 15 },
+-    { name: "クリティカル率UP", type: "critRate", value: 5 },
++    { name: "会心率UP", type: "critRate", value: 5 },
+     { name: "最大HP UP", type: "maxHpBonus", value: 20 },
+     { name: "攻撃力UP", type: "attackBonus", value: 10 },
+     { name: "防御力UP", type: "defenseBonus", value: 10 },
+     { name: "命中率UP", type: "accuracy", value: 5 },
+     { name: "魔法攻撃力UP", type: "magicPower", value: 18 },
+     { name: "回復力UP", type: "healPower", value: 18 },
+     { name: "回復量UP", type: "healReceived", value: 15 },
+     { name: "被ダメージ軽減", type: "damageReduction", value: 8 },
+-    { name: "クリダメUP", type: "critDamage", value: 20 },
++    { name: "会心威力UP", type: "critDamage", value: 20 },
+     { name: "HP吸収", type: "lifeSteal", value: 6 },
+     { name: "再生", type: "regen", value: 2 },
+     // 連続攻撃/追撃を統一（名称は「追撃」）
+     { name: "追撃", type: "pursuitChance", value: 6 },
+     { name: "追撃強化", type: "pursuitDamagePct", value: 20 },
+     { name: "反撃率UP", type: "counterChance", value: 6 },
+     { name: "反撃威力UP", type: "counterDamage", value: 25 },
+     { name: "背水強化", type: "desperationDamage", value: 20 },
+     { name: "追い打ち", type: "executeDamage", value: 15 },
+     { name: "回避時HP回復", type: "evadeHeal", value: 2 },
+     { name: "状態異常短縮", type: "ailmentDurationDown", value: 20 },
+     { name: "状態異常耐性", type: "ailmentResist", value: 30 },
+   ];
  
-     const commonList = document.getElementById("commonSkillsList");
-     const passiveList = document.getElementById("passiveSkillsList");
-     const activeList = document.getElementById("activeSkillsList");
+   // 装飾品（アクセ）用：特殊な効果を発揮するもの
+   // - cond:
+   //   - "unarmed"   : 武器を装備していない時
+   //   - "noArmor"   : 防具を装備していない時
+   //   - "twoHanded" : 両手武器を装備している時
+   const accessoryOptionEffects = [
+     // 装飾品は「下限〜上限」のレンジで値を持つ。
+     // フロアが高いほど上限寄りが出やすい（core.js の rollAccessoryEffectValueByRange）。
+     { name: "スキル威力", type: "skillPower", min: 6, max: 28 },
+     { name: "CT短縮", type: "cooldownReduction", min: 1, max: 3 },
  
-     if (commonList) commonList.innerHTML = "";
-     passiveList.innerHTML = "";
-     activeList.innerHTML = "";
- 
-@@ -2983,50 +2998,51 @@
-           v = eff?.[key];
-         }
-         if (!Number.isFinite(v)) return "-";
- 
-         let rep = formatNumber(
-           maybePercent(v, actualKey, offset, String(_m).length, str),
-         );
-         if (!rep) return "-";
- 
-         // 回避上昇は % として表示（説明文側に % が無い場合でも付与）
-         // 例: "回避+{evasionBonus}" -> "回避+3%"
-         if (actualKey === "evasionBonus") {
-           const base = String(str || raw);
-           const nextChar = base.charAt(offset + String(_m).length);
-           if (nextChar !== "%" && nextChar !== "％") rep += "%";
-         }
- 
-         return rep;
-       });
-     };
- 
-     for (let key in skills) {
-       const skill = skills[key];
-       const isCommon = skill.job === "all";
-       if (skill.job && !isCommon && skill.job !== currentJob) continue;
-+      if (!isSkillVisibleByProgress(key)) continue;
- 
-       const level = p.skills[key] || 0;
-       const maxLv =
-         skill.maxLevel === Infinity ? Infinity : Number(skill.maxLevel);
-       const cost = getSkillPointCost(skill);
-       const prereqOk = isSkillPrereqMet(skill, p.skills);
-       const conflictKey =
-         level <= 0 ? findExclusiveConflict(key, skill, p.skills) : null;
- 
-       const canLevelUp =
-         (maxLv === Infinity || level < maxLv) &&
-         p.skillPoints >= cost &&
-         prereqOk &&
-         !conflictKey;
-       const canLevelDown = level > 0;
- 
-       // 命中率表示（攻撃系スキルのみ）
-       const shownLvForAcc = level > 0 ? level : 1;
-       let previewEff = {};
-       try {
-         if (typeof skill.effect === "function")
-           previewEff = skill.effect(shownLvForAcc) || {};
-       } catch (e) {
-         previewEff = {};
-       }
-@@ -3098,50 +3114,54 @@
-           </div>
-         </div>
-       `;
- 
-       if (isCommon) {
-         if (commonList) commonList.innerHTML += html;
-       } else if (skill.type === "passive") {
-         passiveList.innerHTML += html;
-       } else {
-         activeList.innerHTML += html;
-       }
-     }
- 
-     if (commonList && commonList.innerHTML.trim() === "") {
-       commonList.innerHTML =
-         '<div style="font-size:12px; color:#aaa; padding:8px;">（共通スキルはまだありません）</div>';
-     }
-   }
- 
-   function levelUpSkill(key) {
-     const p = gameData.player;
-     if (!p) return;
- 
-     const skill = skills[key];
-     if (!skill) return;
-+    if (!isSkillVisibleByProgress(key)) {
-+      log("🔒 このスキルは3000階層クリア後に解放されます");
-+      return;
-+    }
- 
-     const cost = getSkillPointCost(skill);
-     if (Math.floor(Number(p.skillPoints || 0)) < cost) return;
- 
-     const currentLevel = Math.floor(Number((p.skills && p.skills[key]) || 0));
-     if (skill.maxLevel !== Infinity && currentLevel >= skill.maxLevel) return;
- 
-     // 分岐・前提チェック（未習得→習得の瞬間だけ）
-     if (currentLevel <= 0) {
-       const conflictKey = findExclusiveConflict(key, skill, p.skills);
-       if (conflictKey) {
-         log(
-           `❌ ${skill.name}は「${skills[conflictKey]?.name || conflictKey}」と同時に取得できません`,
-         );
-         return;
-       }
-       if (!isSkillPrereqMet(skill, p.skills)) {
-         log(`🔒 前提スキルが足りません`);
-         return;
-       }
-     }
- 
-     if (!p.skills || typeof p.skills !== "object") p.skills = {};
-     p.skills[key] = currentLevel + 1;
-     p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);

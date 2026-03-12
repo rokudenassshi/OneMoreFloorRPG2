@@ -656,8 +656,8 @@
           : `${condPrefix}スキル威力`;
       case "critRate":
         return hasV
-          ? `${condPrefix}クリティカル率${sign}${v}%`
-          : `${condPrefix}クリティカル率`;
+          ? `${condPrefix}会心率${sign}${v}%`
+          : `${condPrefix}会心率`;
       case "accuracy":
         return hasV ? `${condPrefix}命中${sign}${v}%` : `${condPrefix}命中`;
       case "evasion":
@@ -710,8 +710,8 @@
           : `${condPrefix}被ダメージ軽減`;
       case "critDamage":
         return hasV
-          ? `${condPrefix}クリダメ${sign}${v}%`
-          : `${condPrefix}クリダメ`;
+          ? `${condPrefix}会心威力${sign}${v}%`
+          : `${condPrefix}会心威力`;
       case "lifeSteal":
         return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
       case "regen":
@@ -2283,7 +2283,7 @@
           ? Math.round(getPlayerEvasionCap())
           : 90;
       push(`回避率: ${Math.round(combat.evasion)}%（上限${evasionCap}%）`);
-      push(`クリティカル: ${Math.round(combat.critRate)}%`);
+      push(`会心: ${Math.round(combat.critRate)}%`);
       push(`索敵: ${Math.round(combat.search)}`);
 
       // 得意装備補正

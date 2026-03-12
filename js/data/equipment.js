@@ -296,7 +296,7 @@
   // 装備品（武器・防具）用：基本戦闘に関するオプションのみ
   const equipmentOptionEffects = [
     { name: "経験値UP", type: "expBonus", value: 15 },
-    { name: "クリティカル率UP", type: "critRate", value: 5 },
+    { name: "会心率UP", type: "critRate", value: 5 },
     { name: "最大HP UP", type: "maxHpBonus", value: 20 },
     { name: "攻撃力UP", type: "attackBonus", value: 10 },
     { name: "防御力UP", type: "defenseBonus", value: 10 },
@@ -305,7 +305,7 @@
     { name: "回復力UP", type: "healPower", value: 18 },
     { name: "回復量UP", type: "healReceived", value: 15 },
     { name: "被ダメージ軽減", type: "damageReduction", value: 8 },
-    { name: "クリダメUP", type: "critDamage", value: 20 },
+    { name: "会心威力UP", type: "critDamage", value: 20 },
     { name: "HP吸収", type: "lifeSteal", value: 6 },
     { name: "再生", type: "regen", value: 2 },
     // 連続攻撃/追撃を統一（名称は「追撃」）

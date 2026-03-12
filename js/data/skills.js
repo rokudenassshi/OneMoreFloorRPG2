@@ -177,7 +177,7 @@
       job: "blademaster",
       maxLevel: 3,
       requiredPoints: 3,
-      desc: "回避/クリティカルで構えが溜まり、構え1につき物理ダメージ+6%。構え上限+{value}",
+      desc: "回避/会心で構えが溜まり、構え1につき物理ダメージ+6%。構え上限+{value}",
       effect: (lv) => ({ stanceMaxBonus: lv }), // 上限 3+lv
     },
     blademaster_iai: {
@@ -280,7 +280,7 @@
       type: "passive",
       job: "thief",
       maxLevel: 5,
-      desc: "クリティカル率+{value}%",
+      desc: "会心率+{value}%",
       effect: (lv) => ({ critBonus: lv * 2 }),
     },
     backstab: {
@@ -322,7 +322,7 @@
       // 仕様変更：最大Lv1、必要ポイント5
       maxLevel: 1,
       requiredPoints: 5,
-      desc: "回避成功時、次の攻撃が確定クリティカル",
+      desc: "回避成功時、次の攻撃が確定会心",
       effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
     },
 
@@ -420,11 +420,11 @@
     // 弓使い (archer)
     // ===================================
     crit_up: {
-      name: "クリティカルマスタリー",
+      name: "会心マスタリー",
       type: "passive",
       job: "archer",
       maxLevel: 5,
-      desc: "クリティカル率+{value}%",
+      desc: "会心率+{value}%",
       effect: (lv) => ({ critBonus: lv * 3 }),
     },
     archer_precision: {

@@ -95,7 +95,7 @@
       skillGroup: "swordsman",
       baseJob: "swordsman",
       favoredType: ["sword", "katana"],
-      unlock: { type: "crit", target: 30, text: "剣士でクリティカルを30回出す" },
+      unlock: { type: "crit", target: 30, text: "剣士で会心を30回出す" },
       bonuses: { strength: 5, vitality: 2, intelligence: 0, agility: 2, dexterity: 2 },
       traits: {"critRateBonus": 8, "critDamageMul": 2.4, "favoredMultiplier": 1.3},
     },
@@ -223,7 +223,7 @@
       baseJob: "swordsman",
       // 得意：斧
       favoredType: "axe",
-      unlock: { type: "crit", target: 40, text: "剣士でクリティカルを40回出す" },
+      unlock: { type: "crit", target: 40, text: "剣士で会心を40回出す" },
       bonuses: { strength: 7, vitality: 1, intelligence: -2, agility: 1, dexterity: 0 },
       traits: {"attackMult": 1.22, "defenseMult": 0.9, "critRateBonus": 3, "favoredMultiplier": 1.3},
     },

@@ -106,7 +106,7 @@
         { type: "bonusPct", key: "firstHitCrit", min: 1, max: 1 },
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
       ],
-      describe: (r) => `初撃会心（戦闘で1回） / クリダメ+${pct(r.critDamage)}`,
+      describe: (r) => `初撃会心（戦闘で1回） / 会心威力+${pct(r.critDamage)}`,
     },
 
     // -------------------
@@ -188,7 +188,7 @@
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
       ],
       describe: (r) =>
-        `HP吸収+${pct(r.lifeSteal)} / クリダメ+${pct(r.critDamage)}`,
+        `HP吸収+${pct(r.lifeSteal)} / 会心威力+${pct(r.critDamage)}`,
     },
 
     {
@@ -231,7 +231,7 @@
         { type: "bonusPct", key: "critDamage", min: 18, max: 40 },
       ],
       describe: (r) =>
-        `攻撃力+${pct(r.attackPct)} / クリダメ+${pct(r.critDamage)}`,
+        `攻撃力+${pct(r.attackPct)} / 会心威力+${pct(r.critDamage)}`,
     },
     {
       name: "断頭の",
@@ -241,7 +241,7 @@
         { type: "bonusPct", key: "critDamage", min: 25, max: 60 },
       ],
       describe: (r) =>
-        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)}`,
+        `追い打ち+${pct(r.executeDamage)} / 会心威力+${pct(r.critDamage)}`,
     },
 
     {
@@ -319,7 +319,7 @@
         { type: "bonusPct", key: "critRate", min: 6, max: 12 },
       ],
       describe: (r) =>
-        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 攻撃力+${pct(r.attackPct)} / クリティカル率+${pct(r.critRate)}`,
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 攻撃力+${pct(r.attackPct)} / 会心率+${pct(r.critRate)}`,
     },
     {
       name: "破滅の",
@@ -331,7 +331,7 @@
         { type: "bonusPct", key: "accuracy", min: 8, max: 16 },
       ],
       describe: (r) =>
-        `追い打ち+${pct(r.executeDamage)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)} / 命中+${pct(r.accuracy)}`,
+        `追い打ち+${pct(r.executeDamage)} / 会心威力+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)} / 命中+${pct(r.accuracy)}`,
     },
     {
       name: "迅詠の",
@@ -355,7 +355,7 @@
         { type: "statPct", stat: "attack", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `命中+${pct(r.accuracy)} / クリティカル率+${pct(r.critRate)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
+        `命中+${pct(r.accuracy)} / 会心率+${pct(r.critRate)} / 会心威力+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "雷鎖の",
@@ -386,7 +386,7 @@
         { type: "bonusPct", key: "pursuitChance", min: 10, max: 20 },
       ],
       describe: (r) =>
-        `クリティカル率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)} / 追撃率+${pct(r.pursuitChance)}`,
+        `会心率+${pct(r.critRate)} / 命中+${pct(r.accuracy)} / 攻撃力+${pct(r.attackPct)} / 追撃率+${pct(r.pursuitChance)}`,
     },
     {
       name: "災禍の",
@@ -398,7 +398,7 @@
         { type: "statPct", stat: "attack", min: 10, max: 18 },
       ],
       describe: (r) =>
-        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / クリダメ+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
+        `追撃率+${pct(r.pursuitChance)} / 追撃威力+${pct(r.pursuitDamagePct)} / 会心威力+${pct(r.critDamage)} / 攻撃力+${pct(r.attackPct)}`,
     },
   ];
 

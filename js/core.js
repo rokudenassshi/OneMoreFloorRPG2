@@ -1354,7 +1354,7 @@
   }
 
   function onPlayerEvade() {
-    // 盗賊：ジャスト回避 → 次の攻撃が確定クリティカル
+    // 盗賊：ジャスト回避 → 次の攻撃が確定会心
     if (gameData.player?.job === "thief") {
       const lv = Number(gameData.player?.skills?.thief_just_dodge || 0);
       if (lv > 0) setNextCrit(1);
@@ -1378,7 +1378,7 @@
   }
 
   function onPlayerHit({ kind, isCrit } = {}) {
-    // 剣聖：クリティカルで構え
+    // 剣聖：会心で構え
     if (gameData.player?.job === "blademaster") {
       const lv = Number(
         gameData.player?.skills?.blademaster_stance_mastery || 0,
@@ -2878,7 +2878,7 @@
 
     addJobProgress("attackHit", 1);
 
-    // クリティカル判定
+    // 会心判定
     const forceCrit = consumeNextCritFlag();
     const isCrit = forceCrit ? true : Math.random() * 100 < combat.critRate;
     const jt = jobs?.[gameData.player?.job]?.traits || {};
@@ -2947,7 +2947,7 @@
 
     enemy.hp -= totalDamage;
     recordPlayerDamage(totalDamage);
-    log(`${totalDamage}のダメージ${isCrit ? " クリティカル！" : ""}`);
+    log(`${totalDamage}のダメージ${isCrit ? " 会心！" : ""}`);
     if (magicKnightBonusDamage > 0) {
       log(`✨ 魔法追撃 ${magicKnightBonusDamage}ダメージ`);
     }
@@ -3043,7 +3043,7 @@
     damage = applyEnemyVulnerableTaken(enemy, damage);
     enemy.hp -= damage;
     recordPlayerDamage(damage);
-    log(`🗡 追撃！ ${damage}ダメージ${isCrit ? " クリティカル！" : ""}`);
+    log(`🗡 追撃！ ${damage}ダメージ${isCrit ? " 会心！" : ""}`);
 
     applyPlayerOnHitSpecialEffects(enemy);
     onPlayerHit({ kind: "physical", isCrit });
@@ -3129,7 +3129,7 @@
     damage = applyEnemyVulnerableTaken(enemy, damage);
     enemy.hp -= damage;
     recordPlayerDamage(damage);
-    log(`⚡ 追撃！ ${damage}ダメージ${isCrit ? " クリティカル！" : ""}`);
+    log(`⚡ 追撃！ ${damage}ダメージ${isCrit ? " 会心！" : ""}`);
 
     applyPlayerOnHitSpecialEffects(enemy);
     onPlayerHit({ kind: "physical", isCrit });
@@ -3419,7 +3419,7 @@
 
         let damage = base * skillMul;
 
-        // クリティカル判定（スキルでも有効）
+        // 会心判定（スキルでも有効）
         const forceCritSkill = consumeNextCritFlag();
         const isCrit = forceCritSkill
           ? true
@@ -3486,7 +3486,7 @@
               skillMul,
           );
 
-          // クリティカル判定（スキルでも有効）
+          // 会心判定（スキルでも有効）
           const forceCritSkill = consumeNextCritFlag();
           const isCrit = forceCritSkill
             ? true
@@ -3602,7 +3602,7 @@
               skillMul,
           );
 
-          // クリティカル判定（スキルでも有効）
+          // 会心判定（スキルでも有効）
           const forceCritSkill = consumeNextCritFlag();
           const isCrit = forceCritSkill
             ? true
