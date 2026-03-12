@@ -1,111 +1,111 @@
-diff --git a/index.html b/index.html
-index 19b1d9021e9e04fcca0003e617ca3176a5478f86..8b906f94692eb725ae914dfb6aa3a50d584df6ae 100644
---- a/index.html
-+++ b/index.html
-@@ -310,60 +310,76 @@
-         <h3>ヘルプ</h3>
-         <button class="back-button" onclick="closeHelpScreen()">戻る</button>
-       </div>
+diff --git a/js/ui.js b/js/ui.js
+index 44f0c393688f8eb68655e342a47c98df896e394d..094ef92b646fd1db49626cc02f2e001f2fc120dd 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -706,50 +706,54 @@
+         return hasV ? `${condPrefix}回復量${sign}${v}%` : `${condPrefix}回復量`;
+       case "damageReduction":
+         return hasV
+           ? `${condPrefix}被ダメージ-${Math.abs(v)}%`
+           : `${condPrefix}被ダメージ軽減`;
+       case "critDamage":
+         return hasV
+           ? `${condPrefix}会心威力${sign}${v}%`
+           : `${condPrefix}会心威力`;
+       case "lifeSteal":
+         return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
+       case "regen":
+         return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
+       case "hitHeal":
+         return hasV
+           ? `${condPrefix}攻撃時HP回復${sign}${v}`
+           : `${condPrefix}攻撃時HP回復`;
+       case "counterChance":
+         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
+       case "counterDamage":
+         return hasV
+           ? `${condPrefix}反撃威力${sign}${v}%`
+           : `${condPrefix}反撃威力`;
+       case "desperationDamage":
+         return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
++      case "battleStartHpLoss":
++        return hasV
++          ? `${condPrefix}戦闘開始時HP-${Math.abs(v)}%`
++          : `${condPrefix}戦闘開始時HP減少`;
+       case "executeDamage":
+         return hasV
+           ? `${condPrefix}追い打ち${sign}${v}%`
+           : `${condPrefix}追い打ち`;
+       case "evadeHeal":
+         return hasV
+           ? `${condPrefix}回避回復${sign}${v}`
+           : `${condPrefix}回避回復`;
+       case "ailmentDurationDown":
+         return hasV
+           ? `${condPrefix}状態異常短縮${sign}${v}%`
+           : `${condPrefix}状態異常短縮`;
+       case "ailmentResist":
+         return hasV
+           ? `${condPrefix}状態異常耐性${sign}${v}%`
+           : `${condPrefix}状態異常耐性`;
+       default:
+         if (eff.name && hasV) return `${condPrefix}${eff.name}(${sign}${v})`;
+         return `${condPrefix}${eff.name || ""}`;
+     }
+   }
  
-       <div class="status-section">
-         <h4>用語説明</h4>
-         <div class="status-note">索敵は、より強い二つ名モンスターとの遭遇率です。100で必ず二つ名モンスターに遭遇します。</div>
+   // -------------------
+   // 装備表示（固有能力 / ランダムオプション）
+   // -------------------
+@@ -2318,50 +2322,51 @@
+       if (Number.isFinite(expTotal) && expTotal !== 0) {
+         push(`経験値+${expTotal}%${expAch ? `（実績+${expAch}%）` : ""}`);
+       }
  
-         <h4>基本ステータス</h4>
-         <ul>
-           <li><strong>力</strong>: 物理攻撃の威力に影響します。</li>
-           <li><strong>体力</strong>: 最大HPや打たれ強さに影響します。</li>
-           <li><strong>賢さ</strong>: 魔法威力や回復力に影響します。</li>
-           <li><strong>素早さ</strong>: 回避率などの行動性能に影響します。</li>
-           <li><strong>器用さ</strong>: 命中率や会心率に影響します。</li>
-         </ul>
+       addBonus("dropRate");
+       addBonus("skillPower");
+       addBonus("cooldownReduction");
+       addBonus("cooldownCheatChance");
+       addBonus("pursuitChance");
+       addBonus("pursuitDamagePct");
+       addBonus("deathAvoidOnce");
+       addBonus("overhealBarrierCap");
  
-         <h4>計算後ステータス</h4>
-         <ul>
-           <li><strong>最大HP</strong>: 戦闘中に受けられるダメージの上限です。</li>
-           <li><strong>攻撃力</strong>: 通常攻撃・物理スキルのダメージに影響します。</li>
-           <li><strong>防御力</strong>: 受けるダメージを軽減します。</li>
-           <li><strong>魔法威力</strong>: 魔法系スキルのダメージに影響します。</li>
-           <li><strong>回復力</strong>: 回復スキルの回復量に影響します。</li>
-           <li><strong>命中率</strong>: 攻撃やスキルが命中する確率です。</li>
--          <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（上限あり）。</li>
-+          <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（基本上限70%、実績で最大90%）。</li>
-           <li><strong>会心</strong>: 会心ヒットが発生する確率です。</li>
-+          <li><strong>反撃率</strong>: 敵の攻撃後に反撃が発生する確率です（上限45%）。</li>
-           <li><strong>索敵</strong>: 二つ名モンスターの遭遇率です。1で1%、100で確定遭遇です。（上限150）。</li>
-         </ul>
+       addBonus("healReceived");
+       addBonus("damageReduction");
  
-         <h4>追加効果</h4>
-         <ul>
-           <li><strong>得意装備補正</strong>: 職業の得意装備を付けたときの性能ボーナスです。</li>
-           <li><strong>経験値増加</strong>: 戦闘で獲得する経験値へのボーナスです。</li>
-           <li><strong>ドロップ率</strong>: 戦闘後にアイテムを入手できる確率へのボーナスです。</li>
-+          <li><strong>余剰回復盾</strong>: 回復で最大HPを超えた分をバリア化する効果です。上限値が高いほど、余剰分を多くバリアに変換できます。</li>
-+        </ul>
-+
-+        <h4>装備オプション用語（主なもの）</h4>
-+        <ul>
-+          <li><strong>スキル威力</strong>: スキルの与ダメージ倍率を上げます。</li>
-+          <li><strong>追撃 / 追撃威力</strong>: 攻撃後に追撃が発生する確率 / 追撃ダメージ倍率です。</li>
-+          <li><strong>会心威力</strong>: 会心発生時のダメージ倍率を上げます。</li>
-+          <li><strong>HP吸収</strong>: 与えたダメージの一部をHPとして回復します（上限60%）。</li>
-+          <li><strong>再生</strong>: ターン経過ごとにHPを回復します。</li>
-+          <li><strong>被ダメージ軽減</strong>: 受けるダメージを割合で減らします。</li>
-+          <li><strong>反撃威力</strong>: 反撃が発生したときのダメージ倍率を上げます。</li>
-+          <li><strong>背水</strong>: HPが低いほど与ダメージが上がる効果です。</li>
-+          <li><strong>追い打ち</strong>: 瀕死の敵に対する与ダメージを上げます。</li>
-+          <li><strong>状態異常短縮 / 状態異常耐性</strong>: 状態異常の継続ターン短縮 / 付与されにくさを高める効果です。</li>
-         </ul>
-       </div>
-     </div>
+       addBonus("critDamage");
+       addBonus("lifeSteal");
+       addBonus("regen");
+       addBonus("hitHeal");
  
+       addBonus("counterChance");
+       addBonus("counterDamage");
  
-     <script>
-       (function () {
-         "use strict";
+       addBonus("desperationDamage");
++      addBonus("battleStartHpLoss");
+       addBonus("executeDamage");
+       addBonus("evadeHeal");
  
-         const deferredLoginActions = [];
+       addBonus("ailmentDurationDown");
+       addBonus("ailmentResist");
  
-         function queueLoginAction(action) {
-           deferredLoginActions.push(action);
-           console.info("ログイン機能を初期化中です。しばらくお待ちください...");
-         }
+       document.getElementById("calcStats").innerHTML = rows.join("");
+     }
  
-         function startWithGoogleLoginBootstrap() {
-           if (
-             typeof window.startWithGoogleLogin === "function" &&
-             window.startWithGoogleLogin !== startWithGoogleLoginBootstrap
-           ) {
-             return window.startWithGoogleLogin();
-           }
-           queueLoginAction("google");
-         }
-@@ -663,26 +679,26 @@
-       getVersion()
-         .then((version) => {
-           // 他のJS（セーブ出力など）でも使えるように window に乗せる
-           window.GAME_VERSION = version;
+     document.getElementById("skillPoints").textContent = p.skillPoints;
  
-           // 順番に読み込む（依存関係を壊さない）
-           let chain = Promise.resolve();
-           for (const p of scriptList) {
-             const src = p + "?v=" + encodeURIComponent(version);
-             chain = chain.then(() => loadScript(src));
-           }
-           return chain.then(() => {
-             if (typeof window.__consumeDeferredLoginStart === "function") {
-               window.__consumeDeferredLoginStart();
-             }
-           });
-         })
-         .catch((err) => {
-           console.error(err);
-           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
-         });
-     })();
-   </script>
- </body>
+     // 装備中スキル（2枠）表示
+     const sk1 = getEquippedSkillKey(0);
+     const sk2 = getEquippedSkillKey(1);
+     const el1 = document.getElementById("equippedSkillName1");
+     const el2 = document.getElementById("equippedSkillName2");
+     if (el1) el1.textContent = sk1 ? skills[sk1]?.name || sk1 : "なし";
+     if (el2) el2.textContent = sk2 ? skills[sk2]?.name || sk2 : "なし";
+   }
  
--</html>
-\ No newline at end of file
-+</html>
+   // 職業選択
+   function openJobSelector() {
+     const grid = document.getElementById("jobGrid");
+     grid.innerHTML = "";
+ 

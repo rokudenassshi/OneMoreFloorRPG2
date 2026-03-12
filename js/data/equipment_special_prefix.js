@@ -154,6 +154,17 @@
       describe: (r) =>
         `最大HP+${pct(r.maxHpPct)} / 再生${pct(r.regen)} / 被ダメ軽減+${pct(r.damageReduction)} / 防御力+${pct(r.defensePct)}`,
     },
+    {
+      name: "捨命の",
+      rarity: "legendary",
+      effects: [
+        { type: "bonusPct", key: "desperationDamage", min: 45, max: 80 },
+        { type: "bonusPct", key: "battleStartHpLoss", min: 50, max: 50 },
+        { type: "statPct", stat: "attack", min: 8, max: 16 },
+      ],
+      describe: (r) =>
+        `背水+${pct(r.desperationDamage)} / 戦闘開始時HP-${pct(r.battleStartHpLoss)} / 攻撃力+${pct(r.attackPct)}`,
+    },
   ];
 
   // 武器向け（攻撃的/手数/状態異常付与）

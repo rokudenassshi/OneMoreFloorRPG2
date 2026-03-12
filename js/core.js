@@ -2625,6 +2625,17 @@
 
     // 戦闘開始：職固有リソースを初期化
     resetPlayerBattleStateForBattle();
+
+    // 装飾品：背水（戦闘開始時HP減少）
+    {
+      const hpLossPct = clamp(Number(getAccessoryBonus("battleStartHpLoss") || 0), 0, 95);
+      if (Number.isFinite(hpLossPct) && hpLossPct > 0) {
+        const maxHp = Math.max(1, Number(gameData.player?.maxHp || combat.maxHp || 1));
+        const startHp = Math.max(1, Math.round(maxHp * (1 - hpLossPct / 100)));
+        gameData.player.hp = Math.min(Math.max(0, Number(gameData.player.hp || 0)), startHp);
+      }
+    }
+
     // 装飾品：初撃会心（戦闘の最初の命中を確定会心にする）
     {
       const v = Number(getAccessoryBonus("firstHitCrit") || 0);

@@ -728,6 +728,10 @@
           : `${condPrefix}反撃威力`;
       case "desperationDamage":
         return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
+      case "battleStartHpLoss":
+        return hasV
+          ? `${condPrefix}戦闘開始時HP-${Math.abs(v)}%`
+          : `${condPrefix}戦闘開始時HP減少`;
       case "executeDamage":
         return hasV
           ? `${condPrefix}追い打ち${sign}${v}%`
@@ -2340,6 +2344,7 @@
       addBonus("counterDamage");
 
       addBonus("desperationDamage");
+      addBonus("battleStartHpLoss");
       addBonus("executeDamage");
       addBonus("evadeHeal");
 
