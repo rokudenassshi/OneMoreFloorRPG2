@@ -495,6 +495,27 @@
     return JSON.parse(JSON.stringify(payload));
   }
 
+  function savePayloadToLocalCache(payload) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadPayloadFromLocalCache() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function applySavePayload(payload) {
     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
 
@@ -546,7 +567,12 @@
         authBridge && typeof authBridge.getCurrentUser === "function"
           ? authBridge.getCurrentUser()
           : null;
-      if (!currentUser) return false;
+      if (!currentUser) {
+        const payload = buildSavePayload();
+        const cached = savePayloadToLocalCache(payload);
+        if (cached) autosaveDirty = false;
+        return cached;
+      }
 
       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
@@ -618,7 +644,11 @@
         authBridge && typeof authBridge.getCurrentUser === "function"
           ? authBridge.getCurrentUser()
           : null;
-      if (!currentUser) return false;
+      if (!currentUser) {
+        const cachedPayload = loadPayloadFromLocalCache();
+        if (!cachedPayload) return false;
+        return applySavePayload(cachedPayload);
+      }
 
       const functionsInstance = window.firebaseFunctions || null;
       const httpsCallableFactory = window.firebaseHttpsCallable || null;
@@ -4634,7 +4664,9 @@
       if (stayCurrentFloor) {
         log("📍 シリアル特典で現在の階層に留まった");
       } else {
-        gameData.floor = Math.max(1, gameData.floor - 3);
+        const checkpointFloor = Math.floor(gameData.floor / 50) * 50;
+        const fallbackFloor = gameData.floor - 20;
+        gameData.floor = Math.max(1, Math.max(checkpointFloor, fallbackFloor));
       }
       endBattle(false);
     }

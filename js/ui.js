@@ -1095,6 +1095,59 @@
     return best;
   }
 
+  function getAccessoryPrimaryEffect(item) {
+    const effects = Array.isArray(item?.effects) ? item.effects : [];
+    if (!effects.length) return { type: "", value: 0 };
+
+    const first = effects.find((eff) => eff && typeof eff.type === "string");
+    if (!first) return { type: "", value: 0 };
+
+    const value = Number(first.value);
+    return {
+      type: first.type,
+      value: Number.isFinite(value) ? Math.abs(value) : 0,
+    };
+  }
+
+  function sortAccessoryItemsByEffectOnly(inv) {
+    if (!Array.isArray(inv) || inv.length <= 1) return;
+
+    const accessoryIndexes = [];
+    const accessories = [];
+
+    inv.forEach((item, idx) => {
+      if (item?.category !== "accessory") return;
+      accessoryIndexes.push(idx);
+      accessories.push(item);
+    });
+
+    if (accessories.length <= 1) return;
+
+    accessories.sort((a, b) => {
+      const ae = getAccessoryPrimaryEffect(a);
+      const be = getAccessoryPrimaryEffect(b);
+      const typeDiff = ae.type.localeCompare(be.type, "ja");
+      if (typeDiff !== 0) return typeDiff;
+
+      const valueDiff = be.value - ae.value;
+      if (valueDiff !== 0) return valueDiff;
+
+      const an = String(a?.name || "");
+      const bn = String(b?.name || "");
+      return an.localeCompare(bn, "ja");
+    });
+
+    accessoryIndexes.forEach((idx, i) => {
+      inv[idx] = accessories[i];
+    });
+  }
+
+  function isAccessoriesSubTabActive() {
+    const accessoriesSubTab = document.getElementById("accessoriesSubTab");
+    if (!accessoriesSubTab) return false;
+    return accessoriesSubTab.style.display !== "none";
+  }
+
   function getEquipmentSortValue(item) {
     if (!item || typeof item !== "object") return 0;
 
@@ -1152,6 +1205,24 @@
   function sortInventoryByEffectValue() {
     const inv = gameData?.player?.inventory;
     const controlsEl = document.getElementById("effectSortControls");
+
+    if (isAccessoriesSubTabActive()) {
+      if (!Array.isArray(inv) || inv.length <= 1) {
+        log("ソート対象の装備がない");
+        return;
+      }
+
+      ensureInventoryAcquireOrder(inv);
+      sortAccessoryItemsByEffectOnly(inv);
+
+      bagSortMode = "effect";
+      if (controlsEl) controlsEl.style.display = "none";
+      updateBagUI();
+      log("🧮 装飾品を効果ごとにソートした");
+      if (typeof requestAutosave === "function") requestAutosave();
+      return;
+    }
+
     if (bagSortMode === "effect") {
       bagSortMode = "acquire";
       if (controlsEl) controlsEl.style.display = "grid";
@@ -1324,12 +1395,11 @@
       if (item.category === "accessory") {
         accessoriesList.innerHTML += card;
       } else {
-        const isTwoHandWeapon =
-          item.category === "weapon" && Number(item.hands || 0) === 2;
+        const isTwoHandEquipment = Number(item.hands || 0) === 2;
         const shouldShowInHandsTab =
           currentWeaponHandsTab === "twoHand"
-            ? isTwoHandWeapon
-            : !isTwoHandWeapon;
+            ? isTwoHandEquipment
+            : !isTwoHandEquipment;
         if (shouldShowInHandsTab) {
           weaponsList.innerHTML += card;
         }

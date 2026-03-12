@@ -1,48 +1,177 @@
-diff --git a/js/data/base.js b/js/data/base.js
-index 63940fe02e94d7bbfdc803f19a8e4e531cedf827..fc6fcbe946ae403390791a8f686585af99ed541c 100644
---- a/js/data/base.js
-+++ b/js/data/base.js
-@@ -87,42 +87,43 @@ stunTurns: 0,
+diff --git a/js/ui.js b/js/ui.js
+index 321b2902521599f0f32f0feaa28aefa3a4936432..282a3057ab80be6546db8688cba6620ec3a57539 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1073,50 +1073,103 @@
  
-       // 装備スロット: 武器/防具 2、装飾品 1
-       equipment: {
-         slot1: null, // weapon/armor
-         slot2: null, // weapon/armor
-         accessory: null, // accessory only
-       },
+     let next = Math.max(1, bagAcquireOrderSeed, maxOrder + 1);
+     for (const item of inv) {
+       if (!item || typeof item !== "object") continue;
+       const n = Math.floor(Number(item._bagAcquireOrder));
+       if (Number.isFinite(n) && n > 0) continue;
+       item._bagAcquireOrder = next;
+       next += 1;
+     }
  
-       inventory: [],
-       items: [],
+     bagAcquireOrderSeed = next;
+   }
  
-       // 自動売却設定
-       autoSell: {
-         armorDefenseMax: 0,
-         weaponAttackMax: 0,
-         weaponHealPowerMax: 0,
-         weaponMagicAttackMax: 0,
-       },
+   function getAccessorySortValue(item) {
+     const effects = Array.isArray(item?.effects) ? item.effects : [];
+     let best = 0;
+     for (const eff of effects) {
+       const v = Number(eff && eff.value);
+       if (!Number.isFinite(v)) continue;
+       const absV = Math.abs(v);
+       if (absV > best) best = absV;
+     }
+     return best;
+   }
  
-       // 貴重品（秘宝）
-       valuables: [],
++  function getAccessoryPrimaryEffect(item) {
++    const effects = Array.isArray(item?.effects) ? item.effects : [];
++    if (!effects.length) return { type: "", value: 0 };
++
++    const first = effects.find((eff) => eff && typeof eff.type === "string");
++    if (!first) return { type: "", value: 0 };
++
++    const value = Number(first.value);
++    return {
++      type: first.type,
++      value: Number.isFinite(value) ? Math.abs(value) : 0,
++    };
++  }
++
++  function sortAccessoryItemsByEffectOnly(inv) {
++    if (!Array.isArray(inv) || inv.length <= 1) return;
++
++    const accessoryIndexes = [];
++    const accessories = [];
++
++    inv.forEach((item, idx) => {
++      if (item?.category !== "accessory") return;
++      accessoryIndexes.push(idx);
++      accessories.push(item);
++    });
++
++    if (accessories.length <= 1) return;
++
++    accessories.sort((a, b) => {
++      const ae = getAccessoryPrimaryEffect(a);
++      const be = getAccessoryPrimaryEffect(b);
++      const typeDiff = ae.type.localeCompare(be.type, "ja");
++      if (typeDiff !== 0) return typeDiff;
++
++      const valueDiff = be.value - ae.value;
++      if (valueDiff !== 0) return valueDiff;
++
++      const an = String(a?.name || "");
++      const bn = String(b?.name || "");
++      return an.localeCompare(bn, "ja");
++    });
++
++    accessoryIndexes.forEach((idx, i) => {
++      inv[idx] = accessories[i];
++    });
++  }
++
++  function isAccessoriesSubTabActive() {
++    const accessoriesSubTab = document.getElementById("accessoriesSubTab");
++    if (!accessoriesSubTab) return false;
++    return accessoriesSubTab.style.display !== "none";
++  }
++
+   function getEquipmentSortValue(item) {
+     if (!item || typeof item !== "object") return 0;
  
-       // 異世界（修羅の国）進行状態
-       worldState: {
-         isAsura: false,
-+        hasVisitedAsura: false,
-         normalFloor: 1,
-         normalMaxReachedFloor: 1,
-         asuraFloor: 1,
-         asuraMaxReachedFloor: 1,
-       },
-     },
+     if (item.category === "accessory") {
+       return getAccessorySortValue(item);
+     }
  
-     enemy: null,
-     gameState: "EXPLORE", // EXPLORE / BATTLE
+     if (bagEffectSortKey === "acquire") {
+       const order = Math.floor(Number(item?._bagAcquireOrder));
+       return Number.isFinite(order) ? order : -1;
+     }
  
-     battleButtons: null,
-     exploreButtons: null,
-   };
+     const value = Number(item?.[bagEffectSortKey]);
+     return Number.isFinite(value) ? value : 0;
+   }
  
-   window.GAME_VERSION = GAME_VERSION;
-   window.gameData = gameData;
- })();
+   function updateEffectSortButtonsUI() {
+     const controlsEl = document.getElementById("effectSortControls");
+     if (!controlsEl) return;
+     controlsEl.querySelectorAll(".effect-sort-btn").forEach((btn) => {
+       const isActive = btn?.dataset?.effectSort === bagEffectSortKey;
+       btn.classList.toggle("is-active", isActive);
+     });
+   }
+ 
+@@ -1130,50 +1183,68 @@
+       if (diff !== 0) return diff;
+       const an = String(a?.name || "");
+       const bn = String(b?.name || "");
+       return an.localeCompare(bn, "ja");
+     });
+   }
+ 
+   function sortInventoryBySelectedKey(inv) {
+     if (bagEffectSortKey === "acquire") {
+       sortInventoryByAcquireOrder(inv);
+       return;
+     }
+ 
+     inv.sort((a, b) => {
+       const diff = getEquipmentSortValue(b) - getEquipmentSortValue(a);
+       if (diff !== 0) return diff;
+       const an = String(a?.name || "");
+       const bn = String(b?.name || "");
+       return an.localeCompare(bn, "ja");
+     });
+   }
+ 
+   function sortInventoryByEffectValue() {
+     const inv = gameData?.player?.inventory;
+     const controlsEl = document.getElementById("effectSortControls");
++
++    if (isAccessoriesSubTabActive()) {
++      if (!Array.isArray(inv) || inv.length <= 1) {
++        log("ソート対象の装備がない");
++        return;
++      }
++
++      ensureInventoryAcquireOrder(inv);
++      sortAccessoryItemsByEffectOnly(inv);
++
++      bagSortMode = "effect";
++      if (controlsEl) controlsEl.style.display = "none";
++      updateBagUI();
++      log("🧮 装飾品を効果ごとにソートした");
++      if (typeof requestAutosave === "function") requestAutosave();
++      return;
++    }
++
+     if (bagSortMode === "effect") {
+       bagSortMode = "acquire";
+       if (controlsEl) controlsEl.style.display = "grid";
+       updateEffectSortButtonsUI();
+       log("🧮 効果ソートの項目を選択してください");
+       return;
+     }
+ 
+     if (!Array.isArray(inv) || inv.length <= 1) {
+       log("ソート対象の装備がない");
+       return;
+     }
+ 
+     ensureInventoryAcquireOrder(inv);
+     sortInventoryBySelectedKey(inv);
+ 
+     bagSortMode = "effect";
+     if (controlsEl) controlsEl.style.display = "none";
+     updateBagUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function getEffectSortLabel(key) {
+     switch (key) {
+       case "attack":
