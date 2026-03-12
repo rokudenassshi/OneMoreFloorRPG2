@@ -1,65 +1,309 @@
-diff --git a/js/ui.js b/js/ui.js
-index 094ef92b646fd1db49626cc02f2e001f2fc120dd..5476b668440cb27b9e6e3c4494d0bdf27f635f12 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2005,55 +2005,58 @@
-     const p = gameData.player;
-     if (!p.achievements || typeof p.achievements !== "object")
-       p.achievements = {};
+diff --git a/js/data/skills.js b/js/data/skills.js
+index 8dc7a408b61d9d45fdeb58e46c5ef0e08930ef12..fecaa08f826e22a5fd232e5792fef793a4d89869 100644
+--- a/js/data/skills.js
++++ b/js/data/skills.js
+@@ -1440,50 +1440,122 @@
  
-     const defs = Array.isArray(window.achievementDefs)
-       ? window.achievementDefs
-       : [];
+     warfiend_last_stand: {
+       name: "不屈",
+       type: "passive",
+       job: "warfiend",
+       maxLevel: 1,
+       requiredPoints: 5,
+       desc: "HPが0になった時、{value}%の確率でHP1で踏みとどまる（戦闘中何度でも）",
+       effect: (_lv) => ({ value: 5, lastStandChance: 5 }),
+     },
  
-     // 解除状態と進捗を組み立て（未解除を先頭、解除済みを末尾へ）
-     const rows = defs
-       .filter((def) => {
-         try {
-           return typeof def.isVisible !== "function" || !!def.isVisible(p);
-         } catch (e) {
-           return true;
-         }
-       })
-       .map((def, idx) => {
-         const done = !!p.achievements[def.id];
-         let progress = "";
-         try {
-           progress = typeof def.progress === "function" ? def.progress(p) : "";
-         } catch (e) {
-           progress = "";
-         }
-+        const useRevealedText = !!(def.revealAfterDone && done);
-         return {
-           idx,
-           id: def.id,
--          title: def.title || def.id,
--          desc: def.desc || "",
-+          title: useRevealedText
-+            ? def.doneTitle || def.title || def.id
-+            : def.title || def.id,
-+          desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
-           done,
-           progress,
-           bonus: def.bonus || {},
-         };
-       });
+     warfiend_ogre_roar: {
+       name: "鬼哭",
+       type: "active",
+       accuracy: 100,
+       job: "warfiend",
+       maxLevel: 3,
+       requiredPoints: 5,
+       cooldown: 7,
+       desc: "咆哮と共に叩きつける（{value}倍、しびれ1ターン）",
+       effect: (lv) => ({
+         damageMultiplier: 1.7 + lv * 0.2,
+         enemyStunTurns: 1,
+       }),
+     },
++
++    // ---- 死神 (reaper) ----
++    reaper_soul_harvest: {
++      name: "魂刈り",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      desc: "攻撃時HP吸収+{value}%（最大25%）",
++      effect: (lv) => ({ lifeStealPctBonus: Math.min(25, lv * 5) }),
++    },
++    reaper_mourning_veil: {
++      name: "喪の帳",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      desc: "防御力+{defenseBonus}%（最大HP+{maxHpBonus}%）",
++      effect: (lv) => ({ defenseBonus: lv * 4, maxHpBonus: lv * 6 }),
++    },
++    reaper_abyss_edge: {
++      name: "深淵の鎌",
++      type: "active",
++      accuracy: 105,
++      job: "reaper",
++      maxLevel: 3,
++      cooldown: 4,
++      desc: "闇を裂く一撃（{value}倍、与ダメの20%回復）",
++      effect: (lv) => ({ damageMultiplier: 1.48 + lv * 0.22, healPercent: 0.2 }),
++    },
++    reaper_grim_guard: {
++      name: "冥府の護り",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      desc: "防御力+{defenseBonus}%（会心率+{critBonus}%）",
++      effect: (lv) => ({ defenseBonus: lv * 5, critBonus: lv * 1 }),
++    },
++    reaper_death_chain: {
++      name: "死鎖連刃",
++      type: "active",
++      accuracy: 105,
++      job: "reaper",
++      maxLevel: 3,
++      requiredPoints: 5,
++      cooldown: 7,
++      desc: "3連撃（{value}倍×3、与ダメの15%回復）",
++      effect: (lv) => ({
++        hits: 3,
++        damageMultiplier: 0.58 + lv * 0.08,
++        healPercent: 0.15,
++      }),
++    },
++    reaper_soul_fortress: {
++      name: "魂魄城壁",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      desc: "最大HP+{maxHpBonus}%（防御力+{defenseBonus}%）",
++      effect: (lv) => ({ maxHpBonus: lv * 8, defenseBonus: lv * 3 }),
++    },
++    reaper_underworld_gaze: {
++      name: "冥眼",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 5,
++      desc: "会心率+{critBonus}%（命中率+{accuracyBonus}%）",
++      effect: (lv) => ({ critBonus: lv * 2, accuracyBonus: lv * 2 }),
++    },
+     // ===================================
+     // 上級職：追加スキル（分岐あり）
+     // ===================================
  
-     const isDeathBeyondAchievement = (row) =>
-       row &&
-       (row.id === "defeated_10_times" ||
-         String(row.title || "").includes("死を超える"));
+     // --- 剣聖 (blademaster)
+     blademaster_style_kenki: {
+       name: "剣気",
+       type: "passive",
+       job: "blademaster",
+       maxLevel: 5,
+       requiredPoints: 3,
+       exclusiveGroup: "blademaster_style",
+       desc: "攻撃力+{attackBonus}%（会心率+{critBonus}%）",
+       effect: (lv) => ({ attackBonus: lv * 4, critBonus: lv * 1.5 }),
+     },
+     blademaster_style_zanshin: {
+       name: "残心",
+       type: "passive",
+       job: "blademaster",
+       maxLevel: 5,
+       requiredPoints: 3,
+       exclusiveGroup: "blademaster_style",
+       desc: "防御力+{defenseBonus}%（回避+{evasionBonus}）",
+       effect: (lv) => ({ defenseBonus: lv * 4, evasionBonus: lv * 2 }),
+     },
+@@ -2168,50 +2240,105 @@
+       requiredPoints: 7,
+       exclusiveGroup: "warfiend_ultimate",
+       cooldown: 8,
+       desc: "吸い上げる一撃（{value}倍、与ダメの30%回復）",
+       effect: (lv) => ({ damageMultiplier: 2.1 + lv * 0.22, healPercent: 0.3 }),
+     },
  
-     const undone = rows.filter((row) => !row.done);
-     const done = rows.filter((row) => row.done);
-     const list = undone
-       .filter((row) => !isDeathBeyondAchievement(row))
-       .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
-       .concat(done);
+     warfiend_frenzy_rend: {
+       name: "裂狂",
+       type: "active",
+       accuracy: 105,
+       job: "warfiend",
+       maxLevel: 3,
+       requiredPoints: 7,
+       exclusiveGroup: "warfiend_ultimate",
+       cooldown: 7,
+       desc: "五連撃（{value}倍×5、体勢崩し2T）",
+       effect: (lv) => ({
+         hits: 5,
+         damageMultiplier: 0.42 + lv * 0.04,
+         enemyVulnerableTurns: 2,
+         enemyVulnerableRate: 0.22 + lv * 0.05,
+       }),
+     },
  
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
-         let bonusText = "";
-         if (a.bonus) {
-           const parts = [];
-           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
++    // --- 死神 (reaper)
++    reaper_style_hades: {
++      name: "冥王の気配",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      exclusiveGroup: "reaper_style",
++      desc: "防御力+{defenseBonus}%（会心率+{critBonus}%）",
++      effect: (lv) => ({ defenseBonus: lv * 5, critBonus: lv * 1.2 }),
++    },
++    reaper_style_siphon: {
++      name: "生命収奪",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 5,
++      requiredPoints: 3,
++      exclusiveGroup: "reaper_style",
++      desc: "攻撃時HP吸収+{value}%（最大30%）",
++      effect: (lv) => ({ lifeStealPctBonus: Math.min(30, lv * 6) }),
++    },
++    reaper_requiem: {
++      name: "終焉鎮魂",
++      type: "active",
++      accuracy: 110,
++      job: "reaper",
++      maxLevel: 3,
++      requiredPoints: 7,
++      exclusiveGroup: "reaper_ultimate",
++      cooldown: 8,
++      desc: "冥府の断罪（{value}倍、防御無視50%、与ダメの25%回復）",
++      effect: (lv) => ({
++        damageMultiplier: 2.0 + lv * 0.25,
++        ignoreDef: 0.5,
++        healPercent: 0.25,
++      }),
++    },
++    reaper_abyss_reap: {
++      name: "奈落刈り",
++      type: "active",
++      accuracy: 108,
++      job: "reaper",
++      maxLevel: 3,
++      requiredPoints: 7,
++      exclusiveGroup: "reaper_ultimate",
++      cooldown: 8,
++      desc: "5連撃（{value}倍×5、体勢崩し2T）",
++      effect: (lv) => ({
++        hits: 5,
++        damageMultiplier: 0.44 + lv * 0.05,
++        enemyVulnerableTurns: 2,
++        enemyVulnerableRate: 0.2 + lv * 0.05,
++      }),
++    },
++
+     // ---- 上級職共通：100ポイント奥義 ----
+     blademaster_eternal_kata: {
+       name: "無窮の型",
+       type: "passive",
+       job: "blademaster",
+       maxLevel: 1,
+       requiredPoints: 100,
+       desc: "常時強化（攻撃+40%、会心+15%、命中+12%、構え上限+2）",
+       effect: (_lv) => ({
+         attackBonus: 40,
+         critBonus: 15,
+         accuracyBonus: 12,
+         stanceMaxBonus: 2,
+       }),
+     },
+     blademaster_zenith_iaigiri: {
+       name: "絶空居合",
+       type: "active",
+       accuracy: 130,
+       job: "blademaster",
+       maxLevel: 1,
+       requiredPoints: 100,
+       cooldown: 10,
+       desc: "構えを全消費して放つ超斬撃（3.8倍、貫通85%）",
+       effect: (_lv) => ({ damageMultiplier: 3.8, ignoreDef: 0.85 }),
+@@ -2425,50 +2552,75 @@
+     warfiend_ruinous_rage: {
+       name: "滅界狂化",
+       type: "passive",
+       job: "warfiend",
+       maxLevel: 1,
+       requiredPoints: 100,
+       desc: "常時強化（攻撃+45%、HP吸収+20%、会心+10%）",
+       effect: (_lv) => ({
+         attackBonus: 45,
+         lifeStealPctBonus: 20,
+         critBonus: 10,
+       }),
+     },
+     warfiend_berserk_end: {
+       name: "終焉暴走",
+       type: "active",
+       accuracy: 115,
+       job: "warfiend",
+       maxLevel: 1,
+       requiredPoints: 100,
+       cooldown: 10,
+       desc: "血宴の大虐殺（4連・各1.05倍、与ダメ30%回復）",
+       effect: (_lv) => ({ hits: 4, damageMultiplier: 1.05, healPercent: 0.3 }),
+     },
+ 
++    reaper_nether_embrace: {
++      name: "冥界抱擁",
++      type: "passive",
++      job: "reaper",
++      maxLevel: 1,
++      requiredPoints: 100,
++      desc: "常時強化（防御+45%、最大HP+30%、HP吸収+20%）",
++      effect: (_lv) => ({
++        defenseBonus: 45,
++        maxHpBonus: 30,
++        lifeStealPctBonus: 20,
++      }),
++    },
++    reaper_death_throne: {
++      name: "死王の玉座",
++      type: "active",
++      accuracy: 115,
++      job: "reaper",
++      maxLevel: 1,
++      requiredPoints: 100,
++      cooldown: 10,
++      desc: "冥府の裁断（3.8倍、防御無視80%、与ダメの35%回復）",
++      effect: (_lv) => ({ damageMultiplier: 3.8, ignoreDef: 0.8, healPercent: 0.35 }),
++    },
++
+     // ===================================
+     // 勇者 (hero)
+     // ===================================
+     hero_universal_mastery: {
+       name: "万能の極意",
+       type: "passive",
+       job: "hero",
+       maxLevel: 5,
+       desc: "攻撃+{attackBonus} / 防御+{defenseBonus} / 魔法威力+{magicBonus}",
+       effect: (lv) => ({
+         attackBonus: lv * 8,
+         defenseBonus: lv * 8,
+         magicBonus: lv * 8,
+       }),
+     },
+     hero_sixth_sense: {
+       name: "第六感",
+       type: "passive",
+       job: "hero",
+       maxLevel: 5,
+       desc: "命中+{accuracyBonus}% / 回避+{evasionBonus}% / 会心+{critBonus}%",
+       effect: (lv) => ({
+         accuracyBonus: lv * 2,
+         evasionBonus: lv * 2,
+         critBonus: lv * 2,
