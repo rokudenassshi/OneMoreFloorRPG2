@@ -232,8 +232,9 @@
       </div>
 
       <div id="tabRecords" style="display:none;">
-        <div class="status-section" >
-          <h4 class="records-header">記録 <span id="recordsGameVersion" class="status-version"></span><button class="record-post-btn" type="button" onclick="postRecordToX()">Xにポスト</button></h4>
+        <div class="status-section">
+          <h4 class="records-header">記録 <span id="recordsGameVersion" class="status-version"></span><button
+              class="record-post-btn" type="button" onclick="postRecordToX()">Xにポスト</button></h4>
           <div class="record-list">
             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
@@ -333,7 +334,7 @@
           <li><strong>命中率</strong>: 攻撃やスキルが命中する確率です。</li>
           <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（上限あり）。</li>
           <li><strong>会心</strong>: 会心ヒットが発生する確率です。</li>
-          <li><strong>索敵</strong>: 二つ名モンスターの遭遇率です。1で1%、100で確定遭遇です。</li>
+          <li><strong>索敵</strong>: 二つ名モンスターの遭遇率です。1で1%、100で確定遭遇です。（上限150）。</li>
         </ul>
 
         <h4>追加効果</h4>
@@ -587,7 +588,7 @@
         const provider = new GoogleAuthProvider();
 
         let authReadyResolved = false;
-        let resolveAuthReady = () => {};
+        let resolveAuthReady = () => { };
         const authReadyPromise = new Promise((resolve) => {
           resolveAuthReady = resolve;
         });
