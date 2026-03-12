@@ -1,125 +1,111 @@
-diff --git a/js/ui.js b/js/ui.js
-index 701f0ff1ae7b9976ba3eb2c1e3b8ac36468c06e2..44f0c393688f8eb68655e342a47c98df896e394d 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -3338,50 +3338,68 @@
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   window.useValuableById = useValuableById;
-   // =====================
-   // セーブ設定
-   // =====================
-   function toggleAutosave(enabled) {
-     setAutosaveEnabled(!!enabled);
-     updateOptionsUI();
-     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
-   }
+diff --git a/index.html b/index.html
+index 19b1d9021e9e04fcca0003e617ca3176a5478f86..8b906f94692eb725ae914dfb6aa3a50d584df6ae 100644
+--- a/index.html
++++ b/index.html
+@@ -310,60 +310,76 @@
+         <h3>ヘルプ</h3>
+         <button class="back-button" onclick="closeHelpScreen()">戻る</button>
+       </div>
  
-+  async function handleManualSave() {
-+    try {
-+      if (typeof saveGameNow !== "function") {
-+        log("⚠️ セーブ機能を利用できません");
-+        return;
-+      }
-+      const ok = await saveGameNow({ force: true, manual: true });
-+      if (ok) {
-+        log("💾 手動セーブしました");
-+      } else {
-+        log("⚠️ 手動セーブできませんでした（ログイン状態をご確認ください）");
-+      }
-+    } catch (e) {
-+      console.error(e);
-+      log("⚠️ 手動セーブに失敗しました");
-+    }
-+  }
+       <div class="status-section">
+         <h4>用語説明</h4>
+         <div class="status-note">索敵は、より強い二つ名モンスターとの遭遇率です。100で必ず二つ名モンスターに遭遇します。</div>
+ 
+         <h4>基本ステータス</h4>
+         <ul>
+           <li><strong>力</strong>: 物理攻撃の威力に影響します。</li>
+           <li><strong>体力</strong>: 最大HPや打たれ強さに影響します。</li>
+           <li><strong>賢さ</strong>: 魔法威力や回復力に影響します。</li>
+           <li><strong>素早さ</strong>: 回避率などの行動性能に影響します。</li>
+           <li><strong>器用さ</strong>: 命中率や会心率に影響します。</li>
+         </ul>
+ 
+         <h4>計算後ステータス</h4>
+         <ul>
+           <li><strong>最大HP</strong>: 戦闘中に受けられるダメージの上限です。</li>
+           <li><strong>攻撃力</strong>: 通常攻撃・物理スキルのダメージに影響します。</li>
+           <li><strong>防御力</strong>: 受けるダメージを軽減します。</li>
+           <li><strong>魔法威力</strong>: 魔法系スキルのダメージに影響します。</li>
+           <li><strong>回復力</strong>: 回復スキルの回復量に影響します。</li>
+           <li><strong>命中率</strong>: 攻撃やスキルが命中する確率です。</li>
+-          <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（上限あり）。</li>
++          <li><strong>回避率</strong>: 敵の攻撃を回避する確率です（基本上限70%、実績で最大90%）。</li>
+           <li><strong>会心</strong>: 会心ヒットが発生する確率です。</li>
++          <li><strong>反撃率</strong>: 敵の攻撃後に反撃が発生する確率です（上限45%）。</li>
+           <li><strong>索敵</strong>: 二つ名モンスターの遭遇率です。1で1%、100で確定遭遇です。（上限150）。</li>
+         </ul>
+ 
+         <h4>追加効果</h4>
+         <ul>
+           <li><strong>得意装備補正</strong>: 職業の得意装備を付けたときの性能ボーナスです。</li>
+           <li><strong>経験値増加</strong>: 戦闘で獲得する経験値へのボーナスです。</li>
+           <li><strong>ドロップ率</strong>: 戦闘後にアイテムを入手できる確率へのボーナスです。</li>
++          <li><strong>余剰回復盾</strong>: 回復で最大HPを超えた分をバリア化する効果です。上限値が高いほど、余剰分を多くバリアに変換できます。</li>
++        </ul>
 +
-   let loginPromptPromise = null;
-   let resolveLoginPrompt = null;
-   let loginPromptResolved = false;
++        <h4>装備オプション用語（主なもの）</h4>
++        <ul>
++          <li><strong>スキル威力</strong>: スキルの与ダメージ倍率を上げます。</li>
++          <li><strong>追撃 / 追撃威力</strong>: 攻撃後に追撃が発生する確率 / 追撃ダメージ倍率です。</li>
++          <li><strong>会心威力</strong>: 会心発生時のダメージ倍率を上げます。</li>
++          <li><strong>HP吸収</strong>: 与えたダメージの一部をHPとして回復します（上限60%）。</li>
++          <li><strong>再生</strong>: ターン経過ごとにHPを回復します。</li>
++          <li><strong>被ダメージ軽減</strong>: 受けるダメージを割合で減らします。</li>
++          <li><strong>反撃威力</strong>: 反撃が発生したときのダメージ倍率を上げます。</li>
++          <li><strong>背水</strong>: HPが低いほど与ダメージが上がる効果です。</li>
++          <li><strong>追い打ち</strong>: 瀕死の敵に対する与ダメージを上げます。</li>
++          <li><strong>状態異常短縮 / 状態異常耐性</strong>: 状態異常の継続ターン短縮 / 付与されにくさを高める効果です。</li>
+         </ul>
+       </div>
+     </div>
  
-   function finishLoginPrompt() {
-     if (loginPromptResolved) return;
-     loginPromptResolved = true;
  
-     const modal = document.getElementById("loginModal");
-     if (modal) {
-       modal.classList.add("hidden");
-       modal.setAttribute("aria-hidden", "true");
-     }
+     <script>
+       (function () {
+         "use strict";
  
-     if (typeof resolveLoginPrompt === "function") resolveLoginPrompt();
-     resolveLoginPrompt = null;
-     loginPromptPromise = null;
-   }
+         const deferredLoginActions = [];
  
-   async function promptGoogleLoginAtStart() {
-     if (loginPromptPromise) return loginPromptPromise;
+         function queueLoginAction(action) {
+           deferredLoginActions.push(action);
+           console.info("ログイン機能を初期化中です。しばらくお待ちください...");
+         }
  
-     loginPromptResolved = false;
-     loginPromptPromise = new Promise((resolve) => {
-       resolveLoginPrompt = resolve;
-@@ -3429,50 +3447,51 @@
-   function startWithoutLogin() {
-     log("⚠️ ログインなしで開始します（クラウド保存は無効）");
-     finishLoginPrompt();
-   }
+         function startWithGoogleLoginBootstrap() {
+           if (
+             typeof window.startWithGoogleLogin === "function" &&
+             window.startWithGoogleLogin !== startWithGoogleLoginBootstrap
+           ) {
+             return window.startWithGoogleLogin();
+           }
+           queueLoginAction("google");
+         }
+@@ -663,26 +679,26 @@
+       getVersion()
+         .then((version) => {
+           // 他のJS（セーブ出力など）でも使えるように window に乗せる
+           window.GAME_VERSION = version;
  
-   function handleFirebaseAuthChanged(user) {
-     if (user) {
-       finishLoginPrompt();
-     }
-   }
+           // 順番に読み込む（依存関係を壊さない）
+           let chain = Promise.resolve();
+           for (const p of scriptList) {
+             const src = p + "?v=" + encodeURIComponent(version);
+             chain = chain.then(() => loadScript(src));
+           }
+           return chain.then(() => {
+             if (typeof window.__consumeDeferredLoginStart === "function") {
+               window.__consumeDeferredLoginStart();
+             }
+           });
+         })
+         .catch((err) => {
+           console.error(err);
+           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
+         });
+     })();
+   </script>
+ </body>
  
-   // -------------------
-   // 初期化（モーダル外タップなど）
-   // -------------------
-   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
-   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
-   bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
- 
-   // ステータス画面の記録タブ横にバージョンを表示
-   applyGameVersionBadges();
- 
-   // グローバル公開（HTML onclick 用）
-   window.setStatusTab = setStatusTab;
-   window.postRecordToX = postRecordToX;
-   window.toggleAutosave = toggleAutosave;
-+  window.handleManualSave = handleManualSave;
- 
-   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
-   window.startWithGoogleLogin = startWithGoogleLogin;
-   window.startWithoutLogin = startWithoutLogin;
-   window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
- 
-   window.openStatus = openStatus;
-   window.openOptions = openOptions;
-   window.closeOptions = closeOptions;
-   window.openHelpScreen = openHelpScreen;
-   window.closeHelpScreen = closeHelpScreen;
-   window.closeStatus = closeStatus;
-   window.updateStatusUI = updateStatusUI;
- 
-   // シリアルコード（オプション画面）
-   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
-   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
- 
-   window.openJobSelector = openJobSelector;
-   window.closeJobSelector = closeJobSelector;
-   window.selectJob = selectJob;
- 
-   window.openStatAllocation = openStatAllocation;
-   window.closeStatAllocation = closeStatAllocation;
-   window.adjustStat = adjustStat;
+-</html>
+\ No newline at end of file
++</html>
