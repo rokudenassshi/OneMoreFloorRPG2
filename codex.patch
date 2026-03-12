@@ -1,111 +1,86 @@
-diff --git a/js/ui.js b/js/ui.js
-index 44f0c393688f8eb68655e342a47c98df896e394d..094ef92b646fd1db49626cc02f2e001f2fc120dd 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -706,50 +706,54 @@
-         return hasV ? `${condPrefix}回復量${sign}${v}%` : `${condPrefix}回復量`;
-       case "damageReduction":
-         return hasV
-           ? `${condPrefix}被ダメージ-${Math.abs(v)}%`
-           : `${condPrefix}被ダメージ軽減`;
-       case "critDamage":
-         return hasV
-           ? `${condPrefix}会心威力${sign}${v}%`
-           : `${condPrefix}会心威力`;
-       case "lifeSteal":
-         return hasV ? `${condPrefix}HP吸収${sign}${v}%` : `${condPrefix}HP吸収`;
-       case "regen":
-         return hasV ? `${condPrefix}再生${sign}${v}%` : `${condPrefix}再生`;
-       case "hitHeal":
-         return hasV
-           ? `${condPrefix}攻撃時HP回復${sign}${v}`
-           : `${condPrefix}攻撃時HP回復`;
-       case "counterChance":
-         return hasV ? `${condPrefix}反撃率${sign}${v}%` : `${condPrefix}反撃率`;
-       case "counterDamage":
-         return hasV
-           ? `${condPrefix}反撃威力${sign}${v}%`
-           : `${condPrefix}反撃威力`;
-       case "desperationDamage":
-         return hasV ? `${condPrefix}背水${sign}${v}%` : `${condPrefix}背水`;
-+      case "battleStartHpLoss":
-+        return hasV
-+          ? `${condPrefix}戦闘開始時HP-${Math.abs(v)}%`
-+          : `${condPrefix}戦闘開始時HP減少`;
-       case "executeDamage":
-         return hasV
-           ? `${condPrefix}追い打ち${sign}${v}%`
-           : `${condPrefix}追い打ち`;
-       case "evadeHeal":
-         return hasV
-           ? `${condPrefix}回避回復${sign}${v}`
-           : `${condPrefix}回避回復`;
-       case "ailmentDurationDown":
-         return hasV
-           ? `${condPrefix}状態異常短縮${sign}${v}%`
-           : `${condPrefix}状態異常短縮`;
-       case "ailmentResist":
-         return hasV
-           ? `${condPrefix}状態異常耐性${sign}${v}%`
-           : `${condPrefix}状態異常耐性`;
-       default:
-         if (eff.name && hasV) return `${condPrefix}${eff.name}(${sign}${v})`;
-         return `${condPrefix}${eff.name || ""}`;
-     }
-   }
+diff --git a/index.html b/index.html
+index 8c834d7bd7b01636f62cbb3193bd79d27d02f6d2..b56449a8a2e25add3c6e417a30c8dc0ecbec98ae 100644
+--- a/index.html
++++ b/index.html
+@@ -131,51 +131,51 @@
+       </div>
  
-   // -------------------
-   // 装備表示（固有能力 / ランダムオプション）
-   // -------------------
-@@ -2318,50 +2322,51 @@
-       if (Number.isFinite(expTotal) && expTotal !== 0) {
-         push(`経験値+${expTotal}%${expAch ? `（実績+${expAch}%）` : ""}`);
-       }
+       <!-- アイテムタブ -->
+       <div id="itemsTab" style="display:none;">
  
-       addBonus("dropRate");
-       addBonus("skillPower");
-       addBonus("cooldownReduction");
-       addBonus("cooldownCheatChance");
-       addBonus("pursuitChance");
-       addBonus("pursuitDamagePct");
-       addBonus("deathAvoidOnce");
-       addBonus("overhealBarrierCap");
+         <div id="valuablesSubTab">
+           <div id="valuablesList"></div>
+         </div>
+       </div>
  
-       addBonus("healReceived");
-       addBonus("damageReduction");
+       <div class="inventory-footer">
+         <button class="scroll-top-button" onclick="closeBag()">戻る</button>
+       </div>
+     </div>
  
-       addBonus("critDamage");
-       addBonus("lifeSteal");
-       addBonus("regen");
-       addBonus("hitHeal");
+     <!-- ステータス画面 -->
+     <div id="statusScreen" style="display:none;">
+       <div class="screen-header">
+         <h3>ステータス</h3>
+         <button class="back-button" onclick="closeStatus()">戻る</button>
+       </div>
  
-       addBonus("counterChance");
-       addBonus("counterDamage");
+       <div class="status-tabs">
+         <button class="status-tab-btn is-active" onclick="setStatusTab('status')" id="statusTabBtnStatus">ステータス</button>
+         <button class="status-tab-btn" onclick="setStatusTab('achievements')" id="statusTabBtnAchievements">実績</button>
+-        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</span></button>
++        <button class="status-tab-btn" onclick="setStatusTab('records')" id="statusTabBtnRecords">記録</button>
+       </div>
  
-       addBonus("desperationDamage");
-+      addBonus("battleStartHpLoss");
-       addBonus("executeDamage");
-       addBonus("evadeHeal");
+       <div id="tabStatus">
+         <div class="status-section">
+           <div class="job-display">
+             <span>職業：<strong id="currentJob">剣士</strong></span>
+             <button class="small-btn" onclick="openJobSelector()">変更</button>
+           </div>
  
-       addBonus("ailmentDurationDown");
-       addBonus("ailmentResist");
+         </div>
+         <div class="status-section">
+           <h4>スキル</h4>
+           <div class="skill-points-display">
+             スキルポイント: <strong id="skillPoints">0</strong>
+           </div>
+           <div class="equipped-skill">
+             装備中スキル: <span id="equippedSkillName1">なし</span> / <span id="equippedSkillName2">なし</span>
+           </div>
+           <button class="full-btn" onclick="openSkillScreen()">スキル管理</button>
+         </div>
+         <div class="status-section">
+           <h4>基本ステータス</h4>
+           <div class="stat-grid">
+             <div class="stat-item">
+               <span class="stat-name">⚔️ 力</span>
+@@ -679,26 +679,26 @@
+       getVersion()
+         .then((version) => {
+           // 他のJS（セーブ出力など）でも使えるように window に乗せる
+           window.GAME_VERSION = version;
  
-       document.getElementById("calcStats").innerHTML = rows.join("");
-     }
+           // 順番に読み込む（依存関係を壊さない）
+           let chain = Promise.resolve();
+           for (const p of scriptList) {
+             const src = p + "?v=" + encodeURIComponent(version);
+             chain = chain.then(() => loadScript(src));
+           }
+           return chain.then(() => {
+             if (typeof window.__consumeDeferredLoginStart === "function") {
+               window.__consumeDeferredLoginStart();
+             }
+           });
+         })
+         .catch((err) => {
+           console.error(err);
+           alert("スクリプトの読み込みに失敗しました。\n" + (err && err.message ? err.message : ""));
+         });
+     })();
+   </script>
+ </body>
  
-     document.getElementById("skillPoints").textContent = p.skillPoints;
- 
-     // 装備中スキル（2枠）表示
-     const sk1 = getEquippedSkillKey(0);
-     const sk2 = getEquippedSkillKey(1);
-     const el1 = document.getElementById("equippedSkillName1");
-     const el2 = document.getElementById("equippedSkillName2");
-     if (el1) el1.textContent = sk1 ? skills[sk1]?.name || sk1 : "なし";
-     if (el2) el2.textContent = sk2 ? skills[sk2]?.name || sk2 : "なし";
-   }
- 
-   // 職業選択
-   function openJobSelector() {
-     const grid = document.getElementById("jobGrid");
-     grid.innerHTML = "";
- 
+-</html>
+\ No newline at end of file
++</html>
