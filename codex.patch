@@ -1,67 +1,164 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 4439d0430141dd23ff6b66cb5f6c9b1b5359dbde..0cda6144ec313c10f4cb54ad4c90b2a7546827fe 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -27,50 +27,62 @@
-       requiredPoints: 5,
-       desc: "索敵+{value}（最大レベル50）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+diff --git a/js/core.js b/js/core.js
+index b1c843c4c63019bd3326ccb2d9a0e5f4ba6c8513..33c118b3ef61a1d88d041cbf7cd83dd5943cb4ca 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -4485,61 +4485,70 @@
  
-     exp_up: {
-       name: "経験値増加",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       desc: "獲得経験値+{value}%（上限なし）",
-       effect: (lv) => ({ expBonus: lv }),
-     },
+       const willDrop = Math.random() * 100 < dropChance;
  
-     common_heal: {
-       name: "ヒール",
-       type: "active",
-       accuracy: 100,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 6,
-       desc: "HPを20%回復する",
-       effect: (_lv) => ({ healRate: 0.2 }),
-     },
+       if (willDrop) {
+         const isNamedEnemy = !!enemy.isNamed;
+         const isHighSearchNamedEnemy =
+           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
+         const forcedSpecialPrefixRarityPool = isNamedEnemy
+           ? isHighSearchNamedEnemy
+             ? ["rare", "epic", "legendary"]
+             : ["rare", "epic"]
+           : null;
+         const item = generateEquipment({
+           player: gameData.player,
+           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
+         });
+         if (isInAsuraWorld() && item && typeof item === "object") {
+           ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
+             const v = Number(item[k]);
+             if (Number.isFinite(v) && v > 0) {
+               item[k] = Math.max(1, Math.round(v * ASURA_ITEM_STAT_MULTIPLIER));
+             }
+           });
+         }
+         const soldByAutoSell = evaluateAutoSellDropItem(item);
++        const skipAccessoryPickup = shouldSkipAccessoryPickupByOwnedValue(
++          item,
++          gameData.player,
++        );
  
-+    common_sure_strike: {
-+      name: "必中撃",
-+      type: "active",
-+      accuracy: 100,
-+      alwaysHit: true,
-+      job: "all",
-+      maxLevel: 1,
-+      cooldown: 3,
-+      desc: "必ず命中する一撃（ダメージ{value}倍）",
-+      effect: (_lv) => ({ damageMultiplier: 1.0 }),
-+    },
+-        if (soldByAutoSell) {
++        if (skipAccessoryPickup) {
++          log(
++            `⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`,
++          );
++        } else if (soldByAutoSell) {
+           log(`💸 ${item.name}を自動売却した。`);
+         } else {
+           gameData.player.inventory.push(item);
+           log(`${item.name}を手に入れた！`);
+         }
+ 
+         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
+         if (
+           !soldByAutoSell &&
++          !skipAccessoryPickup &&
+           item &&
+           typeof item._specialPrefixName === "string" &&
+           item._specialPrefixName &&
+           typeof window.showRareEnemyPopup === "function"
+         ) {
+           const rarityText =
+             typeof item._specialPrefixRarity === "string" &&
+             item._specialPrefixRarity
+               ? item._specialPrefixRarity
+               : typeof item.rarity === "string"
+                 ? item.rarity
+                 : "rare";
+           const rarityLabel =
+             rarityText === "legendary"
+               ? "レジェンダリー"
+               : rarityText === "epic"
+                 ? "エピック"
+                 : "レア";
+           window.showRareEnemyPopup(
+             item.name,
+             `${rarityLabel}特殊接頭語装備を手に入れた！`,
+             {
+               autoClose: false,
+               allowOverlayClose: false,
+               showCloseButton: true,
+@@ -5051,50 +5060,87 @@
+     const eq = p.equipment && typeof p.equipment === "object" ? p.equipment : {};
+     if (eq.accessory && eq.accessory.category === "accessory") {
+       items.push(eq.accessory);
+     }
+ 
+     return items;
+   }
+ 
+   function getBlockedAccessoryDropSignatures(player) {
+     const blocked = new Set();
+     const accessories = getOwnedAccessories(player);
+     for (const item of accessories) {
+       const eff = Array.isArray(item.effects) ? item.effects[0] : null;
+       if (!eff || typeof eff !== "object") continue;
+ 
+       const max = Number(eff.max);
+       const value = Number(eff.value);
+       if (!Number.isFinite(max) || !Number.isFinite(value) || value < max) continue;
+ 
+       const sig = getAccessoryEffectSignature(item.type, eff);
+       if (sig) blocked.add(sig);
+     }
+     return blocked;
+   }
+ 
++  function getAccessoryComparableValue(item) {
++    const eff = Array.isArray(item?.effects) ? item.effects[0] : null;
++    if (!eff || typeof eff !== "object") return null;
 +
-     common_attack_tuning: {
-       name: "攻撃強化",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "攻撃+{attackBonus}%（上限なし）",
-       effect: (lv) => ({ attackBonus: lv * 0.1 }),
-     },
-     common_defense_tuning: {
-       name: "防御強化",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "防御+{defenseBonus}%（上限なし）",
-       effect: (lv) => ({ defenseBonus: lv * 0.1 }),
-     },
-     common_counter_rate_tuning: {
-       name: "反撃率強化",
-       type: "passive",
-       job: "all",
-       maxLevel: 90,
++    const value = Number(eff.value);
++    return Number.isFinite(value) ? value : null;
++  }
++
++  function shouldSkipAccessoryPickupByOwnedValue(item, player) {
++    if (!item || item.category !== "accessory") return false;
++
++    const itemEff = Array.isArray(item.effects) ? item.effects[0] : null;
++    const itemValue = getAccessoryComparableValue(item);
++    if (!itemEff || itemValue == null) return false;
++
++    const targetSig = getAccessoryEffectSignature(item.type, itemEff);
++    if (!targetSig) return false;
++
++    const accessories = getOwnedAccessories(player);
++    for (const owned of accessories) {
++      if (!owned || owned === item) continue;
++
++      const ownedEff = Array.isArray(owned.effects) ? owned.effects[0] : null;
++      if (!ownedEff || typeof ownedEff !== "object") continue;
++
++      const ownedSig = getAccessoryEffectSignature(owned.type, ownedEff);
++      if (ownedSig !== targetSig) continue;
++
++      const ownedValue = getAccessoryComparableValue(owned);
++      if (ownedValue == null) continue;
++
++      if (ownedValue >= itemValue) return true;
++    }
++
++    return false;
++  }
++
+   // -------------------
+   // 装備品オプション：種別ごとの付きやすさ（重み付け）
+   // -------------------
+   /**
+    * @template T
+    * @param {T[]} items
+    * @param {(item: T) => number} weightFn
+    * @returns {T|null}
+    */
+   function pickWeighted(items, weightFn) {
+     if (!Array.isArray(items) || items.length === 0) return null;
+     let total = 0;
+     const weights = items.map((it) => {
+       const w = Number(weightFn(it));
+       const ww = Number.isFinite(w) ? Math.max(0, w) : 0;
+       total += ww;
+       return ww;
+     });
+     if (total <= 0) {
+       // フォールバック：等確率
+       return items[Math.floor(Math.random() * items.length)] || null;
+     }
+     let r = Math.random() * total;
+     for (let i = 0; i < items.length; i++) {
+       r -= weights[i];

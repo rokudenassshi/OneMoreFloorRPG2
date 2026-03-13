@@ -4507,8 +4507,16 @@
           });
         }
         const soldByAutoSell = evaluateAutoSellDropItem(item);
+        const skipAccessoryPickup = shouldSkipAccessoryPickupByOwnedValue(
+          item,
+          gameData.player,
+        );
 
-        if (soldByAutoSell) {
+        if (skipAccessoryPickup) {
+          log(
+            `⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`,
+          );
+        } else if (soldByAutoSell) {
           log(`💸 ${item.name}を自動売却した。`);
         } else {
           gameData.player.inventory.push(item);
@@ -4518,6 +4526,7 @@
         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
         if (
           !soldByAutoSell &&
+          !skipAccessoryPickup &&
           item &&
           typeof item._specialPrefixName === "string" &&
           item._specialPrefixName &&
@@ -5071,6 +5080,43 @@
       if (sig) blocked.add(sig);
     }
     return blocked;
+  }
+
+  function getAccessoryComparableValue(item) {
+    const eff = Array.isArray(item?.effects) ? item.effects[0] : null;
+    if (!eff || typeof eff !== "object") return null;
+
+    const value = Number(eff.value);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function shouldSkipAccessoryPickupByOwnedValue(item, player) {
+    if (!item || item.category !== "accessory") return false;
+
+    const itemEff = Array.isArray(item.effects) ? item.effects[0] : null;
+    const itemValue = getAccessoryComparableValue(item);
+    if (!itemEff || itemValue == null) return false;
+
+    const targetSig = getAccessoryEffectSignature(item.type, itemEff);
+    if (!targetSig) return false;
+
+    const accessories = getOwnedAccessories(player);
+    for (const owned of accessories) {
+      if (!owned || owned === item) continue;
+
+      const ownedEff = Array.isArray(owned.effects) ? owned.effects[0] : null;
+      if (!ownedEff || typeof ownedEff !== "object") continue;
+
+      const ownedSig = getAccessoryEffectSignature(owned.type, ownedEff);
+      if (ownedSig !== targetSig) continue;
+
+      const ownedValue = getAccessoryComparableValue(owned);
+      if (ownedValue == null) continue;
+
+      if (ownedValue >= itemValue) return true;
+    }
+
+    return false;
   }
 
   // -------------------
