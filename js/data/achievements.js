@@ -16,8 +16,8 @@
       progress: (p) => `${Math.min(Number(p.totalDefeats || 0), 10)}/10`,
       bonus: {},
       reward: {
-        valuables: [{ id: "emblem_vitality", amount: 5 }],
-        text: "体力の紋章 ×5",
+        valuables: [{ id: "emblem_vitality", amount: 10 }],
+        text: "体力の紋章 ×10",
       },
     },
     {
