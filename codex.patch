@@ -1,52 +1,67 @@
-diff --git a/js/data/achievements.js b/js/data/achievements.js
-index e4113f69e6746c849fb5881aa1b35ccfa926e236..b4360d50e3d6bbc9797eea6f7011bde0e4f47672 100644
---- a/js/data/achievements.js
-+++ b/js/data/achievements.js
-@@ -1,45 +1,45 @@
- // ===================
- // ゲームデータ：実績
- // ===================
+diff --git a/js/data/skills.js b/js/data/skills.js
+index 4439d0430141dd23ff6b66cb5f6c9b1b5359dbde..0cda6144ec313c10f4cb54ad4c90b2a7546827fe 100644
+--- a/js/data/skills.js
++++ b/js/data/skills.js
+@@ -27,50 +27,62 @@
+       requiredPoints: 5,
+       desc: "索敵+{value}（最大レベル50）",
+       effect: (lv) => ({ searchBonus: lv }),
+     },
  
- (function () {
-   "use strict";
+     exp_up: {
+       name: "経験値増加",
+       type: "passive",
+       job: "all",
+       maxLevel: Infinity,
+       desc: "獲得経験値+{value}%（上限なし）",
+       effect: (lv) => ({ expBonus: lv }),
+     },
  
-   // 実績定義（解除でボーナスが発生）
-   // ※解除状態は player.achievements[id] に保存される
-   const achievementDefs = [
-     {
-       id: "defeated_10_times",
-       title: "不屈の証",
-       desc: "敵に10回倒される",
-       isDone: (p) => Number(p.totalDefeats || 0) >= 10,
-       progress: (p) => `${Math.min(Number(p.totalDefeats || 0), 10)}/10`,
-       bonus: {},
-       reward: {
--        valuables: [{ id: "emblem_vitality", amount: 5 }],
--        text: "体力の紋章 ×5",
-+        valuables: [{ id: "emblem_vitality", amount: 10 }],
-+        text: "体力の紋章 ×10",
-       },
+     common_heal: {
+       name: "ヒール",
+       type: "active",
+       accuracy: 100,
+       job: "all",
+       maxLevel: 1,
+       cooldown: 6,
+       desc: "HPを20%回復する",
+       effect: (_lv) => ({ healRate: 0.2 }),
      },
-     {
-       id: "first_kill",
-       title: "初討伐",
-       desc: "敵を1体倒す",
-       isDone: (p) => Number(p.totalKills || 0) >= 1,
-       progress: (p) => `${Math.min(Number(p.totalKills || 0), 1)}/1`,
-       bonus: {},
+ 
++    common_sure_strike: {
++      name: "必中撃",
++      type: "active",
++      accuracy: 100,
++      alwaysHit: true,
++      job: "all",
++      maxLevel: 1,
++      cooldown: 3,
++      desc: "必ず命中する一撃（ダメージ{value}倍）",
++      effect: (_lv) => ({ damageMultiplier: 1.0 }),
++    },
++
+     common_attack_tuning: {
+       name: "攻撃強化",
+       type: "passive",
+       job: "all",
+       maxLevel: Infinity,
+       requiredPoints: 10,
+       requiredMaxReachedFloor: 5000,
+       desc: "攻撃+{attackBonus}%（上限なし）",
+       effect: (lv) => ({ attackBonus: lv * 0.1 }),
      },
-     {
-       id: "apprentice",
-       title: "冒険者見習い",
-       desc: "最高到達 10階",
-       isDone: (p) => Number(p.maxReachedFloor || 1) >= 10,
-       progress: (p) => `${Math.min(Number(p.maxReachedFloor || 1), 10)}/10`,
-       bonus: {},
+     common_defense_tuning: {
+       name: "防御強化",
+       type: "passive",
+       job: "all",
+       maxLevel: Infinity,
+       requiredPoints: 10,
+       requiredMaxReachedFloor: 5000,
+       desc: "防御+{defenseBonus}%（上限なし）",
+       effect: (lv) => ({ defenseBonus: lv * 0.1 }),
      },
-     {
-       id: "veteran_adventurer",
-       title: "熟練の冒険者",
-       desc: "敵を100体倒す",
-       isDone: (p) => Number(p.totalKills || 0) >= 100,
-       progress: (p) => `${Math.min(Number(p.totalKills || 0), 100)}/100`,
-       // 経験値 +5%
+     common_counter_rate_tuning: {
+       name: "反撃率強化",
+       type: "passive",
+       job: "all",
+       maxLevel: 90,

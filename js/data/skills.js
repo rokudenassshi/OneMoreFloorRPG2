@@ -49,6 +49,18 @@
       effect: (_lv) => ({ healRate: 0.2 }),
     },
 
+    common_sure_strike: {
+      name: "必中撃",
+      type: "active",
+      accuracy: 100,
+      alwaysHit: true,
+      job: "all",
+      maxLevel: 1,
+      cooldown: 3,
+      desc: "必ず命中する一撃（ダメージ{value}倍）",
+      effect: (_lv) => ({ damageMultiplier: 1.0 }),
+    },
+
     common_attack_tuning: {
       name: "攻撃強化",
       type: "passive",

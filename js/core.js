@@ -3400,6 +3400,7 @@
     // -------------------
     const skillAccRaw = Number(skillDef && skillDef.accuracy);
     const skillAcc = Number.isFinite(skillAccRaw) ? skillAccRaw : 100;
+    const skillAlwaysHit = !!(skillDef && skillDef.alwaysHit);
 
     // 通常攻撃と同じ基礎命中（上限95%）
     const baseSkillHitChance = Math.min(
@@ -3408,7 +3409,8 @@
     );
     const skillHitChance = baseSkillHitChance * (clamp(skillAcc, 0, 200) / 100);
 
-    const rollSkillHit = () => Math.random() * 100 <= skillHitChance;
+    const rollSkillHit = () =>
+      skillAlwaysHit ? true : Math.random() * 100 <= skillHitChance;
 
     // 装飾品：スキル威力UP（%）
     const skillPowerPct = Number(getAccessoryBonus("skillPower") || 0);
