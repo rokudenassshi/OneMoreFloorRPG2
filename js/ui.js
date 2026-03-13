@@ -2646,27 +2646,11 @@
       prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
     const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
 
-    // 職業ごとの状態保存領域（※スキルグループ単位）
+    // 職業ごとの状態保存領域（職業キー単位）
     // - build: その職で取得していた職専用スキル構成
     // - remainingSkillPoints: その職で最後に見た残SP
     if (!p.jobSkillStates || typeof p.jobSkillStates !== "object")
       p.jobSkillStates = {};
-
-    // 旧セーブ互換: 旧形式(jobSkillBuilds)があれば新形式へ移送
-    if (p.jobSkillBuilds && typeof p.jobSkillBuilds === "object") {
-      for (const g of Object.keys(p.jobSkillBuilds)) {
-        if (!p.jobSkillStates[g] || typeof p.jobSkillStates[g] !== "object") {
-          p.jobSkillStates[g] = {
-            build: p.jobSkillBuilds[g],
-            remainingSkillPoints: Math.max(
-              0,
-              Math.floor(Number(p.skillPoints || 0)),
-            ),
-          };
-        }
-      }
-      delete p.jobSkillBuilds;
-    }
 
     // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
     const prevBuild = {};
@@ -2691,7 +2675,7 @@
       0,
       Math.floor(Number(p.skillPoints || 0)),
     );
-    p.jobSkillStates[prevGroup] = {
+    p.jobSkillStates[prevJob] = {
       build: prevBuild,
       remainingSkillPoints: prevRemainingSkillPoints,
     };
@@ -2729,14 +2713,15 @@
     }
 
     // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
-    const newState = p.jobSkillStates[newGroup];
+    const newState = p.jobSkillStates[jobKey];
     const build =
       newState && typeof newState === "object" && newState.build
         ? newState.build
         : null;
-    if (build && typeof build === "object") {
-      // 「戻ったら前回の状態を再現」するため、先に残SPを復元
-      // （復元後にbuildを適用して矛盾が出ないよう、必要なら下限補正する）
+    const hasSavedBuild =
+      build && typeof build === "object" && Object.keys(build).length > 0;
+    if (hasSavedBuild) {
+      // 保存済みビルドがある場合は、残SPとスキル割り振りを復元
       const restoredRemaining = Math.max(
         0,
         Math.floor(Number(newState.remainingSkillPoints || 0)),
@@ -2752,6 +2737,15 @@
           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
         if (!p.skills || typeof p.skills !== "object") p.skills = {};
         p.skills[sk] = lv;
+      }
+    } else {
+      // 保存ビルドがない場合は、返却済みSPをそのまま使える状態にする
+      for (const sk of Object.keys(skills)) {
+        const def = skills[sk];
+        if (!def || def.job !== newGroup) continue;
+        if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
+          delete p.skills[sk];
+        }
       }
     }
 
@@ -3381,7 +3375,7 @@
     p.skillCooldown = 0;
 
     // 職業ごとの保存割り振りもリセット
-    p.jobSkillBuilds = {};
+    p.jobSkillStates = {};
 
     log("🔄 スキルをリセットした");
     getCombatStats();

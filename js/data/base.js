@@ -68,7 +68,7 @@
       skillCooldown: 0,
 
       // 職業ごとのスキル割り振り保存
-      jobSkillBuilds: {},
+      jobSkillStates: {},
 
       // 状態異常
       status: {
