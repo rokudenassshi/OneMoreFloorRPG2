@@ -1,111 +1,277 @@
 diff --git a/js/ui.js b/js/ui.js
-index dc6cc30e1d4d732ab601b6ba80b7fbdf0407ef29..126537482b8c46d8b61cb3ffe3269e150af15b29 100644
+index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3df896142e 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -2086,99 +2086,105 @@
-         try {
-           return typeof def.isVisible !== "function" || !!def.isVisible(p);
-         } catch (e) {
-           return true;
-         }
-       })
-       .map((def, idx) => {
-         const done = !!p.achievements[def.id];
-         let progress = "";
-         try {
-           progress = typeof def.progress === "function" ? def.progress(p) : "";
-         } catch (e) {
-           progress = "";
-         }
-         const useRevealedText = !!(def.revealAfterDone && done);
-         return {
-           idx,
-           id: def.id,
-           title: useRevealedText
-             ? def.doneTitle || def.title || def.id
-             : def.title || def.id,
-           desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
-           done,
-           progress,
-           bonus: def.bonus || {},
-+          rewardText:
-+            def.reward && typeof def.reward.text === "string"
-+              ? def.reward.text
-+              : "",
+@@ -1348,56 +1348,59 @@
+         ? gameData.player.valuables
+         : [];
+       if (vals.length === 0) {
+         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
+       } else {
+         const statName = {
+           strength: "⚔️ 力",
+           vitality: "❤️ 体力",
+           intelligence: "🧙 賢さ",
+           agility: "⚡ 素早さ",
+           dexterity: "🎯 器用さ",
          };
-       });
- 
-     const isDeathBeyondAchievement = (row) =>
-       row &&
-       (row.id === "defeated_10_times" ||
-         String(row.title || "").includes("死を超える"));
- 
-     const undone = rows.filter((row) => !row.done);
-     const done = rows.filter((row) => row.done);
-     const list = undone
-       .filter((row) => !isDeathBeyondAchievement(row))
-       .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
-       .concat(done);
- 
-     el.innerHTML = list
-       .map((a) => {
-         const mark = a.done ? "✅" : "⬜";
-         let bonusText = "";
-         if (a.bonus) {
-           const parts = [];
-           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
-             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
-           }
-           if (
-             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
-             a.bonus.asuraBaseStatMultiplierBonus > 0
-           ) {
-             parts.push(
-               `修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`,
-             );
-           }
-           if (
-             typeof a.bonus.evasionCapBonus === "number" &&
-             a.bonus.evasionCapBonus > 0
-           ) {
-             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
-           }
-           if (
-             typeof a.bonus.itemDropRate === "number" &&
-             a.bonus.itemDropRate > 0
-           ) {
-             parts.push(
-               `アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`,
-             );
-           }
-           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
-         }
--        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
-+        const rewardText =
-+          a.done && a.rewardText ? ` / 報酬：${a.rewardText}` : "";
-+        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}${rewardText}</div></div>`;
-       })
-       .join("");
+         vals.forEach((v) => {
+           const cnt = Number(v.count || 0);
+           if (!Number.isFinite(cnt) || cnt <= 0) return;
+           const key = String(v.statKey || "");
+           const sname = statName[key] || "ステータス";
+           const hasStatEffect = !!key && key in statName;
+           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
+           const description =
+             typeof v.description === "string" && v.description
+               ? v.description
+               : "";
+           const canUseMapFragment =
+             v.id === "ancient_map_fragment" && Number(cnt) >= 5;
++          const canUseOptionReforgeStone =
++            v.id === "option_reforge_stone" && Number(cnt) >= 1;
++          const canUseValuable = canUseMapFragment || canUseOptionReforgeStone;
+           valuablesList.innerHTML += `
+             <div class="item-card">
+               <div class="item-name">✨ ${v.name} x${cnt}</div>
+               ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
+               ${description ? `<div class="item-stats">${description}</div>` : ""}
+-              ${canUseMapFragment ? `<button type="button" class="item-action-btn item-action-btn-text" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
++              ${canUseValuable ? `<button type="button" class="item-action-btn item-action-btn-text" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
+             </div>
+           `;
+         });
+       }
+     }
    }
  
-   function updateOptionsUI() {
-     const cb = document.getElementById("optAutosave");
-     if (cb) cb.checked = isAutosaveEnabled();
+   // -------------------
+   // 装備品：ロック / 捨てる
+   // -------------------
+   function toggleItemLock(ev, idx) {
+     if (ev) {
+       ev.stopPropagation();
+       ev.preventDefault();
+     }
+     const item = gameData.player.inventory[idx];
+     if (!item) return;
  
-     // シリアルコード入力の有効/無効
-     const inputEl = document.getElementById("serialCodeInput");
-     const btnEl = document.getElementById("serialCodeSubmitBtn");
-     const disabled = !!serialCodePending;
-     if (inputEl) inputEl.disabled = disabled;
-     if (btnEl) btnEl.disabled = disabled;
+     item.locked = !item.locked;
+     log(item.locked ? "🔒 ロックした" : "🔓 ロック解除した");
+     updateBagUI();
+     if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   function handleSerialCodeKeydown(event) {
-     if (event?.key !== "Enter") return;
-     handleSerialCodeSubmit();
+   function discardEquipment(ev, idx) {
+@@ -1644,106 +1647,169 @@
+       eq.slot2 = null;
+       log(`${item.name}を外した`);
+       getCombatStats();
+       updateBagUI();
+       updateUI();
+       if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
+ 
+     // 装飾品は専用スロットへ
+     if (item.category === "accessory") {
+       eq.accessory = item;
+       log(`${item.name}を装飾品に装備した`);
+       getCombatStats();
+       updateBagUI();
+       updateUI();
+       if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
+ 
+     // 武器/防具は装備先を選択
+     openEquipSlotPicker(idx);
    }
  
-   async function handleSerialCodeSubmit() {
-     if (serialCodePending) return;
-     const inputEl = document.getElementById("serialCodeInput");
-     const raw = String(inputEl?.value || "").trim();
+   function useValuableById(id) {
+-    if (id !== "ancient_map_fragment") return;
+     const vals = Array.isArray(gameData?.player?.valuables)
+       ? gameData.player.valuables
+       : [];
+     const target = vals.find((v) => v && v.id === id);
+     const cnt = Number(target?.count || 0);
+-    if (!Number.isFinite(cnt) || cnt < 5) {
+-      log("謎のかけらが足りない");
++
++    if (id === "ancient_map_fragment") {
++      if (!Number.isFinite(cnt) || cnt < 5) {
++        log("謎のかけらが足りない");
++        return;
++      }
++
++      const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
++      if (
++        !isAsuraNow &&
++        typeof window.confirm === "function" &&
++        !window.confirm(
++          "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
++        )
++      ) {
++        return;
++      }
++
++      let movedToAsura = null;
++      if (typeof window.toggleAsuraWorldByMapFragment === "function") {
++        const result = window.toggleAsuraWorldByMapFragment();
++        if (result && result.ok) movedToAsura = !!result.movedToAsura;
++      }
++
++      if (movedToAsura === true) {
++        log("🗝️ 修羅の国への鍵を使い、修羅の国へ転移した！");
++      } else if (movedToAsura === false) {
++        log("🗝️ 修羅の国への鍵を使い、元の世界へ戻った！");
++      } else {
++        log("🗝️ 修羅の国への鍵を使った…しかし鍵は消えなかった");
++      }
++
++      if (typeof window.showRareEnemyPopup === "function") {
++        const title =
++          movedToAsura === true
++            ? "修羅の国"
++            : movedToAsura === false
++              ? "元の世界"
++              : "修羅の国への鍵";
++        const body =
++          movedToAsura === true
++            ? "世界が歪み、修羅の国に飲み込まれた…"
++            : movedToAsura === false
++              ? "歪みが晴れ、元の世界に戻った"
++              : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
++        window.showRareEnemyPopup(title, body, {
++          autoClose: false,
++          allowOverlayClose: false,
++          showCloseButton: true,
++          hintText: "不思議な力で鍵は残っている",
++        });
++      }
++      updateBagUI();
++      updateUI();
++      if (typeof requestAutosave === "function") requestAutosave();
+       return;
+     }
+ 
+-    const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
+-    if (
+-      !isAsuraNow &&
+-      typeof window.confirm === "function" &&
+-      !window.confirm(
+-        "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
+-      )
+-    ) {
++    if (id !== "option_reforge_stone") return;
++    if (!Number.isFinite(cnt) || cnt < 1) {
++      log("再錬の石が足りない");
+       return;
+     }
+ 
+-    let movedToAsura = null;
+-    if (typeof window.toggleAsuraWorldByMapFragment === "function") {
+-      const result = window.toggleAsuraWorldByMapFragment();
+-      if (result && result.ok) movedToAsura = !!result.movedToAsura;
++    const inv = Array.isArray(gameData?.player?.inventory)
++      ? gameData.player.inventory
++      : [];
++    const targets = inv.filter(
++      (it) =>
++        it &&
++        ["weapon", "armor", "accessory"].includes(String(it.category || "")) &&
++        Math.floor(Number(it.randomOptions || 0)) > 0,
++    );
++    if (!targets.length) {
++      log("再抽選できる装備がない");
++      return;
+     }
+ 
+-    if (movedToAsura === true) {
+-      log("🗝️ 修羅の国への鍵を使い、修羅の国へ転移した！");
+-    } else if (movedToAsura === false) {
+-      log("🗝️ 修羅の国への鍵を使い、元の世界へ戻った！");
+-    } else {
+-      log("🗝️ 修羅の国への鍵を使った…しかし鍵は消えなかった");
+-    }
+-
+-    if (typeof window.showRareEnemyPopup === "function") {
+-      const title =
+-        movedToAsura === true
+-          ? "修羅の国"
+-          : movedToAsura === false
+-            ? "元の世界"
+-            : "修羅の国への鍵";
+-      const body =
+-        movedToAsura === true
+-          ? "世界が歪み、修羅の国に飲み込まれた…"
+-          : movedToAsura === false
+-            ? "歪みが晴れ、元の世界に戻った"
+-            : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
+-      window.showRareEnemyPopup(title, body, {
+-        autoClose: false,
+-        allowOverlayClose: false,
+-        showCloseButton: true,
+-        hintText: "不思議な力で鍵は残っている",
+-      });
++    const choices = targets
++      .map((it, idx) => `${idx + 1}: ${it.name} (+${Math.floor(Number(it.randomOptions || 0))})`)
++      .join("\n");
++    const input =
++      typeof window.prompt === "function"
++        ? window.prompt(
++            `再抽選する装備番号を入力してください（1-${targets.length}）
++${choices}`,
++            "1",
++          )
++        : "1";
++    if (input == null) return;
++    const selected = Math.floor(Number(input));
++    if (!Number.isFinite(selected) || selected < 1 || selected > targets.length) {
++      log("無効な番号");
++      return;
+     }
++
++    const chosen = targets[selected - 1];
++    if (typeof window.rerollEquipmentRandomOptions !== "function") {
++      log("再抽選機能が見つからない");
++      return;
++    }
++
++    const result = window.rerollEquipmentRandomOptions(chosen);
++    if (!result || !result.ok) {
++      log("再抽選に失敗した");
++      return;
++    }
++
++    target.count = Math.max(0, Math.floor(Number(target.count || 0)) - 1);
++    if (target.count <= 0) {
++      gameData.player.valuables = vals.filter((v) => v && v.id !== id);
++    }
++
++    log(`💎 再錬の石を使い、${chosen.name}のランダムオプションを再抽選した！`);
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function useItem(name) {
+     const item = gameData.player.items.find((i) => i.name === name);
+     if (!item) return;
+ 
+     item.count--;
+     if (item.count <= 0) {
+       gameData.player.items = gameData.player.items.filter(
+         (i) => i.name !== name,
+       );
+     }
+ 
+     let heal = Number(item.heal || 0);
+ 
+     gameData.player.hp = Math.min(
+       gameData.player.maxHp,
+       gameData.player.hp + heal,
+     );
+     log(`${name}を使用！ ${heal}HP回復した！`);
+ 
+     updateBagUI();

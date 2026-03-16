@@ -744,6 +744,10 @@ button:active {
   margin: 8px 0 12px;
 }
 
+.teleport-stay-row.hidden {
+  display: none;
+}
+
 .teleport-stay-label {
   display: inline-flex;
   align-items: center;
