@@ -102,6 +102,7 @@
   const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
+  const MAX_BATTLE_ACTIONS_BEFORE_ESCAPE = 50;
   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
 
@@ -2552,6 +2553,7 @@
       ? bossDef
       : pool[Math.floor(Math.random() * pool.length)];
     const enemy = JSON.parse(JSON.stringify(baseMonster));
+    enemy.playerActionCount = 0;
 
     // 敵の状態異常格納を初期化
     ensureEnemyStatus(enemy);
@@ -2924,6 +2926,8 @@
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
+    if (incrementBattleActionAndCheckForcedEscape()) return;
+
     const st = gameData.player.status || (gameData.player.status = {});
     if (st.stunTurns > 0) {
       st.stunTurns--;
@@ -3079,6 +3083,8 @@
   function defend() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
+    if (incrementBattleActionAndCheckForcedEscape()) return;
+
     const st = gameData.player.status || (gameData.player.status = {});
     if (st.stunTurns > 0) {
       st.stunTurns--;
@@ -3230,6 +3236,29 @@
     }
   }
 
+
+  function incrementBattleActionAndCheckForcedEscape() {
+    if (gameData.gameState !== "BATTLE" || !gameData.enemy) return false;
+
+    const enemy = gameData.enemy;
+    const nextCount = Math.floor(Number(enemy.playerActionCount || 0)) + 1;
+    enemy.playerActionCount = nextCount;
+
+    if (nextCount <= MAX_BATTLE_ACTIONS_BEFORE_ESCAPE) return false;
+
+    log(
+      `💨 行動回数が${MAX_BATTLE_ACTIONS_BEFORE_ESCAPE}回を超えたため、戦闘から逃げ出した…`,
+    );
+
+    if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+      gameData.pendingFloorAfterWin = null;
+    }
+
+    endBattle(false);
+    requestAutosave();
+    return true;
+  }
+
   function useSkill(slotIndex = 0) {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
@@ -3263,6 +3292,8 @@
       log(`⏳ クールタイム中（残り${gameData.player.skillCooldown}）`);
       return;
     }
+
+    if (incrementBattleActionAndCheckForcedEscape()) return;
 
     const skillDef = skills[skillKey];
     if (!skillDef || typeof skillDef.effect !== "function") {
