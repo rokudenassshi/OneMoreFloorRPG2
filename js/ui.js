@@ -1304,6 +1304,9 @@
     accessoriesList.innerHTML = "";
     if (valuablesList) valuablesList.innerHTML = "";
 
+    const weaponCards = [];
+    const accessoryCards = [];
+
     // 装備中アイテムは常に先頭に表示し、未装備は現在順を維持する
     const displayInventory = gameData.player.inventory
       .map((item, idx) => ({ item, idx, equipped: isEquipped(item) }))
@@ -1393,7 +1396,7 @@
       `;
 
       if (item.category === "accessory") {
-        accessoriesList.innerHTML += card;
+        accessoryCards.push(card);
       } else {
         const isTwoHandEquipment = Number(item.hands || 0) === 2;
         const shouldShowInHandsTab =
@@ -1401,10 +1404,13 @@
             ? isTwoHandEquipment
             : !isTwoHandEquipment;
         if (shouldShowInHandsTab) {
-          weaponsList.innerHTML += card;
+          weaponCards.push(card);
         }
       }
     });
+
+    accessoriesList.innerHTML = accessoryCards.join("");
+    weaponsList.innerHTML = weaponCards.join("");
 
     if (weaponsList && weaponsList.innerHTML.trim() === "") {
       const handTypeLabel =
