@@ -4072,7 +4072,7 @@
     // 防御が高すぎると常に1ダメになりがちなので、軽減には上限を設ける
     // （最低でも base の一定割合は通す）
     const defenseCut = reducedDefense * defFactor;
-    const maxCutRate = isMagic ? 0.8 : 0.85; // magic は少し控えめに軽減
+    const maxCutRate = isMagic ? 0.6 : 0.65; // magic は少し控えめに軽減
     const maxCut = base * maxCutRate;
 
     return Math.max(1, Math.round(base - Math.min(defenseCut, maxCut)));
