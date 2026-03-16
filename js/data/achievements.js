@@ -140,12 +140,12 @@
       id: "the_have_not",
       title: "死を超える",
       desc: "？？？",
-      isDone: (p) => Number(p.nakedDefeats || 0) >= 1000,
+      isDone: (p) => Number(p.nakedDefeats || 0) >= 1,
       progress: (p) => `${Math.min(Number(p.nakedDefeats || 0), 1000)}/1000`,
       bonus: {},
       reward: {
         unlockJobs: ["have_not"],
-        text: "？？？",
+        text: "職業「持たざる者」解放",
       },
     },
     {

@@ -1,60 +1,111 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index a9638e8311cae8bb11d8b104ce9ed1e27f5299d1..447ca8fe442cebf2a1398589cb697b3f1f488a2c 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -12,51 +12,54 @@
- 
-   function loadStore() {
-     try {
-       const raw = localStorage.getItem(STORE_KEY);
-       const obj = raw ? JSON.parse(raw) : null;
-       return obj && typeof obj === "object" ? obj : {};
-     } catch (e) {
-       return {};
-     }
-   }
- 
-   function saveStore(store) {
-     try {
-       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
-     } catch (e) {}
-   }
- 
-   function getPlayer() {
-     return window.gameData && window.gameData.player
-       ? window.gameData.player
-       : null;
-   }
- 
-   // ✅ “シリアルコード → 解放キー”
-   // セキュリティのため通常は空（サーバー側で検証）。
--  const serialCodeLookup = {};
-+  const serialCodeLookup = {
-+    // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
-+    stay8q2m1v7xk9: "stayBattle",
-+  };
- 
-   // ✅ “解放キー → 実行内容”
-   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
-   const serialCodeActions = {
-     stayBattle: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.stayBattle) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.stayBattle = true;
-         saveStore(s);
- 
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.stayBattle = true;
+diff --git a/js/ui.js b/js/ui.js
+index dc6cc30e1d4d732ab601b6ba80b7fbdf0407ef29..126537482b8c46d8b61cb3ffe3269e150af15b29 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2086,99 +2086,105 @@
+         try {
+           return typeof def.isVisible !== "function" || !!def.isVisible(p);
+         } catch (e) {
+           return true;
          }
+       })
+       .map((def, idx) => {
+         const done = !!p.achievements[def.id];
+         let progress = "";
+         try {
+           progress = typeof def.progress === "function" ? def.progress(p) : "";
+         } catch (e) {
+           progress = "";
+         }
+         const useRevealedText = !!(def.revealAfterDone && done);
+         return {
+           idx,
+           id: def.id,
+           title: useRevealedText
+             ? def.doneTitle || def.title || def.id
+             : def.title || def.id,
+           desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
+           done,
+           progress,
+           bonus: def.bonus || {},
++          rewardText:
++            def.reward && typeof def.reward.text === "string"
++              ? def.reward.text
++              : "",
+         };
+       });
  
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
+     const isDeathBeyondAchievement = (row) =>
+       row &&
+       (row.id === "defeated_10_times" ||
+         String(row.title || "").includes("死を超える"));
+ 
+     const undone = rows.filter((row) => !row.done);
+     const done = rows.filter((row) => row.done);
+     const list = undone
+       .filter((row) => !isDeathBeyondAchievement(row))
+       .concat(undone.filter((row) => isDeathBeyondAchievement(row)))
+       .concat(done);
+ 
+     el.innerHTML = list
+       .map((a) => {
+         const mark = a.done ? "✅" : "⬜";
+         let bonusText = "";
+         if (a.bonus) {
+           const parts = [];
+           if (typeof a.bonus.expRate === "number" && a.bonus.expRate > 0) {
+             parts.push(`経験値+${Math.round(a.bonus.expRate * 100)}%`);
+           }
+           if (
+             typeof a.bonus.asuraBaseStatMultiplierBonus === "number" &&
+             a.bonus.asuraBaseStatMultiplierBonus > 0
+           ) {
+             parts.push(
+               `修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`,
+             );
+           }
+           if (
+             typeof a.bonus.evasionCapBonus === "number" &&
+             a.bonus.evasionCapBonus > 0
+           ) {
+             parts.push(`回避上限+${Math.floor(a.bonus.evasionCapBonus)}%`);
+           }
+           if (
+             typeof a.bonus.itemDropRate === "number" &&
+             a.bonus.itemDropRate > 0
+           ) {
+             parts.push(
+               `アイテムドロップ率+${Math.floor(a.bonus.itemDropRate)}%`,
+             );
+           }
+           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
+         }
+-        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
++        const rewardText =
++          a.done && a.rewardText ? ` / 報酬：${a.rewardText}` : "";
++        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}${rewardText}</div></div>`;
+       })
+       .join("");
+   }
+ 
+   function updateOptionsUI() {
+     const cb = document.getElementById("optAutosave");
+     if (cb) cb.checked = isAutosaveEnabled();
+ 
+     // シリアルコード入力の有効/無効
+     const inputEl = document.getElementById("serialCodeInput");
+     const btnEl = document.getElementById("serialCodeSubmitBtn");
+     const disabled = !!serialCodePending;
+     if (inputEl) inputEl.disabled = disabled;
+     if (btnEl) btnEl.disabled = disabled;
+   }
+ 
+   function handleSerialCodeKeydown(event) {
+     if (event?.key !== "Enter") return;
+     handleSerialCodeSubmit();
+   }
+ 
+   async function handleSerialCodeSubmit() {
+     if (serialCodePending) return;
+     const inputEl = document.getElementById("serialCodeInput");
+     const raw = String(inputEl?.value || "").trim();

@@ -2108,6 +2108,10 @@
           done,
           progress,
           bonus: def.bonus || {},
+          rewardText:
+            def.reward && typeof def.reward.text === "string"
+              ? def.reward.text
+              : "",
         };
       });
 
@@ -2156,7 +2160,9 @@
           }
           if (parts.length) bonusText = ` / ボーナス：${parts.join("、")}`;
         }
-        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}</div></div>`;
+        const rewardText =
+          a.done && a.rewardText ? ` / 報酬：${a.rewardText}` : "";
+        return `<div class="achievement-card ${a.done ? "is-done" : ""}">${mark} <strong>${a.title}</strong><div class="small">${a.desc}（${a.progress}）${bonusText}${rewardText}</div></div>`;
       })
       .join("");
   }
