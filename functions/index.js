@@ -72,10 +72,16 @@ exports.saveUserGameData = functions
 
     const payload = data?.payload;
     if (!payload || typeof payload !== "object") {
-      throw new functions.https.HttpsError("invalid-argument", "payload required");
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "payload required",
+      );
     }
     if (payload.schema !== SAVE_SCHEMA) {
-      throw new functions.https.HttpsError("invalid-argument", "invalid schema");
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "invalid schema",
+      );
     }
 
     await db.collection(SAVE_COLLECTION).doc(uid).set(

@@ -1,5 +1,5 @@
 diff --git a/js/ui.js b/js/ui.js
-index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3df896142e 100644
+index 4596f70276bf335c40bac7d101ef89bdf1536b02..2052b025bf858c272efde4ce80c793ae1fd5f201 100644
 --- a/js/ui.js
 +++ b/js/ui.js
 @@ -1348,56 +1348,59 @@
@@ -63,7 +63,7 @@ index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3d
    }
  
    function discardEquipment(ev, idx) {
-@@ -1644,106 +1647,169 @@
+@@ -1644,106 +1647,209 @@
        eq.slot2 = null;
        log(`${item.name}を外した`);
        getCombatStats();
@@ -161,11 +161,77 @@ index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3d
 -      typeof window.confirm === "function" &&
 -      !window.confirm(
 -        "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
--      )
--    ) {
 +    if (id !== "option_reforge_stone") return;
 +    if (!Number.isFinite(cnt) || cnt < 1) {
 +      log("再錬の石が足りない");
++      return;
++    }
++
++    const eq = gameData?.player?.equipment || {};
++    const targets = [];
++    const pushUniqueTarget = (it, slotLabel) => {
++      if (!it) return;
++      if (!["weapon", "armor", "accessory"].includes(String(it.category || ""))) return;
++      if (Math.floor(Number(it.randomOptions || 0)) <= 0) return;
++      if (targets.some((t) => sameItem(t.item, it))) return;
++      targets.push({ item: it, slotLabel });
++    };
++    pushUniqueTarget(eq.slot1, "装備1");
++    pushUniqueTarget(eq.slot2, "装備2");
++    pushUniqueTarget(eq.accessory, "装飾品");
++    if (!targets.length) {
++      log("再抽選できる装備中の装備がない");
++      return;
++    }
++
++    const choices = targets
++      .map(
++        (t, idx) =>
++          `${idx + 1}: ${t.slotLabel} ${t.item.name} (+${Math.floor(Number(t.item.randomOptions || 0))})`,
+       )
++      .join("\n");
++    const input =
++      typeof window.prompt === "function"
++        ? window.prompt(
++            `再抽選する装備番号を入力してください（1-${targets.length}）
++${choices}`,
++            "1",
++          )
++        : "1";
++    if (input == null) return;
++    const selected = Math.floor(Number(input));
++    if (!Number.isFinite(selected) || selected < 1 || selected > targets.length) {
++      log("無効な番号");
++      return;
++    }
++
++    const chosenTarget = targets[selected - 1];
++    const chosen = chosenTarget.item;
++
++    const optionTexts = getRandomOptionTexts(chosen);
++    if (!optionTexts.length) {
++      log("変更できるランダムオプションが見つからない");
++      return;
++    }
++
++    const optionChoiceText = optionTexts
++      .map((text, idx) => `${idx + 1}: ${text}`)
++      .join("\n");
++    const optionInput =
++      typeof window.prompt === "function"
++        ? window.prompt(
++            `${chosen.name} のどのランダムオプションを変更しますか？（1-${optionTexts.length}）\n${optionChoiceText}`,
++            "1",
++          )
++        : "1";
++    if (optionInput == null) return;
++    const optionSelected = Math.floor(Number(optionInput));
++    if (
++      !Number.isFinite(optionSelected) ||
++      optionSelected < 1 ||
++      optionSelected > optionTexts.length
+     ) {
++      log("無効なオプション番号");
        return;
      }
  
@@ -173,17 +239,8 @@ index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3d
 -    if (typeof window.toggleAsuraWorldByMapFragment === "function") {
 -      const result = window.toggleAsuraWorldByMapFragment();
 -      if (result && result.ok) movedToAsura = !!result.movedToAsura;
-+    const inv = Array.isArray(gameData?.player?.inventory)
-+      ? gameData.player.inventory
-+      : [];
-+    const targets = inv.filter(
-+      (it) =>
-+        it &&
-+        ["weapon", "armor", "accessory"].includes(String(it.category || "")) &&
-+        Math.floor(Number(it.randomOptions || 0)) > 0,
-+    );
-+    if (!targets.length) {
-+      log("再抽選できる装備がない");
++    if (typeof window.rerollEquipmentSingleRandomOption !== "function") {
++      log("再抽選機能が見つからない");
 +      return;
      }
  
@@ -214,31 +271,10 @@ index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3d
 -        showCloseButton: true,
 -        hintText: "不思議な力で鍵は残っている",
 -      });
-+    const choices = targets
-+      .map((it, idx) => `${idx + 1}: ${it.name} (+${Math.floor(Number(it.randomOptions || 0))})`)
-+      .join("\n");
-+    const input =
-+      typeof window.prompt === "function"
-+        ? window.prompt(
-+            `再抽選する装備番号を入力してください（1-${targets.length}）
-+${choices}`,
-+            "1",
-+          )
-+        : "1";
-+    if (input == null) return;
-+    const selected = Math.floor(Number(input));
-+    if (!Number.isFinite(selected) || selected < 1 || selected > targets.length) {
-+      log("無効な番号");
-+      return;
-     }
-+
-+    const chosen = targets[selected - 1];
-+    if (typeof window.rerollEquipmentRandomOptions !== "function") {
-+      log("再抽選機能が見つからない");
-+      return;
-+    }
-+
-+    const result = window.rerollEquipmentRandomOptions(chosen);
++    const result = window.rerollEquipmentSingleRandomOption(
++      chosen,
++      optionSelected - 1,
++    );
 +    if (!result || !result.ok) {
 +      log("再抽選に失敗した");
 +      return;
@@ -247,9 +283,11 @@ index 4596f70276bf335c40bac7d101ef89bdf1536b02..b37f5d15fcf31181827b67d1eec02d3d
 +    target.count = Math.max(0, Math.floor(Number(target.count || 0)) - 1);
 +    if (target.count <= 0) {
 +      gameData.player.valuables = vals.filter((v) => v && v.id !== id);
-+    }
+     }
 +
-+    log(`💎 再錬の石を使い、${chosen.name}のランダムオプションを再抽選した！`);
++    log(
++      `💎 再錬の石を使い、${chosenTarget.slotLabel} ${chosen.name}のランダムオプションを1つ変更した！`,
++    );
      updateBagUI();
      updateUI();
      if (typeof requestAutosave === "function") requestAutosave();
