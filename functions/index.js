@@ -13,6 +13,9 @@ const serialCodeLookup = {
   // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+20%）
   omfprg1h30n98jqmo: "pastLifeMemory",
 
+  // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+  stay8q2m1v7xk9: "stayBattle",
+
   // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
   startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
 };

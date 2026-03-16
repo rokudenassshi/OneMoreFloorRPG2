@@ -119,7 +119,8 @@
       id: "asura_world_first_visit",
       title: "さらなる冒険",
       desc: "修羅の国に行く",
-      isVisible: (p) => !!(p && p.achievements && p.achievements.asura_world_first_visit),
+      isVisible: (p) =>
+        !!(p && p.achievements && p.achievements.asura_world_first_visit),
       isDone: (p) => !!(p && p.worldState && p.worldState.hasVisitedAsura),
       progress: (p) =>
         p && p.worldState && p.worldState.hasVisitedAsura ? "1/1" : "0/1",

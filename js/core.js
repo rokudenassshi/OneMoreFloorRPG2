@@ -2161,6 +2161,21 @@
     if (gameData.gameState !== "EXPLORE") return;
 
     const cur = clampFloor(gameData.floor || 1);
+    const stayCurrentFloor =
+      isStayBattleUnlocked() &&
+      !!(
+        gameData.player &&
+        gameData.player.serialOptions &&
+        gameData.player.serialOptions.stayBattleCurrentFloor
+      );
+
+    if (stayCurrentFloor) {
+      gameData.floor = cur;
+      gameData.pendingFloorAfterWin = cur;
+      startBattle(cur);
+      return;
+    }
+
     const floorCap = getCurrentFloorCap();
     const isAtTestFloorCap =
       Number.isFinite(floorCap) && floorCap > 0 && cur >= floorCap;

@@ -1,164 +1,60 @@
-diff --git a/js/core.js b/js/core.js
-index b1c843c4c63019bd3326ccb2d9a0e5f4ba6c8513..33c118b3ef61a1d88d041cbf7cd83dd5943cb4ca 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -4485,61 +4485,70 @@
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index a9638e8311cae8bb11d8b104ce9ed1e27f5299d1..447ca8fe442cebf2a1398589cb697b3f1f488a2c 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -12,51 +12,54 @@
  
-       const willDrop = Math.random() * 100 < dropChance;
- 
-       if (willDrop) {
-         const isNamedEnemy = !!enemy.isNamed;
-         const isHighSearchNamedEnemy =
-           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
-         const forcedSpecialPrefixRarityPool = isNamedEnemy
-           ? isHighSearchNamedEnemy
-             ? ["rare", "epic", "legendary"]
-             : ["rare", "epic"]
-           : null;
-         const item = generateEquipment({
-           player: gameData.player,
-           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
-         });
-         if (isInAsuraWorld() && item && typeof item === "object") {
-           ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
-             const v = Number(item[k]);
-             if (Number.isFinite(v) && v > 0) {
-               item[k] = Math.max(1, Math.round(v * ASURA_ITEM_STAT_MULTIPLIER));
-             }
-           });
-         }
-         const soldByAutoSell = evaluateAutoSellDropItem(item);
-+        const skipAccessoryPickup = shouldSkipAccessoryPickupByOwnedValue(
-+          item,
-+          gameData.player,
-+        );
- 
--        if (soldByAutoSell) {
-+        if (skipAccessoryPickup) {
-+          log(
-+            `⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`,
-+          );
-+        } else if (soldByAutoSell) {
-           log(`💸 ${item.name}を自動売却した。`);
-         } else {
-           gameData.player.inventory.push(item);
-           log(`${item.name}を手に入れた！`);
-         }
- 
-         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
-         if (
-           !soldByAutoSell &&
-+          !skipAccessoryPickup &&
-           item &&
-           typeof item._specialPrefixName === "string" &&
-           item._specialPrefixName &&
-           typeof window.showRareEnemyPopup === "function"
-         ) {
-           const rarityText =
-             typeof item._specialPrefixRarity === "string" &&
-             item._specialPrefixRarity
-               ? item._specialPrefixRarity
-               : typeof item.rarity === "string"
-                 ? item.rarity
-                 : "rare";
-           const rarityLabel =
-             rarityText === "legendary"
-               ? "レジェンダリー"
-               : rarityText === "epic"
-                 ? "エピック"
-                 : "レア";
-           window.showRareEnemyPopup(
-             item.name,
-             `${rarityLabel}特殊接頭語装備を手に入れた！`,
-             {
-               autoClose: false,
-               allowOverlayClose: false,
-               showCloseButton: true,
-@@ -5051,50 +5060,87 @@
-     const eq = p.equipment && typeof p.equipment === "object" ? p.equipment : {};
-     if (eq.accessory && eq.accessory.category === "accessory") {
-       items.push(eq.accessory);
+   function loadStore() {
+     try {
+       const raw = localStorage.getItem(STORE_KEY);
+       const obj = raw ? JSON.parse(raw) : null;
+       return obj && typeof obj === "object" ? obj : {};
+     } catch (e) {
+       return {};
      }
- 
-     return items;
    }
  
-   function getBlockedAccessoryDropSignatures(player) {
-     const blocked = new Set();
-     const accessories = getOwnedAccessories(player);
-     for (const item of accessories) {
-       const eff = Array.isArray(item.effects) ? item.effects[0] : null;
-       if (!eff || typeof eff !== "object") continue;
- 
-       const max = Number(eff.max);
-       const value = Number(eff.value);
-       if (!Number.isFinite(max) || !Number.isFinite(value) || value < max) continue;
- 
-       const sig = getAccessoryEffectSignature(item.type, eff);
-       if (sig) blocked.add(sig);
-     }
-     return blocked;
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
    }
  
-+  function getAccessoryComparableValue(item) {
-+    const eff = Array.isArray(item?.effects) ? item.effects[0] : null;
-+    if (!eff || typeof eff !== "object") return null;
-+
-+    const value = Number(eff.value);
-+    return Number.isFinite(value) ? value : null;
-+  }
-+
-+  function shouldSkipAccessoryPickupByOwnedValue(item, player) {
-+    if (!item || item.category !== "accessory") return false;
-+
-+    const itemEff = Array.isArray(item.effects) ? item.effects[0] : null;
-+    const itemValue = getAccessoryComparableValue(item);
-+    if (!itemEff || itemValue == null) return false;
-+
-+    const targetSig = getAccessoryEffectSignature(item.type, itemEff);
-+    if (!targetSig) return false;
-+
-+    const accessories = getOwnedAccessories(player);
-+    for (const owned of accessories) {
-+      if (!owned || owned === item) continue;
-+
-+      const ownedEff = Array.isArray(owned.effects) ? owned.effects[0] : null;
-+      if (!ownedEff || typeof ownedEff !== "object") continue;
-+
-+      const ownedSig = getAccessoryEffectSignature(owned.type, ownedEff);
-+      if (ownedSig !== targetSig) continue;
-+
-+      const ownedValue = getAccessoryComparableValue(owned);
-+      if (ownedValue == null) continue;
-+
-+      if (ownedValue >= itemValue) return true;
-+    }
-+
-+    return false;
-+  }
-+
-   // -------------------
-   // 装備品オプション：種別ごとの付きやすさ（重み付け）
-   // -------------------
-   /**
-    * @template T
-    * @param {T[]} items
-    * @param {(item: T) => number} weightFn
-    * @returns {T|null}
-    */
-   function pickWeighted(items, weightFn) {
-     if (!Array.isArray(items) || items.length === 0) return null;
-     let total = 0;
-     const weights = items.map((it) => {
-       const w = Number(weightFn(it));
-       const ww = Number.isFinite(w) ? Math.max(0, w) : 0;
-       total += ww;
-       return ww;
-     });
-     if (total <= 0) {
-       // フォールバック：等確率
-       return items[Math.floor(Math.random() * items.length)] || null;
-     }
-     let r = Math.random() * total;
-     for (let i = 0; i < items.length; i++) {
-       r -= weights[i];
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
+   }
+ 
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+-  const serialCodeLookup = {};
++  const serialCodeLookup = {
++    // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
++    stay8q2m1v7xk9: "stayBattle",
++  };
+ 
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.stayBattle) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
+ 
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.stayBattle = true;
+         }
+ 
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
