@@ -1,324 +1,135 @@
-diff --git a/js/core.js b/js/core.js
-index f5e4dbe8ce9443cf710428b2193300ecca19f49c..5e20d125fbe65ea4bb249b55c2d46c08b29793ee 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -80,50 +80,51 @@
-   const jobs = window.jobs || window.JOBS || {};
-   // -------------------
-   // 状態異常: 追加ルール
-   // -------------------
-   // 毒：最大HP割合ダメージ（敵ターン開始時に1回）
-   const POISON_MAXHP_RATE = 0.03; // 3%
-   // 火傷：回復量が減少（回復時に適用）
-   const BURN_HEAL_MULT = 0.6; // 60%（=40%減少）
-   // 火傷：継続ダメージ（敵ターン開始時に1回、長めに継続）
-   const BURN_DOT_MAXHP_RATE = 0.015; // 最大HPの1.5%
-   const DEFAULT_BURN_TURNS = 6;
-   // 出血：継続ダメージ（最大HP割合。敵/プレイヤー共通で使用）
-   const BLEED_DOT_MAXHP_RATE = 0.02; // 最大HPの2%
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index 447ca8fe442cebf2a1398589cb697b3f1f488a2c..5304fa8daf250349b94c026bede5805a4c1527bf 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -15,50 +15,53 @@
+       const raw = localStorage.getItem(STORE_KEY);
+       const obj = raw ? JSON.parse(raw) : null;
+       return obj && typeof obj === "object" ? obj : {};
+     } catch (e) {
+       return {};
+     }
+   }
  
-   // -------------------
-   // 貴重品（秘宝）：所持ボーナス
-   // -------------------
-   // 敵を倒すと 1/1000 の確率でドロップ
-   const RELIC_DROP_CHANCE = 0.001;
-   const RELIC_FAMILY_NAME = "秘宝";
-   const MAP_FRAGMENT_ID = "ancient_map_fragment";
-   const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
-   const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
-   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
-   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
-+  const MAX_BATTLE_ACTIONS_BEFORE_ESCAPE = 50;
-   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
-   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
+   }
  
-   const RELIC_DEFS = [
-     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
-     { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
-     { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
-     { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
-     { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
-   ];
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
+   }
  
-   const MAP_FRAGMENT_DEF = {
-     id: MAP_FRAGMENT_ID,
-     name: MAP_FRAGMENT_BASE_NAME,
-     statKey: "",
-     description: "5つ集めると・・・",
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+   const serialCodeLookup = {
+     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+     stay8q2m1v7xk9: "stayBattle",
++
++    // `startdash` + 英数字10文字（固定）: 各紋章10個配布
++    startdashi1u474nk3ks: "startDashEmblems",
    };
  
-   function getMapFragmentDisplayName(count) {
-     const n = Number(count || 0);
-     return n >= MAP_FRAGMENT_MAX_STACK_FOR_DROP
-       ? MAP_FRAGMENT_READY_NAME
-       : MAP_FRAGMENT_BASE_NAME;
-   }
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.stayBattle) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
  
-@@ -2530,50 +2531,51 @@
-     const asuraPool =
-       isAsuraWorld && Array.isArray(window.asuraMonsterTypes)
-         ? window.asuraMonsterTypes
-         : null;
-     const enemyTable =
-       asuraPool && asuraPool.length > 0 ? asuraPool : monsterTypes;
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.stayBattle = true;
+         }
  
-     // 敵生成：階層に応じて候補を絞る
-     const candidates = enemyTable.filter((m) => {
-       const min = m.minFloor || 1;
-       const max = typeof m.maxFloor === "number" ? m.maxFloor : Infinity;
-       return min <= enemyScalingFloor && enemyScalingFloor <= max;
-     });
-     const pool = candidates.length > 0 ? candidates : enemyTable;
+         if (typeof window.checkAndUnlockAchievements === "function") {
+@@ -102,31 +105,76 @@
+         if (s.pastLifeMemory) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
+       },
+       unlock: () => {
+         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
+         const s = loadStore();
+         s.pastLifeMemory = true;
+         saveStore(s);
  
-     // ボス生成（敵テーブル切替階層）
-     const bossDef =
-       typeof window.bossMonsters === "object" && window.bossMonsters
-         ? window.bossMonsters[floor]
-         : null;
+         // 2) セーブデータ側にも保存（実績用）
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.pastLifeMemory = true;
+         }
  
-     const baseMonster = bossDef
-       ? bossDef
-       : pool[Math.floor(Math.random() * pool.length)];
-     const enemy = JSON.parse(JSON.stringify(baseMonster));
-+    enemy.playerActionCount = 0;
- 
-     // 敵の状態異常格納を初期化
-     ensureEnemyStatus(enemy);
- 
-     // 事前定義の特殊効果（ボスなど）を保持しておく
-     const presetEffects =
-       enemy && enemy.effects && typeof enemy.effects === "object"
-         ? JSON.parse(JSON.stringify(enemy.effects))
-         : {};
- 
-     const combat = getCombatStats();
-     const search = combat.search;
- 
-     // フロア補正（常に強くなる）
-     const floorMul = Math.min(4.2, 1 + (enemyScalingFloor - 1) * 0.075);
-     enemy.hp = Math.round(enemy.hp * floorMul);
-     enemy.str = Math.round(enemy.str * floorMul);
-     enemy.vit = Math.round(enemy.vit * floorMul);
-     enemy.int = Math.round(enemy.int * floorMul);
-     enemy.agi = Math.round(enemy.agi * floorMul);
-     enemy.dex = Math.round(enemy.dex * floorMul);
-     enemy.exp = Math.round(enemy.exp * floorMul);
- 
-     if (isAsuraWorld) {
-       const asuraBaseMul = 2;
-@@ -2902,50 +2904,52 @@
-     if (st.accuracyDownTurns > 0) {
-       st.accuracyDownTurns--;
-       if (st.accuracyDownTurns <= 0) {
-         st.accuracyDownRate = 0;
-       }
-     }
- 
-     if (st.slowTurns > 0) {
-       st.slowTurns--;
-       if (st.slowTurns <= 0) st.slowRate = 0;
-     }
- 
-     if (st.vulnerableTurns > 0) {
-       st.vulnerableTurns--;
-       if (st.vulnerableTurns <= 0) st.vulnerableRate = 0;
-     }
- 
-     if (st.silenceTurns > 0) st.silenceTurns--;
- 
-     if (st.defendingTurns > 0) st.defendingTurns--;
-   }
- 
-   function attack() {
-     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
- 
-+    if (incrementBattleActionAndCheckForcedEscape()) return;
+         // 3) 実績解除チェック（ログもここで出る）
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
+       },
+       logMessage: "✨ シリアルコードを確認しました。",
+     },
 +
-     const st = gameData.player.status || (gameData.player.status = {});
-     if (st.stunTurns > 0) {
-       st.stunTurns--;
-       log("⚡ しびれて動けない！");
-       enemyTurn();
-       return;
-     }
- 
-     addJobProgress("attack", 1);
- 
-     // このアクション内の追撃は1回まで
-     beginPlayerAction();
- 
-     const isAsura = gameData.player?.job === "asura";
- 
-     const combat = getCombatStats();
-     const enemy = gameData.enemy;
- 
-     // 命中判定
-     const hitChance = Math.min(95, combat.accuracy - getEnemyAgiForHit(enemy));
-     if (Math.random() * 100 > hitChance) {
-       log("攻撃は外れた！");
-       // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
-       if (isAsura) gainQi(1);
-       enemyTurn();
-@@ -3057,50 +3061,52 @@
-     // 職業：追撃（通常攻撃でも）
-     const bs = ensurePlayerBattleState();
-     if (bs.followUpOnAttack) {
-       trySkillFollowUp(enemy, combat);
-     }
- 
-     // 装飾品：追撃トリガー
-     tryAccessoryPursuit(enemy, combat);
- 
-     // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
-     if (isAsura) gainQi(1);
-     checkBattleEnd();
- 
-     if (gameData.gameState === "BATTLE") {
-       enemyTurn();
-     } else {
-       // 敵を倒して敵ターンが発生しない場合も、行動1回分のCTは進行させる
-       advancePlayerSkillCooldown();
-       advancePlayerStatusTurnsWithoutEnemyTurn();
-     }
-   }
- 
-   function defend() {
-     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
- 
-+    if (incrementBattleActionAndCheckForcedEscape()) return;
++    // スタートダッシュ（各紋章 ×10）
++    startDashEmblems: {
++      isUnlocked: () => {
++        const s = loadStore();
++        if (s.startDashEmblems) return true;
++        const p = getPlayer();
++        return !!(p && p.serialUnlocks && p.serialUnlocks.startDashEmblems);
++      },
++      unlock: () => {
++        const s = loadStore();
++        s.startDashEmblems = true;
++        saveStore(s);
 +
-     const st = gameData.player.status || (gameData.player.status = {});
-     if (st.stunTurns > 0) {
-       st.stunTurns--;
-       log("⚡ しびれて動けない！");
-       enemyTurn();
-       return;
-     }
- 
-     st.defendingTurns = 1;
-     log("🛡 防御した");
- 
-     addJobProgress("defend", 1);
- 
-     enemyTurn();
-   }
- 
-   function trySkillFollowUp(enemy, combat) {
-     if (!enemy || enemy.hp <= 0) return;
-     const bs = ensurePlayerBattleState();
-     const ch = Number(bs.skillFollowUpChance || 0);
-     if (!Number.isFinite(ch) || ch <= 0) return;
-     if (Math.random() >= ch) return;
- 
-     const jt = jobs?.[gameData.player?.job]?.traits || {};
-     const baseCritMul =
-@@ -3208,84 +3214,109 @@
-     damage = Math.round(damage * (0.9 + Math.random() * 0.2));
-     damage = applyEnemyIncomingReduction(enemy, damage);
-     damage = applyEnemyVulnerableTaken(enemy, damage);
-     enemy.hp -= damage;
-     recordPlayerDamage(damage);
-     log(`⚡ 追撃！ ${damage}ダメージ${isCrit ? " 会心！" : ""}`);
- 
-     applyPlayerOnHitSpecialEffects(enemy);
-     onPlayerHit({ kind: "physical", isCrit });
- 
-     // HP吸収（追撃分）
-     const lsPct = Number(getLifeStealPercent() || 0);
-     if (Number.isFinite(lsPct) && lsPct > 0) {
-       const baseHeal = Math.max(1, Math.round(damage * (lsPct / 100)));
-       const r = applyPlayerHeal(baseHeal);
-       if (r.healed > 0 && r.barrierGained > 0) {
-         log(`🩸 HP吸収で${r.healed}回復（🛡+${r.barrierGained}）`);
-       } else if (r.healed > 0) {
-         log(`🩸 HP吸収で${r.healed}回復`);
-       } else if (r.barrierGained > 0) {
-         log(`🛡 バリア+${r.barrierGained}`);
-       }
-     }
-   }
- 
++        const p = getPlayer();
++        if (p) {
++          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
++            p.serialUnlocks = {};
++          }
++          p.serialUnlocks.startDashEmblems = true;
 +
-+  function incrementBattleActionAndCheckForcedEscape() {
-+    if (gameData.gameState !== "BATTLE" || !gameData.enemy) return false;
++          if (!Array.isArray(p.valuables)) p.valuables = [];
++          const emblemIds = [
++            "emblem_strength",
++            "emblem_vitality",
++            "emblem_intelligence",
++            "emblem_agility",
++            "emblem_dexterity",
++          ];
++          for (const id of emblemIds) {
++            const found = p.valuables.find((v) => v && v.id === id);
++            if (found) {
++              found.amount = Math.max(0, Number(found.amount || 0)) + 10;
++            } else {
++              p.valuables.push({ id, amount: 10, keepOnReset: true });
++            }
++          }
++        }
 +
-+    const enemy = gameData.enemy;
-+    const nextCount = Math.floor(Number(enemy.playerActionCount || 0)) + 1;
-+    enemy.playerActionCount = nextCount;
-+
-+    if (nextCount <= MAX_BATTLE_ACTIONS_BEFORE_ESCAPE) return false;
-+
-+    log(
-+      `💨 行動回数が${MAX_BATTLE_ACTIONS_BEFORE_ESCAPE}回を超えたため、戦闘から逃げ出した…`,
-+    );
-+
-+    if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
-+      gameData.pendingFloorAfterWin = null;
-+    }
-+
-+    endBattle(false);
-+    requestAutosave();
-+    return true;
-+  }
-+
-   function useSkill(slotIndex = 0) {
-     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
++        if (typeof window.checkAndUnlockAchievements === "function") {
++          window.checkAndUnlockAchievements({ silent: false });
++        }
++      },
++      logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
++    },
+   };
  
-     const p = gameData.player || {};
-     const idx = Number(slotIndex) === 1 ? 1 : 0;
-     const list = Array.isArray(p.equippedSkills)
-       ? p.equippedSkills
-       : [p.equippedSkill, null];
-     const skillKey = list[idx] != null ? String(list[idx]) : null;
-     if (!skillKey) return;
- 
-     // クールタイム値の正規化（NaN対策）
-     let cdNow = Number(gameData.player.skillCooldown || 0);
-     if (!Number.isFinite(cdNow) || cdNow < 0) cdNow = 0;
-     gameData.player.skillCooldown = cdNow;
- 
-     const st = gameData.player.status || (gameData.player.status = {});
-     if (st.stunTurns > 0) {
-       st.stunTurns--;
-       log("⚡ しびれて動けない！");
-       enemyTurn();
-       return;
-     }
-     if (st.silenceTurns > 0) {
-       log("🔇 封印されてスキルが使えない！");
-       enemyTurn();
-       return;
-     }
- 
-     if (gameData.player.skillCooldown > 0) {
-       log(`⏳ クールタイム中（残り${gameData.player.skillCooldown}）`);
-       return;
-     }
- 
-+    if (incrementBattleActionAndCheckForcedEscape()) return;
-+
-     const skillDef = skills[skillKey];
-     if (!skillDef || typeof skillDef.effect !== "function") {
-       log("スキルが設定されていない");
-       return;
-     }
-     // 職業制限（上位職は下位職スキルを使用不可）
-     const curJob = gameData.player?.job;
-     const isCommonSkill = skillDef.job === "all";
-     if (skillDef.job && !isCommonSkill && skillDef.job !== curJob) {
-       log("この職業では使用できないスキルです");
-       return;
-     }
-     const level =
-       gameData.player.skills && gameData.player.skills[skillKey]
-         ? gameData.player.skills[skillKey]
-         : 0;
-     const effect = skillDef.effect(level);
- 
-     // 修羅：攻撃（通常攻撃/攻撃スキル）を行うたびに気を溜める
-     // ※スキル側は「攻撃系スキル（ダメージを与える効果）」のみ対象
-     const isAsuraOffenseSkill =
-       curJob === "asura" &&
-       effect &&
-       (typeof effect.baseDamage === "number" ||
-         typeof effect.damageMultiplier === "number");
+   // グローバルに公開（ui.js が参照する）
+   window.serialCodeLookup = serialCodeLookup;
+   window.serialCodeActions = serialCodeActions;
+ })();

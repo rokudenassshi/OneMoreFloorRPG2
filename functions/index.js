@@ -18,6 +18,9 @@ const serialCodeLookup = {
 
   // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
   startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
+
+  // `startdash` + 英数字10文字（固定）: 各紋章10個配布
+  startdashi1u474nk3ks: "startDashEmblems",
 };
 
 exports.verifySerialCode = functions

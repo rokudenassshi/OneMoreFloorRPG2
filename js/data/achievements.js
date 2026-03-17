@@ -92,6 +92,18 @@
       bonus: { expRate: 0.2 },
     },
     {
+      id: "serial_start_dash_emblems",
+      title: "スタートダッシュ",
+      desc: "シリアルコード（スタートダッシュ）を入力する",
+      isDone: (p) =>
+        !!(p && p.serialUnlocks && p.serialUnlocks.startDashEmblems),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.startDashEmblems
+          ? "1/1"
+          : "0/1",
+      bonus: {},
+    },
+    {
       id: "named_hunter",
       title: "二つ名狩り",
       desc: "二つ名モンスターを10体倒す",
