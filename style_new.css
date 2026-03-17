@@ -1039,6 +1039,32 @@ button.item-action-btn.item-action-btn-text {
   opacity: 0.75;
   font-weight: 500;
 }
+
+.options-tabs{
+  display:flex;
+  gap:8px;
+  padding:8px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.update-history-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.update-history-item{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.04);
+}
+.update-history-item h5{
+  margin:0 0 8px;
+  font-size:14px;
+}
+.update-history-item ul{
+  margin:0;
+  padding-left:18px;
+}
 .options-row{
   display:flex;
   gap:8px;

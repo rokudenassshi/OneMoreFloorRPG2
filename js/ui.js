@@ -1831,6 +1831,7 @@
   // UI - ステータス
   // -------------------
   let currentStatusTab = "status";
+  let currentOptionsTab = "main";
 
   function openStatus() {
     // バージョン表示（記録タブ横）
@@ -1856,7 +1857,60 @@
     document.getElementById("bagScreen").style.display = "none";
     document.getElementById("exploreButtons").style.display = "none";
     document.getElementById("battleButtons").style.display = "none";
+    setOptionsTab(currentOptionsTab || "main");
     updateOptionsUI();
+  }
+
+
+
+  function setOptionsTab(tab) {
+    const allowed = ["main", "history"];
+    if (!allowed.includes(tab)) tab = "main";
+    currentOptionsTab = tab;
+
+    const mainEl = document.getElementById("optionsTabMain");
+    const historyEl = document.getElementById("optionsTabHistory");
+    if (mainEl) mainEl.style.display = tab === "main" ? "block" : "none";
+    if (historyEl) historyEl.style.display = tab === "history" ? "block" : "none";
+
+    const btnMain = document.getElementById("optionsTabBtnMain");
+    const btnHistory = document.getElementById("optionsTabBtnHistory");
+    if (btnMain) btnMain.classList.toggle("is-active", tab === "main");
+    if (btnHistory) btnHistory.classList.toggle("is-active", tab === "history");
+
+    if (tab === "history") {
+      loadUpdateHistory();
+    }
+  }
+
+  async function loadUpdateHistory() {
+    const listEl = document.getElementById("updateHistoryList");
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="status-note">読み込み中...</div>';
+
+    try {
+      const response = await fetch("update-history.html", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+
+      const tmp = document.createElement("div");
+      tmp.innerHTML = text;
+
+      const items = Array.from(tmp.querySelectorAll(".update-history-item"));
+      const latestItems = items.slice(0, 3);
+
+      if (latestItems.length === 0) {
+        listEl.innerHTML = '<div class="status-note">アップデート履歴がありません。</div>';
+        return;
+      }
+
+      listEl.innerHTML = "";
+      latestItems.forEach((item) => listEl.appendChild(item.cloneNode(true)));
+    } catch (error) {
+      listEl.innerHTML = '<div class="status-note">アップデート履歴を読み込めませんでした。</div>';
+      console.error("アップデート履歴の読み込みに失敗:", error);
+    }
   }
 
   function closeOptions() {
@@ -3413,6 +3467,7 @@
 
   window.openBag = openBag;
   window.openOptions = openOptions;
+  window.setOptionsTab = setOptionsTab;
   window.closeOptions = closeOptions;
   window.closeBag = closeBag;
   window.openTeleportModal = openTeleportModal;
@@ -3563,6 +3618,7 @@
 
   window.openStatus = openStatus;
   window.openOptions = openOptions;
+  window.setOptionsTab = setOptionsTab;
   window.closeOptions = closeOptions;
   window.openHelpScreen = openHelpScreen;
   window.closeHelpScreen = closeHelpScreen;

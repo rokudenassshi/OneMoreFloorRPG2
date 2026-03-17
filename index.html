@@ -272,6 +272,15 @@
         <button class="back-button" onclick="closeOptions()">戻る</button>
       </div>
 
+      <div class="options-tabs">
+        <button class="status-tab-btn is-active" id="optionsTabBtnMain" type="button"
+          onclick="setOptionsTab('main')">オプション</button>
+        <button class="status-tab-btn" id="optionsTabBtnHistory" type="button"
+          onclick="setOptionsTab('history')">アップデート履歴</button>
+      </div>
+
+      <div id="optionsTabMain">
+
       <div class="status-section">
         <h4>セーブデータ</h4>
         <div class="status-note">※セーブデータはGoogleログイン中のアカウントへ保存されます</div>
@@ -301,6 +310,14 @@
 
       <div class="status-section">
         <a href="#" onclick="openHelpScreen(); return false;">ヘルプ（各名称の説明）</a>
+      </div>
+      </div>
+
+      <div id="optionsTabHistory" style="display:none;">
+        <div class="status-section">
+          <h4>アップデート履歴（最新3件）</h4>
+          <div id="updateHistoryList" class="update-history-list"></div>
+        </div>
       </div>
     </div>
 

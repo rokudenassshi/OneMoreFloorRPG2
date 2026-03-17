@@ -1,135 +1,241 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index 447ca8fe442cebf2a1398589cb697b3f1f488a2c..5304fa8daf250349b94c026bede5805a4c1527bf 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -15,50 +15,53 @@
-       const raw = localStorage.getItem(STORE_KEY);
-       const obj = raw ? JSON.parse(raw) : null;
-       return obj && typeof obj === "object" ? obj : {};
-     } catch (e) {
-       return {};
+diff --git a/js/ui.js b/js/ui.js
+index 57c3acc52208dee3aefbc2e713e3dda6710709ea..fce89a315408b05a729a3c5815ca321fd5a0af97 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1809,78 +1809,132 @@
+ 
+     item.count--;
+     if (item.count <= 0) {
+       gameData.player.items = gameData.player.items.filter(
+         (i) => i.name !== name,
+       );
      }
+ 
+     let heal = Number(item.heal || 0);
+ 
+     gameData.player.hp = Math.min(
+       gameData.player.maxHp,
+       gameData.player.hp + heal,
+     );
+     log(`${name}を使用！ ${heal}HP回復した！`);
+ 
+     updateBagUI();
+     updateUI();
+     if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   function saveStore(store) {
-     try {
-       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
-     } catch (e) {}
+   // -------------------
+   // UI - ステータス
+   // -------------------
+   let currentStatusTab = "status";
++  let currentOptionsTab = "main";
+ 
+   function openStatus() {
+     // バージョン表示（記録タブ横）
+     applyGameVersionBadges();
+ 
+     document.getElementById("statusScreen").style.display = "block";
+     document.getElementById("optionsScreen").style.display = "none";
+     document.getElementById("helpScreen").style.display = "none";
+     document.getElementById("exploreButtons").style.display = "none";
+     document.getElementById("battleButtons").style.display = "none";
+     setStatusTab(currentStatusTab || "status");
+     updateStatusUI();
+     updateAchievementsUI();
+     updateRecordsUI();
+     updateOptionsUI();
    }
  
-   function getPlayer() {
-     return window.gameData && window.gameData.player
-       ? window.gameData.player
-       : null;
+   function openOptions() {
+     // ステータス画面のタブではなく、独立したオプション画面を開く
+     document.getElementById("optionsScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
+     document.getElementById("helpScreen").style.display = "none";
+     document.getElementById("bagScreen").style.display = "none";
+     document.getElementById("exploreButtons").style.display = "none";
+     document.getElementById("battleButtons").style.display = "none";
++    setOptionsTab(currentOptionsTab || "main");
+     updateOptionsUI();
    }
  
-   // ✅ “シリアルコード → 解放キー”
-   // セキュリティのため通常は空（サーバー側で検証）。
-   const serialCodeLookup = {
-     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
-     stay8q2m1v7xk9: "stayBattle",
 +
-+    // `startdash` + 英数字10文字（固定）: 各紋章10個配布
-+    startdashi1u474nk3ks: "startDashEmblems",
-   };
- 
-   // ✅ “解放キー → 実行内容”
-   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
-   const serialCodeActions = {
-     stayBattle: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.stayBattle) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.stayBattle = true;
-         saveStore(s);
- 
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.stayBattle = true;
-         }
- 
-         if (typeof window.checkAndUnlockAchievements === "function") {
-@@ -102,31 +105,76 @@
-         if (s.pastLifeMemory) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory);
-       },
-       unlock: () => {
-         // 1) この端末で「使用済み」を保存（同じコードを何度も通さない）
-         const s = loadStore();
-         s.pastLifeMemory = true;
-         saveStore(s);
- 
-         // 2) セーブデータ側にも保存（実績用）
-         const p = getPlayer();
-         if (p) {
-           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
-             p.serialUnlocks = {};
-           p.serialUnlocks.pastLifeMemory = true;
-         }
- 
-         // 3) 実績解除チェック（ログもここで出る）
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
-         }
-       },
-       logMessage: "✨ シリアルコードを確認しました。",
-     },
 +
-+    // スタートダッシュ（各紋章 ×10）
-+    startDashEmblems: {
-+      isUnlocked: () => {
-+        const s = loadStore();
-+        if (s.startDashEmblems) return true;
-+        const p = getPlayer();
-+        return !!(p && p.serialUnlocks && p.serialUnlocks.startDashEmblems);
-+      },
-+      unlock: () => {
-+        const s = loadStore();
-+        s.startDashEmblems = true;
-+        saveStore(s);
++  function setOptionsTab(tab) {
++    const allowed = ["main", "history"];
++    if (!allowed.includes(tab)) tab = "main";
++    currentOptionsTab = tab;
 +
-+        const p = getPlayer();
-+        if (p) {
-+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
-+            p.serialUnlocks = {};
-+          }
-+          p.serialUnlocks.startDashEmblems = true;
++    const mainEl = document.getElementById("optionsTabMain");
++    const historyEl = document.getElementById("optionsTabHistory");
++    if (mainEl) mainEl.style.display = tab === "main" ? "block" : "none";
++    if (historyEl) historyEl.style.display = tab === "history" ? "block" : "none";
 +
-+          if (!Array.isArray(p.valuables)) p.valuables = [];
-+          const emblemIds = [
-+            "emblem_strength",
-+            "emblem_vitality",
-+            "emblem_intelligence",
-+            "emblem_agility",
-+            "emblem_dexterity",
-+          ];
-+          for (const id of emblemIds) {
-+            const found = p.valuables.find((v) => v && v.id === id);
-+            if (found) {
-+              found.amount = Math.max(0, Number(found.amount || 0)) + 10;
-+            } else {
-+              p.valuables.push({ id, amount: 10, keepOnReset: true });
-+            }
-+          }
-+        }
++    const btnMain = document.getElementById("optionsTabBtnMain");
++    const btnHistory = document.getElementById("optionsTabBtnHistory");
++    if (btnMain) btnMain.classList.toggle("is-active", tab === "main");
++    if (btnHistory) btnHistory.classList.toggle("is-active", tab === "history");
 +
-+        if (typeof window.checkAndUnlockAchievements === "function") {
-+          window.checkAndUnlockAchievements({ silent: false });
-+        }
-+      },
-+      logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
-+    },
-   };
++    if (tab === "history") {
++      loadUpdateHistory();
++    }
++  }
++
++  async function loadUpdateHistory() {
++    const listEl = document.getElementById("updateHistoryList");
++    if (!listEl) return;
++
++    listEl.innerHTML = '<div class="status-note">読み込み中...</div>';
++
++    try {
++      const response = await fetch("update-history.html", { cache: "no-store" });
++      if (!response.ok) throw new Error(`HTTP ${response.status}`);
++      const text = await response.text();
++
++      const tmp = document.createElement("div");
++      tmp.innerHTML = text;
++
++      const items = Array.from(tmp.querySelectorAll(".update-history-item"));
++      const latestItems = items.slice(0, 3);
++
++      if (latestItems.length === 0) {
++        listEl.innerHTML = '<div class="status-note">アップデート履歴がありません。</div>';
++        return;
++      }
++
++      listEl.innerHTML = "";
++      latestItems.forEach((item) => listEl.appendChild(item.cloneNode(true)));
++    } catch (error) {
++      listEl.innerHTML = '<div class="status-note">アップデート履歴を読み込めませんでした。</div>';
++      console.error("アップデート履歴の読み込みに失敗:", error);
++    }
++  }
++
+   function closeOptions() {
+     document.getElementById("optionsScreen").style.display = "none";
+     updateUI();
+   }
  
-   // グローバルに公開（ui.js が参照する）
-   window.serialCodeLookup = serialCodeLookup;
-   window.serialCodeActions = serialCodeActions;
- })();
+   function openHelpScreen() {
+     document.getElementById("helpScreen").style.display = "block";
+     document.getElementById("optionsScreen").style.display = "none";
+   }
+ 
+   function closeHelpScreen() {
+     document.getElementById("helpScreen").style.display = "none";
+     document.getElementById("optionsScreen").style.display = "block";
+   }
+ 
+   function closeStatus() {
+     document.getElementById("statusScreen").style.display = "none";
+     updateUI();
+   }
+ 
+   // -------------------
+   // UI - 転移（50階層刻み）
+   // -------------------
+   let lastTeleportFocusEl = null;
+ 
+@@ -3391,50 +3445,51 @@
+ 
+     log("🔄 スキルをリセットした");
+     getCombatStats();
+     updateSkillUI();
+     updateStatusUI();
+     updateSkillButtons();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // ポップアップ
+   window.showRareEnemyPopup = showRareEnemyPopup;
+   window.showEventPopup = showEventPopup;
+ 
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   window.updateRecordsUI = updateRecordsUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
++  window.setOptionsTab = setOptionsTab;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+   window.useValuableById = useValuableById;
+   // =====================
+   // セーブ設定
+@@ -3541,50 +3596,51 @@
+   }
+ 
+   // -------------------
+   // 初期化（モーダル外タップなど）
+   // -------------------
+   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
+   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
+   bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
+ 
+   // ステータス画面の記録タブ横にバージョンを表示
+   applyGameVersionBadges();
+ 
+   // グローバル公開（HTML onclick 用）
+   window.setStatusTab = setStatusTab;
+   window.postRecordToX = postRecordToX;
+   window.toggleAutosave = toggleAutosave;
+   window.handleManualSave = handleManualSave;
+ 
+   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
+   window.startWithGoogleLogin = startWithGoogleLogin;
+   window.startWithoutLogin = startWithoutLogin;
+   window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
+ 
+   window.openStatus = openStatus;
+   window.openOptions = openOptions;
++  window.setOptionsTab = setOptionsTab;
+   window.closeOptions = closeOptions;
+   window.openHelpScreen = openHelpScreen;
+   window.closeHelpScreen = closeHelpScreen;
+   window.closeStatus = closeStatus;
+   window.updateStatusUI = updateStatusUI;
+ 
+   // シリアルコード（オプション画面）
+   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
+   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
+ 
+   window.openJobSelector = openJobSelector;
+   window.closeJobSelector = closeJobSelector;
+   window.selectJob = selectJob;
+ 
+   window.openStatAllocation = openStatAllocation;
+   window.closeStatAllocation = closeStatAllocation;
+   window.adjustStat = adjustStat;
+   window.resetStatAllocation = resetStatAllocation;
+ 
+   window.openSkillScreen = openSkillScreen;
+   window.closeSkillScreen = closeSkillScreen;
+   window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
+   window.toggleAutoAllocateStatPoints = toggleAutoAllocateStatPoints;
+   window.setAutoAllocateStatTarget = setAutoAllocateStatTarget;
+   window.updateSkillUI = updateSkillUI;
