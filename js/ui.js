@@ -655,9 +655,7 @@
           ? `${condPrefix}スキル威力${sign}${v}%`
           : `${condPrefix}スキル威力`;
       case "critRate":
-        return hasV
-          ? `${condPrefix}会心率${sign}${v}%`
-          : `${condPrefix}会心率`;
+        return hasV ? `${condPrefix}会心率${sign}${v}%` : `${condPrefix}会心率`;
       case "accuracy":
         return hasV ? `${condPrefix}命中${sign}${v}%` : `${condPrefix}命中`;
       case "evasion":
@@ -1861,8 +1859,6 @@
     updateOptionsUI();
   }
 
-
-
   function setOptionsTab(tab) {
     const allowed = ["main", "history"];
     if (!allowed.includes(tab)) tab = "main";
@@ -1871,7 +1867,8 @@
     const mainEl = document.getElementById("optionsTabMain");
     const historyEl = document.getElementById("optionsTabHistory");
     if (mainEl) mainEl.style.display = tab === "main" ? "block" : "none";
-    if (historyEl) historyEl.style.display = tab === "history" ? "block" : "none";
+    if (historyEl)
+      historyEl.style.display = tab === "history" ? "block" : "none";
 
     const btnMain = document.getElementById("optionsTabBtnMain");
     const btnHistory = document.getElementById("optionsTabBtnHistory");
@@ -1890,7 +1887,9 @@
     listEl.innerHTML = '<div class="status-note">読み込み中...</div>';
 
     try {
-      const response = await fetch("update-history.html", { cache: "no-store" });
+      const response = await fetch("update-history.html", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const text = await response.text();
 
@@ -1901,14 +1900,16 @@
       const latestItems = items.slice(0, 3);
 
       if (latestItems.length === 0) {
-        listEl.innerHTML = '<div class="status-note">アップデート履歴がありません。</div>';
+        listEl.innerHTML =
+          '<div class="status-note">アップデート履歴がありません。</div>';
         return;
       }
 
       listEl.innerHTML = "";
       latestItems.forEach((item) => listEl.appendChild(item.cloneNode(true)));
     } catch (error) {
-      listEl.innerHTML = '<div class="status-note">アップデート履歴を読み込めませんでした。</div>';
+      listEl.innerHTML =
+        '<div class="status-note">アップデート履歴を読み込めませんでした。</div>';
       console.error("アップデート履歴の読み込みに失敗:", error);
     }
   }
@@ -2058,7 +2059,8 @@
       gameData.player.serialOptions = {};
     }
 
-    gameData.player.serialOptions.stayBattleCurrentFloor = unlocked && !!checked;
+    gameData.player.serialOptions.stayBattleCurrentFloor =
+      unlocked && !!checked;
 
     if (typeof requestAutosave === "function") requestAutosave();
   }
@@ -2128,16 +2130,15 @@
     const totalKills = Math.max(0, Math.floor(Number(p.totalKills || 0)));
     const maxDamage = Math.max(0, Math.floor(Number(p.maxDamage || 0)));
 
-    const text = `OneMoreFloorRPG2
+    const text = `ハクスラ OneMoreFloorRPG2をプレイ！
 これまで倒した敵の数: ${totalKills}体
 最大ダメージ: ${maxDamage}
 到達階層: ${floor}F
-#OneMoreFloorRPG2`;
+#OneMoreFloorRPG2
+#OMF2`;
     const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
-
-
 
   function updateAchievementsUI() {
     const el = document.getElementById("achievementsContent");
@@ -2175,7 +2176,9 @@
           title: useRevealedText
             ? def.doneTitle || def.title || def.id
             : def.title || def.id,
-          desc: useRevealedText ? def.doneDesc || def.desc || "" : def.desc || "",
+          desc: useRevealedText
+            ? def.doneDesc || def.desc || ""
+            : def.desc || "",
           done,
           progress,
           bonus: def.bonus || {},
@@ -2553,7 +2556,8 @@
         return { unlocked, text: "？？？" };
       }
       const parts = [];
-      if (minLevel) parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
+      if (minLevel)
+        parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
       parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
       return { unlocked, text: parts.join(" ＆ ") };
     };
@@ -2565,8 +2569,7 @@
       return getUnlockInfo(jobKey).unlocked;
     };
     const baseKeys = keys.filter(
-      (k) =>
-        (!jobs[k] || jobs[k].tier !== "advanced") && shouldShowJob(k),
+      (k) => (!jobs[k] || jobs[k].tier !== "advanced") && shouldShowJob(k),
     );
     const advKeys = keys.filter(
       (k) => jobs[k] && jobs[k].tier === "advanced" && shouldShowJob(k),
@@ -2703,7 +2706,8 @@
 
       if (!unlocked) {
         const parts = [];
-        if (minLevel) parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
+        if (minLevel)
+          parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
         return;
@@ -3040,7 +3044,9 @@
       "common_crit_rate_tuning",
     ]);
     if (!gatedCommonSkills.has(String(skillKey || ""))) return true;
-    const maxReached = Math.floor(Number(gameData?.player?.maxReachedFloor || 1));
+    const maxReached = Math.floor(
+      Number(gameData?.player?.maxReachedFloor || 1),
+    );
     return maxReached >= 3000;
   }
 
@@ -3138,8 +3144,7 @@
         const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
           String(key || ""),
         );
-        const shouldPercentize =
-          nextChar === "%" || keyLooksPercent;
+        const shouldPercentize = nextChar === "%" || keyLooksPercent;
         if (!shouldPercentize) return v;
         if (!Number.isFinite(v)) return v;
         if (v > 0 && v < 1) return v * 100;
