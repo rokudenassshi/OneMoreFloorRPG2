@@ -1,61 +1,112 @@
-diff --git a/js/ui.js b/js/ui.js
-index cbf2a469d5dd2e2db2a097b6215dabc0b3ff2a94..0d6d63e379488776a1fa368a6d251e09e2903027 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1332,51 +1332,55 @@
-       const rarityClass =
-         rarityText === "rare" ||
-         rarityText === "epic" ||
-         rarityText === "legendary"
-           ? `rarity-${rarityText}`
-           : "";
+diff --git a/js/core.js b/js/core.js
+index 5b5135809f9e8afea19c3b529cddaecf9c654767..9279598116ab621431dfb6b8573a65c80b36cc8a 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -72,52 +72,52 @@
+       return Math.min(floorCap, f);
+     }
+     return f;
+   }
  
-       const fixedTexts = getFixedEffectTexts(item);
-       const randomTexts = getRandomOptionTexts(item);
-       const randomCount = randomTexts.length;
+   // data/jobs.js は window.jobs に職業定義を載せる。
+   // 読み込み順や環境差で識別子 `jobs` が存在しないケースがあるため、
+   // ここで必ず参照先を確保して ReferenceError を防ぐ。
+   const jobs = window.jobs || window.JOBS || {};
+   // -------------------
+   // 状態異常: 追加ルール
+   // -------------------
+   // 毒：最大HP割合ダメージ（敵ターン開始時に1回）
+   const POISON_MAXHP_RATE = 0.03; // 3%
+   // 火傷：回復量が減少（回復時に適用）
+   const BURN_HEAL_MULT = 0.6; // 60%（=40%減少）
+   // 火傷：継続ダメージ（敵ターン開始時に1回、長めに継続）
+   const BURN_DOT_MAXHP_RATE = 0.015; // 最大HPの1.5%
+   const DEFAULT_BURN_TURNS = 6;
+   // 出血：継続ダメージ（最大HP割合。敵/プレイヤー共通で使用）
+   const BLEED_DOT_MAXHP_RATE = 0.02; // 最大HPの2%
  
-       // 固有能力がない場合、アイテム欄では「固有能力」欄自体を非表示にする
-       const fixedSectionHtml =
-         Array.isArray(fixedTexts) && fixedTexts.length > 0
-           ? `
-                 <div class="effect-section">
-                   <div class="effect-title">装備固有能力</div>
-                   ${renderEffectListHtml(fixedTexts)}
-                 </div>
-               `
-           : "";
-       // アイテム欄では「両手武器」を明示する
-       // 例: 破邪の弓（両手） +2
-       const twoHandSuffix =
-         item && Number(item.hands || 0) === 2 ? "（両手）" : "";
--      const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
-+      const optionCountSuffix =
-+        item.category !== "accessory" && randomCount > 0
-+          ? ` +${randomCount}`
-+          : "";
-+      const displayName = `${item.name}${twoHandSuffix}${optionCountSuffix}`;
+   // -------------------
+   // 貴重品（秘宝）：所持ボーナス
+   // -------------------
+-  // 敵を倒すと 1/1000 の確率でドロップ
+-  const RELIC_DROP_CHANCE = 0.001;
++  // 敵を倒すと 1/100 の確率でドロップ
++  const RELIC_DROP_CHANCE = 0.01;
+   const RELIC_FAMILY_NAME = "秘宝";
+   const MAP_FRAGMENT_ID = "ancient_map_fragment";
+   const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
+   const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
+   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
+   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
+   const MAX_BATTLE_ACTIONS_BEFORE_ESCAPE = 50;
+   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
+   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
  
-       const baseStatsText = [
-         fmtStat("攻撃", item.attack).trim(),
-         fmtStat("魔法攻撃", item.magicAttack).trim(),
-         fmtStat("回復力", item.healPower).trim(),
-         fmtStat("防御", item.defense).trim(),
-         fmtStat("命中", item.accuracy, "%").trim(),
-         fmtStat("回避", item.evasion, "%").trim(),
-       ]
-         .filter(Boolean)
-         .join(" ");
+   const RELIC_DEFS = [
+     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
+     { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
+     { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
+     { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
+     { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
+   ];
  
-       const card = `
-         <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${categoryClass}" onclick="toggleEquip(${idx})">
-           <div class="item-row">
-             <div class="item-main">
-               <div class="item-name ${rarityClass}">${displayName}</div>
-               ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
+   const MAP_FRAGMENT_DEF = {
+     id: MAP_FRAGMENT_ID,
+     name: MAP_FRAGMENT_BASE_NAME,
+     statKey: "",
+     description: "5つ集めると・・・",
+   };
  
-               <div class="item-effects">
-                 ${fixedSectionHtml}
-                 <div class="effect-section">
-                   <div class="effect-title">ランダムオプション</div>
-                   ${renderEffectListHtml(randomTexts, "なし")}
-                 </div>
+@@ -4605,51 +4605,51 @@
+             typeof item._specialPrefixRarity === "string" &&
+             item._specialPrefixRarity
+               ? item._specialPrefixRarity
+               : typeof item.rarity === "string"
+                 ? item.rarity
+                 : "rare";
+           const rarityLabel =
+             rarityText === "legendary"
+               ? "レジェンダリー"
+               : rarityText === "epic"
+                 ? "エピック"
+                 : "レア";
+           window.showRareEnemyPopup(
+             item.name,
+             `${rarityLabel}装備を手に入れた！`,
+             {
+               autoClose: false,
+               allowOverlayClose: false,
+               showCloseButton: true,
+               hintText: "閉じるボタンで閉じる",
+             },
+           );
+         }
+       }
+ 
+-      // 貴重品（秘宝）ドロップ（固定 1/1000）
++      // 貴重品（秘宝）ドロップ（固定 1/100）
+       if (Math.random() < RELIC_DROP_CHANCE) {
+         const def = RELIC_DEFS[Math.floor(Math.random() * RELIC_DEFS.length)];
+         addValuableByDef(def, 1);
+         log(`✨${RELIC_FAMILY_NAME}を発見！ ${def.name}を手に入れた！`);
+       }
+ 
+       // 地図の切れ端ドロップ（通常ドロップとは別判定 / 固定 1/10,000,000）
+       // 5個持っている場合はドロップしない。
+       const mapFragmentCount = getValuableCountById(
+         gameData.player,
+         MAP_FRAGMENT_ID,
+       );
+       if (
+         mapFragmentCount < MAP_FRAGMENT_MAX_STACK_FOR_DROP &&
+         Math.random() < MAP_FRAGMENT_DROP_CHANCE
+       ) {
+         addValuableByDef(MAP_FRAGMENT_DEF, 1);
+         log(
+           `🗺️ ${getMapFragmentDisplayName(mapFragmentCount + 1)}を手に入れた！ (${mapFragmentCount + 1}/5)`,
+         );
+         if (typeof window.showRareEnemyPopup === "function") {
+           window.showRareEnemyPopup(
+             getMapFragmentDisplayName(mapFragmentCount + 1),
+             "超低確率ドロップ！",
+             {

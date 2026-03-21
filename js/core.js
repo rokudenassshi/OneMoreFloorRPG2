@@ -94,8 +94,8 @@
   // -------------------
   // 貴重品（秘宝）：所持ボーナス
   // -------------------
-  // 敵を倒すと 1/1000 の確率でドロップ
-  const RELIC_DROP_CHANCE = 0.001;
+  // 敵を倒すと 1/100 の確率でドロップ
+  const RELIC_DROP_CHANCE = 0.01;
   const RELIC_FAMILY_NAME = "秘宝";
   const MAP_FRAGMENT_ID = "ancient_map_fragment";
   const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
@@ -4627,7 +4627,7 @@
         }
       }
 
-      // 貴重品（秘宝）ドロップ（固定 1/1000）
+      // 貴重品（秘宝）ドロップ（固定 1/100）
       if (Math.random() < RELIC_DROP_CHANCE) {
         const def = RELIC_DEFS[Math.floor(Math.random() * RELIC_DEFS.length)];
         addValuableByDef(def, 1);
