@@ -1,198 +1,56 @@
-diff --git a/js/ui.js b/js/ui.js
-index 3d30072be9ba50c88f52b252aa5be3d648cbed2e..4464b27c6244898d86c325ab4ac126a3674d7900 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2696,156 +2696,164 @@
-       const minLevel = Number(jd.unlock.minLevel || 0);
-       const level = Number(p.level || 0);
-       const levelOk = !minLevel || level >= minLevel;
-       const isHiddenUnlock = !!jd.unlock.hidden;
-       const unlocked = isHiddenUnlock
-         ? !!p.unlockedJobs[jobKey]
-         : !!p.unlockedJobs[jobKey] || (levelOk && cur >= target);
+diff --git a/js/core.js b/js/core.js
+index 537da71cf45ef3e754d215244880383adcd4cb3b..04ff20ad53e45e070b33a58e722b2273e423b5fd 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -2165,50 +2165,51 @@
+     if (gameData.gameState !== "EXPLORE") return;
  
-       if (!unlocked) {
-         const parts = [];
-         if (minLevel) parts.push(`レベル${Math.min(level, minLevel)}/${minLevel}`);
-         parts.push(`${jd.unlock.text}（${Math.min(cur, target)}/${target}）`);
-         log(`🔒 上級職は未解放：${parts.join(" ＆ ")}`);
-         return;
-       }
-       // 条件達成しているならフラグを立てておく
-       p.unlockedJobs[jobKey] = true;
-     }
+     const cur = clampFloor(gameData.floor || 1);
+     const stayCurrentFloor =
+       isStayBattleUnlocked() &&
+       !!(
+         gameData.player &&
+         gameData.player.serialOptions &&
+         gameData.player.serialOptions.stayBattleCurrentFloor
+       );
  
-     const prevJob = p.job;
-     if (prevJob === jobKey) {
-       closeJobSelector();
+     if (stayCurrentFloor) {
+       gameData.floor = cur;
+       gameData.pendingFloorAfterWin = cur;
+       startBattle(cur);
        return;
      }
  
--    const prevJobDef = jobs && jobs[prevJob] ? jobs[prevJob] : null;
--    const prevGroup =
--      prevJobDef && prevJobDef.skillGroup ? prevJobDef.skillGroup : prevJob;
--    const newGroup = jd.skillGroup ? jd.skillGroup : jobKey;
-+    const getSkillOwnerJobKey = (job) => {
-+      if (!jobs || !jobs[job]) return job;
-+      return jobs[job].skillGroup || job;
-+    };
-+    const isJobSpecificSkillForJob = (skillDef, job) => {
-+      if (!skillDef || skillDef.job === "all") return false;
-+      const owner = getSkillOwnerJobKey(job);
-+      return skillDef.job === job || skillDef.job === owner;
-+    };
+     const floorCap = getCurrentFloorCap();
+     const isAtTestFloorCap =
+       Number.isFinite(floorCap) && floorCap > 0 && cur >= floorCap;
  
-     // 職業ごとの状態保存領域（職業キー単位）
-     // - build: その職で取得していた職専用スキル構成
--    // - remainingSkillPoints: その職で最後に見た残SP
-     if (!p.jobSkillStates || typeof p.jobSkillStates !== "object")
-       p.jobSkillStates = {};
- 
--    // 1) 旧職（旧グループ）のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
-+    // 1) 旧職のスキル割り振りを保存し、ポイントを返却（共通スキルは対象外）
-     const prevBuild = {};
-     let refund = 0;
-     for (const sk of Object.keys(skills)) {
-       const def = skills[sk];
--      if (!def || def.job !== prevGroup) continue;
-+      if (!isJobSpecificSkillForJob(def, prevJob)) continue;
-       const lv = Math.max(
-         0,
-         Math.floor(Number((p.skills && p.skills[sk]) || 0)),
-       );
-       if (lv > 0) {
-         prevBuild[sk] = lv;
-         refund += lv * getSkillPointCost(def);
-       }
-       // 旧グループのスキルは外す
-       if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
-         delete p.skills[sk];
-       }
-     }
--    const prevRemainingSkillPoints = Math.max(
--      0,
--      Math.floor(Number(p.skillPoints || 0)),
--    );
-     p.jobSkillStates[prevJob] = {
-       build: prevBuild,
--      remainingSkillPoints: prevRemainingSkillPoints,
-     };
-     p.skillPoints = Math.max(
-       0,
-       Math.floor(Number(p.skillPoints || 0)) + refund,
-     );
- 
-     // 2) 職業変更：装備中スキルは解除（2枠）
-     p.job = jobKey;
-     p.equippedSkills = [null, null];
-     p.equippedSkill = null;
-     p.skillCooldown = 0;
- 
-     // 2.5) 装備制限：武器を装備できない職（拳聖/修羅など）なら武器を外す
-     {
-       const nt = (jd && jd.traits) || {};
-       if (nt && nt.cannotEquipWeapon) {
-         const eq =
-           p.equipment ||
-           (p.equipment = { slot1: null, slot2: null, accessory: null });
-         const removed = [];
-         if (eq.slot1 && eq.slot1.category === "weapon") {
-           removed.push(eq.slot1.name || "武器");
-           eq.slot1 = null;
-         }
-         if (eq.slot2 && eq.slot2.category === "weapon") {
-           removed.push(eq.slot2.name || "武器");
-           eq.slot2 = null;
-         }
-         if (removed.length) {
-           log(`🧤 武器不可のため外した：${removed.join(" / ")}`);
-         }
-       }
+     // 上限に到達している場合：次階層へは進めないが、戦闘は発生させる（周回用）
+     if (dir > 0 && isAtTestFloorCap) {
+       gameData.floor = cur;
++      log("⚠️ この先に進むにはシリアルコードが必要");
+       // 進行待ちを残さず、現在階層で戦闘開始
+       gameData.pendingFloorAfterWin = cur;
+       startBattle(cur);
+       return;
      }
  
--    // 3) 新職（新グループ）の保存割り振りを復元（可能な範囲で消費）
-+    // 3) 新職の保存割り振りを復元（可能な範囲で消費）
-     const newState = p.jobSkillStates[jobKey];
-     const build =
-       newState && typeof newState === "object" && newState.build
-         ? newState.build
-         : null;
-     const hasSavedBuild =
-       build && typeof build === "object" && Object.keys(build).length > 0;
-+    // 新職に紐づく職業スキルの現在値は一旦クリアしてから復元する
-+    for (const sk of Object.keys(skills)) {
-+      const def = skills[sk];
-+      if (!isJobSpecificSkillForJob(def, jobKey)) continue;
-+      if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
-+        delete p.skills[sk];
-+      }
-+    }
-     if (hasSavedBuild) {
--      // 保存済みビルドがある場合は、残SPとスキル割り振りを復元
--      const restoredRemaining = Math.max(
--        0,
--        Math.floor(Number(newState.remainingSkillPoints || 0)),
--      );
--      p.skillPoints = restoredRemaining;
--
-+      // 保存済みビルドがある場合は、返却済みSPを使って可能な範囲で復元
-       for (const sk of Object.keys(build)) {
-         const def = skills[sk];
--        if (!def || def.job !== newGroup) continue;
-+        if (!isJobSpecificSkillForJob(def, jobKey)) continue;
-         let lv = Math.max(0, Math.floor(Number(build[sk] || 0)));
-         if (lv <= 0) continue;
-         if (def.maxLevel !== Infinity)
-           lv = Math.min(lv, Math.floor(Number(def.maxLevel || 0)));
-         if (!p.skills || typeof p.skills !== "object") p.skills = {};
--        p.skills[sk] = lv;
-+        const cost = getSkillPointCost(def);
-+        if (cost <= 0) {
-+          p.skills[sk] = lv;
-+          continue;
-+        }
-+        const maxAffordableLv = Math.floor(
-+          Math.max(0, Number(p.skillPoints || 0)) / cost,
-+        );
-+        const appliedLv = Math.min(lv, maxAffordableLv);
-+        if (appliedLv <= 0) continue;
-+        p.skills[sk] = appliedLv;
-+        p.skillPoints = Math.max(
-+          0,
-+          Math.floor(Number(p.skillPoints || 0)) - appliedLv * cost,
-+        );
-       }
-     } else {
-       // 保存ビルドがない場合は、返却済みSPをそのまま使える状態にする
--      for (const sk of Object.keys(skills)) {
--        const def = skills[sk];
--        if (!def || def.job !== newGroup) continue;
--        if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, sk)) {
--          delete p.skills[sk];
--        }
--      }
-     }
+     const target = clampFloor(cur + dir);
  
-     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
-     getCombatStats();
-     updateStatusUI();
-     closeJobSelector();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
+     // 進む（敵と遭遇した場合は、倒してから階層が上がる）
+     if (dir > 0) {
+       // 戦闘開始
+       if (Math.random() < 0.8 || target <= 5) {
+         gameData.pendingFloorAfterWin = target;
+         startBattle(target);
+       } else {
+         gameData.floor = target;
  
-   // ステータス振り分け
-   function openStatAllocation() {
-     const list = document.getElementById("statAllocationList");
-     list.innerHTML = "";
- 
-     const statNames = {
-       strength: "⚔️ 力",
-       vitality: "❤️ 体力",
-       intelligence: "🧙 賢さ",
-       agility: "⚡ 素早さ",
-       dexterity: "🎯 器用さ",
-     };
- 
-     for (let key in statNames) {
-       const current = gameData.player.allocatedStats[key];
- 
+         if (typeof gameData.player.maxReachedFloor !== "number")
+           gameData.player.maxReachedFloor = 1;
+         gameData.player.maxReachedFloor = Math.max(
+           gameData.player.maxReachedFloor,
+           gameData.floor,
+         );
+         gameData.player.maxReachedFloor = clampFloor(
+           gameData.player.maxReachedFloor,

@@ -2187,6 +2187,7 @@
     // 上限に到達している場合：次階層へは進めないが、戦闘は発生させる（周回用）
     if (dir > 0 && isAtTestFloorCap) {
       gameData.floor = cur;
+      log("⚠️ この先に進むにはシリアルコードが必要");
       // 進行待ちを残さず、現在階層で戦闘開始
       gameData.pendingFloorAfterWin = cur;
       startBattle(cur);
