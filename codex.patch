@@ -1,72 +1,77 @@
-diff --git a/index.html b/index.html
-index 9984bf5cae509018682112e6b75e93e767f81836..5d88f71ed2411d99ec4837fc327ba738775e160c 100644
---- a/index.html
-+++ b/index.html
-@@ -228,55 +228,62 @@
-         <div class="status-section">
-           <h4>実績</h4>
-           <div id="achievementsContent" class="achievements-list"></div>
-         </div>
-       </div>
- 
-       <div id="tabRecords" style="display:none;">
-         <div class="status-section">
-           <h4 class="records-header">記録 <span id="recordsGameVersion" class="status-version"></span><button
-               class="record-post-btn" type="button" onclick="postRecordToX()">Xにポスト</button></h4>
-           <div class="record-list">
-             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
-             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
+diff --git a/js/ui.js b/js/ui.js
+index d133f200546ab9929bb938ecccc3ca58c2225a48..bb4e45ea9fb87787accbfd5e8fd02fa45b1108ae 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -3282,60 +3282,68 @@
+                 : ""
+             }
+             ${
+               (skill.exclusiveGroup ||
+                 (Array.isArray(skill.exclusiveWith) &&
+                   skill.exclusiveWith.length > 0)) &&
+               level <= 0
+                 ? exclusiveLine
+                 : ""
+             }
+             ${
+               !prereqOk && level <= 0
+                 ? `<div style="font-size: 11px; color: #f88;">🔒 前提スキル未達</div>`
+                 : ""
+             }
+             ${
+               conflictKey && level <= 0
+                 ? `<div style="font-size: 11px; color: #f88;">🔒 取得中：${
+                     skills[conflictKey]?.name || conflictKey
+                   }</div>`
+                 : ""
+             }
+           </div>
+           <div class="skill-actions">
+             <div class="skill-level">レベル${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
++            ${
++              canLevelDown || canLevelUp
++                ? `<div class="skill-action-row">
++              ${canLevelDown ? `<button class="small-btn" onclick="levelDownSkill('${key}')">-</button>` : ""}
++              ${canLevelUp ? `<button class="small-btn" onclick="levelUpSkill('${key}')">+</button>` : ""}
++            </div>`
++                : ""
++            }
+             ${
+               skill.type === "active" && level > 0
+                 ? `
+-              <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
+-              <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
++              <div class="skill-action-row">
++                <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
++                <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
++              </div>
+             `
+                 : ""
+             }
+-            ${canLevelDown ? `<button class="small-btn" onclick="levelDownSkill('${key}')">-</button>` : ""}
+-            ${canLevelUp ? `<button class="small-btn" onclick="levelUpSkill('${key}')">+</button>` : ""}
            </div>
          </div>
-       </div>
-     </div>
+       `;
  
-     <!-- スキル画面 -->
-     <div id="skillScreen" style="display:none;">
-       <div class="screen-header">
-         <h3>スキル管理</h3>
-         <button class="back-button" onclick="closeSkillScreen()">戻る</button>
-       </div>
-       <div id="skillContent">
--        <div class="skill-points-display">
--          <div>スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
--          <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
--              onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
--          <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
-+        <div class="skill-points-display skill-points-display-skill">
-+          <div class="skill-points-main">スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
-+          <div class="skill-points-controls">
-+            <div class="stat-step-row">
-+              <label for="skillAllocationStepInput">割り振り単位:</label>
-+              <input id="skillAllocationStepInput" type="number" min="1" step="1" value="1"
-+                oninput="setSkillAllocationStep(this.value)" onchange="setSkillAllocationStep(this.value)">
-+            </div>
-+            <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
-+                onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
-+            <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
-+          </div>
-         </div>
-         <h4>共通スキル</h4>
-         <div id="commonSkillsList"></div>
-         <h4>常時スキル</h4>
-         <div id="passiveSkillsList"></div>
-         <h4>戦闘スキル</h4>
-         <div id="activeSkillsList"></div>
-       </div>
-     </div>
+       if (isCommon) {
+         if (commonList) commonList.innerHTML += html;
+       } else if (skill.type === "passive") {
+         passiveList.innerHTML += html;
+       } else {
+         activeList.innerHTML += html;
+       }
+     }
  
-     <!-- オプション画面 -->
-     <div id="optionsScreen" style="display:none;">
-       <div class="screen-header">
-         <h3>オプション</h3>
-         <button class="back-button" onclick="closeOptions()">戻る</button>
-       </div>
+     if (commonList && commonList.innerHTML.trim() === "") {
+       commonList.innerHTML =
+         '<div style="font-size:12px; color:#aaa; padding:8px;">（共通スキルはまだありません）</div>';
+     }
+   }
  
-       <div class="options-tabs">
-         <button class="status-tab-btn is-active" id="optionsTabBtnMain" type="button"
-           onclick="setOptionsTab('main')">オプション</button>
-         <button class="status-tab-btn" id="optionsTabBtnHistory" type="button"
-           onclick="setOptionsTab('history')">アップデート履歴</button>
-       </div>
+   function levelUpSkill(key) {
+     const p = gameData.player;
+     if (!p) return;
  
-       <div id="optionsTabMain">
+     const skill = skills[key];
+     if (!skill) return;

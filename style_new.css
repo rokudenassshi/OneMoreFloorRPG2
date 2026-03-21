@@ -992,8 +992,15 @@ button.item-action-btn.item-action-btn-text {
 
 .skill-actions {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.skill-action-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .skill-level {

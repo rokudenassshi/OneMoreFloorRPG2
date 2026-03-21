@@ -3305,15 +3305,23 @@
           <div class="skill-actions">
             <div class="skill-level">レベル${level}/${skill.maxLevel === Infinity ? "∞" : skill.maxLevel}</div>
             ${
+              canLevelDown || canLevelUp
+                ? `<div class="skill-action-row">
+              ${canLevelDown ? `<button class="small-btn" onclick="levelDownSkill('${key}')">-</button>` : ""}
+              ${canLevelUp ? `<button class="small-btn" onclick="levelUpSkill('${key}')">+</button>` : ""}
+            </div>`
+                : ""
+            }
+            ${
               skill.type === "active" && level > 0
                 ? `
-              <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
-              <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
+              <div class="skill-action-row">
+                <button class="small-btn" onclick="toggleSkillSlot('${key}',0)">${getEquippedSkillKey(0) === key ? "外①" : "①"}</button>
+                <button class="small-btn" onclick="toggleSkillSlot('${key}',1)">${getEquippedSkillKey(1) === key ? "外②" : "②"}</button>
+              </div>
             `
                 : ""
             }
-            ${canLevelDown ? `<button class="small-btn" onclick="levelDownSkill('${key}')">-</button>` : ""}
-            ${canLevelUp ? `<button class="small-btn" onclick="levelUpSkill('${key}')">+</button>` : ""}
           </div>
         </div>
       `;
