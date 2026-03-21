@@ -1,64 +1,72 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 9d373cfed0748fa8750fcb4cb94fbe025acd1ba1..e1e4a0c076f8743366eab319542efd03715a88ce 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -118,50 +118,59 @@
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "追撃率+{skillFollowUpChance}%（最大60%）",
-       effect: (lv) => ({ skillFollowUpChance: lv * 0.005 }),
-     },
-     common_followup_damage_tuning: {
-       name: "追撃威力強化",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "追撃威力+{followUpDamageMulBonus}%（上限なし）",
-       effect: (lv) => ({ followUpDamageMulBonus: lv * 0.1 }),
-     },
-     common_crit_rate_tuning: {
-       name: "会心率強化",
-       type: "passive",
-       job: "all",
-       maxLevel: 200,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "会心率+{critBonus}%（最大100%）",
-       effect: (lv) => ({ critBonus: lv * 0.5 }),
-     },
-+    common_guarded_attack: {
-+      name: "護りの構え",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: 1,
-+      requiredPoints: 1,
-+      desc: "たたかう時に攻撃せず、防御を行う",
-+      effect: (_lv) => ({}),
-+    },
+diff --git a/style_new.css b/style_new.css
+index a2195fbc07bc88aacf6ebd3b8837782c274470bb..41b3823365ef932eb05da5173edfb64ca91c7290 100644
+--- a/style_new.css
++++ b/style_new.css
+@@ -770,50 +770,67 @@ button:active {
+   background: #2a2a2a;
+   border-radius: 6px;
+   margin-bottom: 8px;
+ }
  
-     // ===================================
-     // 剣士 (swordsman)
-     // ===================================
-     sword_mastery: {
-       name: "剣術マスタリー",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "物理攻撃力+{value}",
-       effect: (lv) => ({ attackBonus: lv * 5 }),
-     },
-     sword_focus: {
-       name: "剣の心得",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "命中率+{value}%",
-       effect: (lv) => ({ accuracyBonus: lv * 2 }),
-     },
-     power_slash: {
-       name: "パワースラッシュ",
-       type: "active",
-       accuracy: 100,
-       job: "swordsman",
+ .stat-alloc-controls {
+   display: flex;
+   gap: 8px;
+   align-items: center;
+ }
+ 
+ .stat-alloc-controls button {
+   width: 36px;
+   height: 36px;
+   padding: 0;
+   font-size: 18px;
+   margin: 0;
+ }
+ 
+ .stat-alloc-value {
+   min-width: 30px;
+   text-align: center;
+   font-weight: bold;
+ }
+ 
++.stat-step-row {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  margin-top: 10px;
++}
++
++.stat-step-row input {
++  width: 90px;
++  height: 32px;
++  padding: 4px 8px;
++  border: 1px solid #666;
++  border-radius: 6px;
++  background: #222;
++  color: #fff;
++}
++
+ .item-card {
+   padding: 10px;
+   background: #2a2a2a;
+   border: 2px solid #444;
+   border-radius: 8px;
+   margin-bottom: 8px;
+   cursor: pointer;
+   transition: all 0.2s;
+ }
+ 
+ .item-card:hover {
+   border-color: #4a6cf7;
+ }
+ 
+ .item-card.equipped {
+   border-color: #4caf50;
+   background: #1a3d1a;
+   border-left: 4px solid #4caf50;
+ }
+ 
+ .item-card.locked {
+   border-style: dashed;
+ }
+ 
+ .item-row {

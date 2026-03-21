@@ -4380,10 +4380,12 @@
     const bsC = ensurePlayerBattleState();
     const accChance = Number(getAccessoryBonus("counterChance") || 0);
     const passiveChance = Number(bsC.counterChanceBonus || 0);
-    const chance =
+    const baseChance =
       (Number.isFinite(accChance) ? accChance : 0) +
       (Number.isFinite(passiveChance) ? passiveChance : 0);
-    if (!Number.isFinite(chance) || chance <= 0) return;
+    if (!Number.isFinite(baseChance) || baseChance <= 0) return;
+    const st = gameData.player.status || {};
+    const chance = st.defendingTurns > 0 ? baseChance * 2 : baseChance;
     const roll = Math.random() * 100;
     if (roll >= Math.min(45, chance)) return;
 
