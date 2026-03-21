@@ -1,119 +1,60 @@
-diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
-index d7138dc798f1fe731114fbe54ae8fc8c9cfbfb96..de5da2266e56351b5078af47a1e02bf8ec2e583a 100644
---- a/js/data/serial-codes.js
-+++ b/js/data/serial-codes.js
-@@ -18,50 +18,53 @@
+diff --git a/js/core.js b/js/core.js
+index 7cb7b4746b69ac818379857f4a66b5ac89634b3c..ac75eaff71f78dd19979b73328419111895fc894 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -518,53 +518,54 @@
+ 
+   function savePayloadToLocalCache(payload) {
+     try {
+       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+       return true;
      } catch (e) {
-       return {};
+       return false;
      }
    }
  
-   function saveStore(store) {
+   function loadPayloadFromLocalCache() {
      try {
-       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
-     } catch (e) {}
+       const raw = localStorage.getItem(SAVE_KEY);
+       if (!raw) return null;
+       const parsed = JSON.parse(raw);
+       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
+       return parsed;
+     } catch (e) {
+       return null;
+     }
    }
  
-   function getPlayer() {
-     return window.gameData && window.gameData.player
-       ? window.gameData.player
-       : null;
-   }
+   function applySavePayload(payload) {
+     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
  
-   // ✅ “シリアルコード → 解放キー”
-   // セキュリティのため通常は空（サーバー側で検証）。
-   const serialCodeLookup = {
-     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
-     stay8q2m1v7xk9: "stayBattle",
++    gameData.player = payload.player || gameData.player;
++    // 階層上限は serialUnlocks に依存するため、player 復元後に clamp する
+     gameData.floor = clampFloor(payload.floor || 1);
+     gameData.gameState = payload.gameState || "EXPLORE";
+-    gameData.player = payload.player || gameData.player;
+     gameData.enemy = payload.enemy || null;
+     gameData.battleFloor =
+       payload.battleFloor != null ? payload.battleFloor : null;
+     gameData.pendingFloorAfterWin =
+       payload.pendingFloorAfterWin != null
+         ? payload.pendingFloorAfterWin
+         : null;
  
-     // `startdash` + 英数字10文字（固定）: 各紋章10個配布
-     startdashi1u474nk3ks: "startDashEmblems",
-+
-+    // `autoskill` + 英数字10文字（固定）: たたかうでスキル1自動発動
-+    autoskill52goi48goi545: "autoSkill1OnAttack",
-   };
- 
-   const START_DASH_EMBLEMS = [
-     { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
-     { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
-     { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
-     { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
-     { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
-   ];
- 
- 
-   // ✅ “解放キー → 実行内容”
-   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
-   const serialCodeActions = {
-     stayBattle: {
-       isUnlocked: () => {
-         const s = loadStore();
-         if (s.stayBattle) return true;
-         const p = getPlayer();
-         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
-       },
-       unlock: () => {
-         const s = loadStore();
-         s.stayBattle = true;
-         saveStore(s);
-@@ -161,31 +164,60 @@
-           for (const emblem of START_DASH_EMBLEMS) {
-             const found = p.valuables.find((v) => v && v.id === emblem.id);
-             if (found) {
-               found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
-               found.name = emblem.name;
-               found.statKey = emblem.statKey;
-               if (typeof found.description !== "string") found.description = "";
-             } else {
-               p.valuables.push({
-                 id: emblem.id,
-                 name: emblem.name,
-                 statKey: emblem.statKey,
-                 description: "",
-                 count: 10,
-               });
-             }
-           }
-         }
- 
-         if (typeof window.checkAndUnlockAchievements === "function") {
-           window.checkAndUnlockAchievements({ silent: false });
-         }
-       },
-       logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
-     },
-+
-+    // たたかうボタンでスキル1を自動発動（使用可能時のみ）
-+    autoSkill1OnAttack: {
-+      isUnlocked: () => {
-+        const s = loadStore();
-+        if (s.autoSkill1OnAttack) return true;
-+        const p = getPlayer();
-+        return !!(p && p.serialUnlocks && p.serialUnlocks.autoSkill1OnAttack);
-+      },
-+      unlock: () => {
-+        const s = loadStore();
-+        s.autoSkill1OnAttack = true;
-+        saveStore(s);
-+
-+        const p = getPlayer();
-+        if (p) {
-+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
-+            p.serialUnlocks = {};
-+          }
-+          p.serialUnlocks.autoSkill1OnAttack = true;
-+        }
-+
-+        if (typeof window.checkAndUnlockAchievements === "function") {
-+          window.checkAndUnlockAchievements({ silent: false });
-+        }
-+      },
-+      logMessage:
-+        "✨ 特典解放：スキル1が使用可能な時、たたかうでスキル1が発動します。",
-+    },
-   };
- 
-   // グローバルに公開（ui.js が参照する）
-   window.serialCodeLookup = serialCodeLookup;
-   window.serialCodeActions = serialCodeActions;
- })();
+     ensureAutoSellConfig(gameData.player);
+     ensureAutoAllocateExpUpConfig(gameData.player);
+     ensureAutoAllocateStatPointsConfig(gameData.player);
+     ensureSerialOptionsConfig(gameData.player);
+     ensureWorldStateConfig(gameData.player);
+     // テスト上限を越えたセーブが来ても破綻しないように丸める
+     try {
+       if (gameData && gameData.player) {
+         gameData.player.maxReachedFloor = clampFloor(
+           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
+         );
+       }
+       if (Number.isFinite(Number(gameData.battleFloor))) {
+         gameData.battleFloor = clampFloor(gameData.battleFloor);
+       }
+       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
+         gameData.pendingFloorAfterWin = clampFloor(

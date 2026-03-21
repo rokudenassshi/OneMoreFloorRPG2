@@ -540,9 +540,10 @@
   function applySavePayload(payload) {
     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
 
+    gameData.player = payload.player || gameData.player;
+    // 階層上限は serialUnlocks に依存するため、player 復元後に clamp する
     gameData.floor = clampFloor(payload.floor || 1);
     gameData.gameState = payload.gameState || "EXPLORE";
-    gameData.player = payload.player || gameData.player;
     gameData.enemy = payload.enemy || null;
     gameData.battleFloor =
       payload.battleFloor != null ? payload.battleFloor : null;
