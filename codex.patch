@@ -1,139 +1,151 @@
-diff --git a/functions/index.js b/functions/index.js
-index 9482efe386f6c239905562026b72034ac4061bf3..7c7c6321fc3e3430b246bccceea1b5aca4c4f898 100644
---- a/functions/index.js
-+++ b/functions/index.js
-@@ -1,99 +1,105 @@
--const functions = require("firebase-functions");
-+const { onCall, HttpsError } = require("firebase-functions/v2/https");
- const admin = require("firebase-admin");
+diff --git a/js/ui.js b/js/ui.js
+index fce89a315408b05a729a3c5815ca321fd5a0af97..3d30072be9ba50c88f52b252aa5be3d648cbed2e 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2021,70 +2021,81 @@
+     setTimeout(() => {
+       try {
+         select.focus();
+       } catch (e) {}
+     }, 0);
+   }
  
- admin.initializeApp();
+   function closeTeleportModal() {
+     const modal = document.getElementById("teleportModal");
+     if (!modal) return;
+     modal.classList.add("hidden");
+     modal.setAttribute("aria-hidden", "true");
  
- const db = admin.firestore();
- const SAVE_COLLECTION = "userSaves";
- const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
+     // フォーカスを戻す（aria-hidden警告回避）
+     const btn = document.getElementById("teleportBtn");
+     const target = btn || lastTeleportFocusEl;
+     if (target && typeof target.focus === "function") {
+       setTimeout(() => {
+         try {
+           target.focus();
+         } catch (e) {}
+       }, 0);
+     }
+   }
  
- // ✅ “シリアルコード → 解放キー” をサーバー側に置く（クライアントには公開しない）
- // ランダム文字列部分は固定（外部から推測されにくくするために付与）
- const serialCodeLookup = {
-   // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+20%）
-   omfprg1h30n98jqmo: "pastLifeMemory",
+-  function confirmTeleport() {
+-    const select = document.getElementById("teleportSelect");
+-    const stayToggle = document.getElementById("teleportStayBattleToggle");
+-    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
++  function applyStayBattleCurrentFloorOption(checked) {
++    if (!gameData || !gameData.player) return;
  
-   // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
-   stay8q2m1v7xk9: "stayBattle",
- 
-   // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
-   startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
- 
-   // `startdash` + 英数字10文字（固定）: 各紋章10個配布
-   startdashi1u474nk3ks: "startDashEmblems",
- };
- 
--exports.verifySerialCode = functions
--  .region("us-central1")
--  .https.onCall((data) => {
--    const code = String(data?.code || "")
-+exports.verifySerialCode = onCall(
-+  {
-+    region: "us-central1",
-+    cpu: 1,
-+  },
-+  (request) => {
-+    const code = String(request.data?.code || "")
-       .trim()
-       .toLowerCase();
-     if (!code) return { ok: false, message: "empty" };
- 
-     const unlock = serialCodeLookup[code];
-     if (unlock) return { ok: true, unlock };
- 
-     return { ok: false, message: "invalid" };
--  });
--
--exports.loadUserGameData = functions
--  .region("us-central1")
--  .https.onCall(async (_, context) => {
--    const uid = context.auth?.uid;
-+  },
-+);
+     const unlocked =
+       typeof window.isStayBattleUnlocked === "function"
+         ? !!window.isStayBattleUnlocked()
+         : false;
+-    if (gameData && gameData.player) {
+-      if (
+-        !gameData.player.serialOptions ||
+-        typeof gameData.player.serialOptions !== "object"
+-      ) {
+-        gameData.player.serialOptions = {};
+-      }
+-      gameData.player.serialOptions.stayBattleCurrentFloor =
+-        unlocked && !!(stayToggle && stayToggle.checked);
 +
-+exports.loadUserGameData = onCall(
-+  {
-+    region: "us-central1",
-+    cpu: 1,
-+  },
-+  async (request) => {
-+    const uid = request.auth?.uid;
-     if (!uid) {
--      throw new functions.https.HttpsError("unauthenticated", "auth required");
-+      throw new HttpsError("unauthenticated", "auth required");
++    if (
++      !gameData.player.serialOptions ||
++      typeof gameData.player.serialOptions !== "object"
++    ) {
++      gameData.player.serialOptions = {};
      }
  
-     const snap = await db.collection(SAVE_COLLECTION).doc(uid).get();
-     if (!snap.exists) {
-       return { ok: true, hasSave: false };
-     }
- 
-     const data = snap.data() || {};
-     const payload = data.payload;
- 
-     if (!payload || payload.schema !== SAVE_SCHEMA) {
-       return { ok: true, hasSave: false };
-     }
- 
-     return {
-       ok: true,
-       hasSave: true,
-       payload,
-       updatedAt: data.updatedAt || null,
-     };
--  });
--
--exports.saveUserGameData = functions
--  .region("us-central1")
--  .https.onCall(async (data, context) => {
--    const uid = context.auth?.uid;
-+  },
-+);
++    gameData.player.serialOptions.stayBattleCurrentFloor = unlocked && !!checked;
 +
-+exports.saveUserGameData = onCall(
-+  {
-+    region: "us-central1",
-+    cpu: 1,
-+  },
-+  async (request) => {
-+    const uid = request.auth?.uid;
-     if (!uid) {
--      throw new functions.https.HttpsError("unauthenticated", "auth required");
-+      throw new HttpsError("unauthenticated", "auth required");
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
++
++  function onTeleportStayBattleToggleChange(el) {
++    applyStayBattleCurrentFloorOption(!!(el && el.checked));
++  }
++
++  function confirmTeleport() {
++    const select = document.getElementById("teleportSelect");
++    const stayToggle = document.getElementById("teleportStayBattleToggle");
++    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
++
++    applyStayBattleCurrentFloorOption(!!(stayToggle && stayToggle.checked));
++
+     if (typeof window.teleportToFloor === "function") {
+       const ok = window.teleportToFloor(dest);
+       if (ok) closeTeleportModal();
      }
+   }
  
--    const payload = data?.payload;
-+    const payload = request.data?.payload;
-     if (!payload || typeof payload !== "object") {
--      throw new functions.https.HttpsError(
--        "invalid-argument",
--        "payload required",
--      );
-+      throw new HttpsError("invalid-argument", "payload required");
-     }
-     if (payload.schema !== SAVE_SCHEMA) {
--      throw new functions.https.HttpsError(
--        "invalid-argument",
--        "invalid schema",
--      );
-+      throw new HttpsError("invalid-argument", "invalid schema");
-     }
+   function setStatusTab(tab) {
+     const allowed = ["status", "achievements", "records"];
+     if (!allowed.includes(tab)) tab = "status";
+     currentStatusTab = tab;
  
-     await db.collection(SAVE_COLLECTION).doc(uid).set(
-       {
-         payload,
-         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-       },
-       { merge: true },
-     );
+     const tabStatus = document.getElementById("tabStatus");
+     const tabAch = document.getElementById("tabAchievements");
+     const tabRec = document.getElementById("tabRecords");
  
-     return { ok: true };
--  });
-+  },
-+);
+     if (tabStatus)
+       tabStatus.style.display = tab === "status" ? "block" : "none";
+     if (tabAch)
+       tabAch.style.display = tab === "achievements" ? "block" : "none";
+     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
+ 
+     const btnS = document.getElementById("statusTabBtnStatus");
+     const btnA = document.getElementById("statusTabBtnAchievements");
+     const btnR = document.getElementById("statusTabBtnRecords");
+     if (btnS) btnS.classList.toggle("is-active", tab === "status");
+@@ -3450,50 +3461,51 @@
+     updateSkillButtons();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   // ポップアップ
+   window.showRareEnemyPopup = showRareEnemyPopup;
+   window.showEventPopup = showEventPopup;
+ 
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   window.updateRecordsUI = updateRecordsUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.setOptionsTab = setOptionsTab;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
++  window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+   window.useValuableById = useValuableById;
+   // =====================
+   // セーブ設定
+   // =====================
+   function toggleAutosave(enabled) {
+     setAutosaveEnabled(!!enabled);
+     updateOptionsUI();

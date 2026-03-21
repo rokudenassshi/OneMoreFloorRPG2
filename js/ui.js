@@ -2043,25 +2043,36 @@
     }
   }
 
-  function confirmTeleport() {
-    const select = document.getElementById("teleportSelect");
-    const stayToggle = document.getElementById("teleportStayBattleToggle");
-    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
+  function applyStayBattleCurrentFloorOption(checked) {
+    if (!gameData || !gameData.player) return;
 
     const unlocked =
       typeof window.isStayBattleUnlocked === "function"
         ? !!window.isStayBattleUnlocked()
         : false;
-    if (gameData && gameData.player) {
-      if (
-        !gameData.player.serialOptions ||
-        typeof gameData.player.serialOptions !== "object"
-      ) {
-        gameData.player.serialOptions = {};
-      }
-      gameData.player.serialOptions.stayBattleCurrentFloor =
-        unlocked && !!(stayToggle && stayToggle.checked);
+
+    if (
+      !gameData.player.serialOptions ||
+      typeof gameData.player.serialOptions !== "object"
+    ) {
+      gameData.player.serialOptions = {};
     }
+
+    gameData.player.serialOptions.stayBattleCurrentFloor = unlocked && !!checked;
+
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
+  function onTeleportStayBattleToggleChange(el) {
+    applyStayBattleCurrentFloorOption(!!(el && el.checked));
+  }
+
+  function confirmTeleport() {
+    const select = document.getElementById("teleportSelect");
+    const stayToggle = document.getElementById("teleportStayBattleToggle");
+    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
+
+    applyStayBattleCurrentFloorOption(!!(stayToggle && stayToggle.checked));
 
     if (typeof window.teleportToFloor === "function") {
       const ok = window.teleportToFloor(dest);
@@ -3472,6 +3483,7 @@
   window.closeBag = closeBag;
   window.openTeleportModal = openTeleportModal;
   window.closeTeleportModal = closeTeleportModal;
+  window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
   window.confirmTeleport = confirmTeleport;
   window.setBagTab = setBagTab;
   window.setEquipmentSubTab = setEquipmentSubTab;
