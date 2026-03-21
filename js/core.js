@@ -5778,6 +5778,8 @@
       } else {
         item.accuracy = Math.round(5 + floor * 0.5);
       }
+      // 武器の命中補正は +30 / -30 を上限にする
+      item.accuracy = clamp(item.accuracy, -30, 30);
 
       // 武器でも追加ステータスを持てる（例：杖の防御など）
       if (typeof bias.defense !== "undefined")

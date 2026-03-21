@@ -1,64 +1,57 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 0cda6144ec313c10f4cb54ad4c90b2a7546827fe..52f6e7ee10cce6634ccc37b9ab5e6766eeb9387d 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -15,50 +15,59 @@
-       type: "passive",
-       job: "all",
-       maxLevel: 100,
-       desc: "索敵+{value}（最大レベル100）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+diff --git a/js/core.js b/js/core.js
+index 60e42756235facfc2c876932221825bfdea9af2d..93d2254fc4bd0b8014097772cc0f5a33798d970d 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -5756,50 +5756,52 @@
+     };
  
-     search_up_kai: {
-       name: "索敵強化・改",
-       type: "passive",
-       job: "all",
-       maxLevel: 50,
-       requiredPoints: 5,
-       desc: "索敵+{value}（最大レベル50）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+     if (category === "weapon") {
+       const baseAttack = statBase * (1 + Math.random() * 0.35);
+       const attackMult = getBias("attackMult", 1);
+       item.attack = Math.round(baseAttack * attackMult);
  
-     exp_up: {
-       name: "経験値増加",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       desc: "獲得経験値+{value}%（上限なし）",
-       effect: (lv) => ({ expBonus: lv }),
-     },
-+    common_exp_level_mult: {
-+      name: "成長加速",
-+      type: "passive",
-+      job: "all",
-+      maxLevel: 1,
-+      requiredPoints: 50,
-+      desc: "獲得経験値がレベル倍になる",
-+      effect: (_lv) => ({}),
-+    },
+       // 杖/金棒など：攻撃力とは別に、魔法攻撃力/回復力を持てる
+       if (typeof bias.magicAttackMult !== "undefined") {
+         const baseMagic = statBase * (1 + Math.random() * 0.6);
+         const mm = getBias("magicAttackMult", 1);
+         item.magicAttack = Math.round(baseMagic * mm);
+       }
+       if (typeof bias.healPowerMult !== "undefined") {
+         const baseHeal = statBase * (1 + Math.random() * 0.6);
+         const hm = getBias("healPowerMult", 1);
+         item.healPower = Math.round(baseHeal * hm);
+       }
  
-     common_heal: {
-       name: "ヒール",
-       type: "active",
-       accuracy: 100,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 6,
-       desc: "HPを20%回復する",
-       effect: (_lv) => ({ healRate: 0.2 }),
-     },
+       // 命中（マイナスもあり）
+       if (typeof bias.accuracy !== "undefined") {
+         item.accuracy = Math.round(getBias("accuracy", 0));
+       } else {
+         item.accuracy = Math.round(5 + floor * 0.5);
+       }
++      // 武器の命中補正は +30 / -30 を上限にする
++      item.accuracy = clamp(item.accuracy, -30, 30);
  
-     common_sure_strike: {
-       name: "必中撃",
-       type: "active",
-       accuracy: 100,
-       alwaysHit: true,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 3,
-       desc: "必ず命中する一撃（ダメージ{value}倍）",
-       effect: (_lv) => ({ damageMultiplier: 1.0 }),
-     },
+       // 武器でも追加ステータスを持てる（例：杖の防御など）
+       if (typeof bias.defense !== "undefined")
+         item.defense = Math.round(getBias("defense", 0));
+     } else if (category === "armor") {
+       const baseDefense = statBase * (1 + Math.random() * 0.35);
+       const defenseMult = getBias("defenseMult", 1);
+       item.defense = Math.round(baseDefense * defenseMult);
  
-     common_attack_tuning: {
+       // 防具でも固有回避（%）や魔法/回復ステータスを持てる
+       if (typeof bias.evasion !== "undefined") {
+         item.evasion = Math.round(getBias("evasion", 0));
+       }
+       if (typeof bias.magicAttackMult !== "undefined") {
+         const baseMagic = statBase * (1 + Math.random() * 0.55);
+         const mm = getBias("magicAttackMult", 1);
+         item.magicAttack = Math.round(baseMagic * mm);
+       }
+       if (typeof bias.healPowerMult !== "undefined") {
+         const baseHeal = statBase * (1 + Math.random() * 0.55);
+         const hm = getBias("healPowerMult", 1);
+         item.healPower = Math.round(baseHeal * hm);
+       }
+ 
+       // 固有能力（固定効果）を付与
