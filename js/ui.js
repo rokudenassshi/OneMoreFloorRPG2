@@ -2996,6 +2996,20 @@
     return Math.max(1, Math.floor(c));
   }
 
+  function getSkillAllocationStep() {
+    const input = document.getElementById("skillAllocationStepInput");
+    const n = Math.floor(Number(input ? input.value : 1));
+    if (!Number.isFinite(n) || n <= 0) return 1;
+    return n;
+  }
+
+  function setSkillAllocationStep(value) {
+    const parsed = Math.floor(Number(value));
+    const normalized = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    const input = document.getElementById("skillAllocationStepInput");
+    if (input) input.value = String(normalized);
+  }
+
   function findExclusiveConflict(skillKey, skillDef, playerSkills) {
     const ps =
       playerSkills && typeof playerSkills === "object" ? playerSkills : {};
@@ -3090,6 +3104,8 @@
     const autoStatTarget = document.getElementById("autoAllocateStatTarget");
     if (autoStatTarget)
       autoStatTarget.value = p.autoAllocateStatTarget || "strength";
+    const stepInput = document.getElementById("skillAllocationStepInput");
+    if (stepInput) stepInput.value = String(getSkillAllocationStep());
 
     const commonList = document.getElementById("commonSkillsList");
     const passiveList = document.getElementById("passiveSkillsList");
@@ -3333,6 +3349,7 @@
 
     const currentLevel = Math.floor(Number((p.skills && p.skills[key]) || 0));
     if (skill.maxLevel !== Infinity && currentLevel >= skill.maxLevel) return;
+    const step = getSkillAllocationStep();
 
     // 分岐・前提チェック（未習得→習得の瞬間だけ）
     if (currentLevel <= 0) {
@@ -3349,11 +3366,18 @@
       }
     }
 
-    if (!p.skills || typeof p.skills !== "object") p.skills = {};
-    p.skills[key] = currentLevel + 1;
-    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - cost);
+    const byPoints = Math.floor(Math.max(0, Number(p.skillPoints || 0)) / cost);
+    const byLevelCap =
+      skill.maxLevel === Infinity ? byPoints : Math.max(0, skill.maxLevel - currentLevel);
+    const amount = Math.min(step, byPoints, byLevelCap);
+    if (amount <= 0) return;
 
-    log(`${skill.name}のレベルが上がった！（ポイント-${cost}）`);
+    if (!p.skills || typeof p.skills !== "object") p.skills = {};
+    p.skills[key] = currentLevel + amount;
+    const spent = amount * cost;
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - spent);
+
+    log(`${skill.name}のレベルが${amount}上がった！（ポイント-${spent}）`);
     updateSkillUI();
     updateStatusUI();
     getCombatStats();
@@ -3368,8 +3392,11 @@
     const skill = skills[key];
     const currentLevel = Math.floor(Number(p.skills[key] || 0));
     if (currentLevel <= 0) return;
+    const step = getSkillAllocationStep();
+    const amount = Math.min(step, currentLevel);
+    if (amount <= 0) return;
 
-    const nextLevel = currentLevel - 1;
+    const nextLevel = currentLevel - amount;
     if (nextLevel <= 0) {
       delete p.skills[key];
 
@@ -3386,9 +3413,10 @@
 
     // ポイント返却（スキルごとに必要SPが違う）
     const cost = getSkillPointCost(skill);
-    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + cost);
+    const refund = amount * cost;
+    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + refund);
 
-    log(`${skill?.name || key}のレベルを下げた（ポイント+${cost}）`);
+    log(`${skill?.name || key}のレベルを${amount}下げた（ポイント+${refund}）`);
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();

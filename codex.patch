@@ -1,126 +1,72 @@
-diff --git a/js/ui.js b/js/ui.js
-index 0d6d63e379488776a1fa368a6d251e09e2903027..58f84dcb216094ed724b34da5ae40d4692091f9f 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2828,96 +2828,116 @@
-           continue;
-         }
-         const maxAffordableLv = Math.floor(
-           Math.max(0, Number(p.skillPoints || 0)) / cost,
-         );
-         const appliedLv = Math.min(lv, maxAffordableLv);
-         if (appliedLv <= 0) continue;
-         p.skills[sk] = appliedLv;
-         p.skillPoints = Math.max(
-           0,
-           Math.floor(Number(p.skillPoints || 0)) - appliedLv * cost,
-         );
-       }
-     } else {
-       // 保存ビルドがない場合は、返却済みSPをそのまま使える状態にする
-     }
+diff --git a/index.html b/index.html
+index 9984bf5cae509018682112e6b75e93e767f81836..5d88f71ed2411d99ec4837fc327ba738775e160c 100644
+--- a/index.html
++++ b/index.html
+@@ -228,55 +228,62 @@
+         <div class="status-section">
+           <h4>実績</h4>
+           <div id="achievementsContent" class="achievements-list"></div>
+         </div>
+       </div>
  
-     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
-     getCombatStats();
-     updateStatusUI();
-     closeJobSelector();
-     if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   // ステータス振り分け
-+  function getStatAllocationStep() {
-+    const input = document.getElementById("statAllocationStepInput");
-+    const n = Math.floor(Number(input ? input.value : 1));
-+    if (!Number.isFinite(n) || n <= 0) return 1;
-+    return n;
-+  }
-+
-+  function setStatAllocationStep(value) {
-+    const parsed = Math.floor(Number(value));
-+    const normalized = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-+    const input = document.getElementById("statAllocationStepInput");
-+    if (input) input.value = String(normalized);
-+  }
-+
-   function openStatAllocation() {
-     const list = document.getElementById("statAllocationList");
-     list.innerHTML = "";
- 
-     const statNames = {
-       strength: "⚔️ 力",
-       vitality: "❤️ 体力",
-       intelligence: "🧙 賢さ",
-       agility: "⚡ 素早さ",
-       dexterity: "🎯 器用さ",
-     };
- 
-     for (let key in statNames) {
-       const current = gameData.player.allocatedStats[key];
- 
-       list.innerHTML += `
-         <div class="stat-alloc-item">
-           <span>${statNames[key]}: <span id="alloc-${key}">${current}</span></span>
-           <div class="stat-alloc-controls">
-             <button onclick="adjustStat('${key}', -1)">-</button>
-             <button onclick="adjustStat('${key}', 1)">+</button>
+       <div id="tabRecords" style="display:none;">
+         <div class="status-section">
+           <h4 class="records-header">記録 <span id="recordsGameVersion" class="status-version"></span><button
+               class="record-post-btn" type="button" onclick="postRecordToX()">Xにポスト</button></h4>
+           <div class="record-list">
+             <div class="record-item">これまで倒した敵の数: <strong id="recordTotalKills">0</strong></div>
+             <div class="record-item">最大ダメージ: <strong id="recordMaxDamage">0</strong></div>
            </div>
          </div>
-       `;
-     }
+       </div>
+     </div>
  
-     document.getElementById("remainingPoints").textContent =
-       gameData.player.statPoints;
-+    const stepInput = document.getElementById("statAllocationStepInput");
-+    if (stepInput) stepInput.value = String(getStatAllocationStep());
-     document.getElementById("statModal").classList.remove("hidden");
-   }
+     <!-- スキル画面 -->
+     <div id="skillScreen" style="display:none;">
+       <div class="screen-header">
+         <h3>スキル管理</h3>
+         <button class="back-button" onclick="closeSkillScreen()">戻る</button>
+       </div>
+       <div id="skillContent">
+-        <div class="skill-points-display">
+-          <div>スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
+-          <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
+-              onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
+-          <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
++        <div class="skill-points-display skill-points-display-skill">
++          <div class="skill-points-main">スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
++          <div class="skill-points-controls">
++            <div class="stat-step-row">
++              <label for="skillAllocationStepInput">割り振り単位:</label>
++              <input id="skillAllocationStepInput" type="number" min="1" step="1" value="1"
++                oninput="setSkillAllocationStep(this.value)" onchange="setSkillAllocationStep(this.value)">
++            </div>
++            <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
++                onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
++            <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
++          </div>
+         </div>
+         <h4>共通スキル</h4>
+         <div id="commonSkillsList"></div>
+         <h4>常時スキル</h4>
+         <div id="passiveSkillsList"></div>
+         <h4>戦闘スキル</h4>
+         <div id="activeSkillsList"></div>
+       </div>
+     </div>
  
-   function closeStatAllocation() {
-     document.getElementById("statModal").classList.add("hidden");
-     getCombatStats();
-     updateStatusUI();
-   }
+     <!-- オプション画面 -->
+     <div id="optionsScreen" style="display:none;">
+       <div class="screen-header">
+         <h3>オプション</h3>
+         <button class="back-button" onclick="closeOptions()">戻る</button>
+       </div>
  
-   function adjustStat(stat, delta) {
-+    const step = getStatAllocationStep();
-+    if (delta === 0) return;
-     const current = gameData.player.allocatedStats[stat];
--    const newValue = current + delta;
--
--    if (newValue < 0) return;
--    if (delta > 0 && gameData.player.statPoints <= 0) return;
-+    const remaining = Math.max(0, Math.floor(Number(gameData.player.statPoints || 0)));
-+    const maxAdjust = delta > 0 ? remaining : current;
-+    if (maxAdjust <= 0) return;
-+    const amount = Math.min(step, maxAdjust);
-+    const signedDelta = delta > 0 ? amount : -amount;
-+    const newValue = current + signedDelta;
+       <div class="options-tabs">
+         <button class="status-tab-btn is-active" id="optionsTabBtnMain" type="button"
+           onclick="setOptionsTab('main')">オプション</button>
+         <button class="status-tab-btn" id="optionsTabBtnHistory" type="button"
+           onclick="setOptionsTab('history')">アップデート履歴</button>
+       </div>
  
-     gameData.player.allocatedStats[stat] = newValue;
--    gameData.player.statPoints -= delta;
-+    gameData.player.statPoints -= signedDelta;
- 
-     document.getElementById(`alloc-${stat}`).textContent = newValue;
-     document.getElementById("remainingPoints").textContent =
-       gameData.player.statPoints;
-   }
- 
-   function resetStatAllocation() {
-     let total = 0;
-     for (let stat in gameData.player.allocatedStats) {
-       total += gameData.player.allocatedStats[stat];
-       gameData.player.allocatedStats[stat] = 0;
-     }
-     gameData.player.statPoints += total;
- 
-     openStatAllocation();
-   }
- 
-   // -------------------
-   // UI - スキル
-   // -------------------
-   function openSkillScreen() {
-     document.getElementById("skillScreen").style.display = "block";
-     document.getElementById("statusScreen").style.display = "none";
-     updateSkillUI();
-   }
+       <div id="optionsTabMain">

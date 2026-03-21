@@ -250,11 +250,18 @@
         <button class="back-button" onclick="closeSkillScreen()">戻る</button>
       </div>
       <div id="skillContent">
-        <div class="skill-points-display">
-          <div>スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
-          <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
-              onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
-          <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
+        <div class="skill-points-display skill-points-display-skill">
+          <div class="skill-points-main">スキルポイント: <strong id="skillPointsInSkill">0</strong></div>
+          <div class="skill-points-controls">
+            <div class="stat-step-row">
+              <label for="skillAllocationStepInput">割り振り単位:</label>
+              <input id="skillAllocationStepInput" type="number" min="1" step="1" value="1"
+                oninput="setSkillAllocationStep(this.value)" onchange="setSkillAllocationStep(this.value)">
+            </div>
+            <label class="skill-auto-allocate-toggle"><input id="autoAllocateExpUpToggle" type="checkbox"
+                onchange="toggleAutoAllocateExpUp(this.checked)"> 経験値増加へ自動割り振り</label>
+            <button class="small-btn" type="button" onclick="resetSkills()">リセット</button>
+          </div>
         </div>
         <h4>共通スキル</h4>
         <div id="commonSkillsList"></div>
