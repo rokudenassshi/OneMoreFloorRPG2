@@ -1354,7 +1354,11 @@
       // 例: 破邪の弓（両手） +2
       const twoHandSuffix =
         item && Number(item.hands || 0) === 2 ? "（両手）" : "";
-      const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
+      const optionCountSuffix =
+        item.category !== "accessory" && randomCount > 0
+          ? ` +${randomCount}`
+          : "";
+      const displayName = `${item.name}${twoHandSuffix}${optionCountSuffix}`;
 
       const baseStatsText = [
         fmtStat("攻撃", item.attack).trim(),

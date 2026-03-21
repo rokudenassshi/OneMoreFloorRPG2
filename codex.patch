@@ -1,59 +1,61 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index 52f6e7ee10cce6634ccc37b9ab5e6766eeb9387d..9d373cfed0748fa8750fcb4cb94fbe025acd1ba1 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -21,52 +21,52 @@
+diff --git a/js/ui.js b/js/ui.js
+index cbf2a469d5dd2e2db2a097b6215dabc0b3ff2a94..0d6d63e379488776a1fa368a6d251e09e2903027 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -1332,51 +1332,55 @@
+       const rarityClass =
+         rarityText === "rare" ||
+         rarityText === "epic" ||
+         rarityText === "legendary"
+           ? `rarity-${rarityText}`
+           : "";
  
-     search_up_kai: {
-       name: "索敵強化・改",
-       type: "passive",
-       job: "all",
-       maxLevel: 50,
-       requiredPoints: 5,
-       desc: "索敵+{value}（最大レベル50）",
-       effect: (lv) => ({ searchBonus: lv }),
-     },
+       const fixedTexts = getFixedEffectTexts(item);
+       const randomTexts = getRandomOptionTexts(item);
+       const randomCount = randomTexts.length;
  
-     exp_up: {
-       name: "経験値増加",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       desc: "獲得経験値+{value}%（上限なし）",
-       effect: (lv) => ({ expBonus: lv }),
-     },
-     common_exp_level_mult: {
-       name: "成長加速",
-       type: "passive",
-       job: "all",
-       maxLevel: 1,
-       requiredPoints: 50,
--      desc: "獲得経験値がレベル倍になる",
--      effect: (_lv) => ({}),
-+      desc: "獲得経験値が{value}倍になる",
-+      effect: (lv) => ({ value: lv + 2 }),
-     },
+       // 固有能力がない場合、アイテム欄では「固有能力」欄自体を非表示にする
+       const fixedSectionHtml =
+         Array.isArray(fixedTexts) && fixedTexts.length > 0
+           ? `
+                 <div class="effect-section">
+                   <div class="effect-title">装備固有能力</div>
+                   ${renderEffectListHtml(fixedTexts)}
+                 </div>
+               `
+           : "";
+       // アイテム欄では「両手武器」を明示する
+       // 例: 破邪の弓（両手） +2
+       const twoHandSuffix =
+         item && Number(item.hands || 0) === 2 ? "（両手）" : "";
+-      const displayName = `${item.name}${twoHandSuffix}${randomCount > 0 ? ` +${randomCount}` : ""}`;
++      const optionCountSuffix =
++        item.category !== "accessory" && randomCount > 0
++          ? ` +${randomCount}`
++          : "";
++      const displayName = `${item.name}${twoHandSuffix}${optionCountSuffix}`;
  
-     common_heal: {
-       name: "ヒール",
-       type: "active",
-       accuracy: 100,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 6,
-       desc: "HPを20%回復する",
-       effect: (_lv) => ({ healRate: 0.2 }),
-     },
+       const baseStatsText = [
+         fmtStat("攻撃", item.attack).trim(),
+         fmtStat("魔法攻撃", item.magicAttack).trim(),
+         fmtStat("回復力", item.healPower).trim(),
+         fmtStat("防御", item.defense).trim(),
+         fmtStat("命中", item.accuracy, "%").trim(),
+         fmtStat("回避", item.evasion, "%").trim(),
+       ]
+         .filter(Boolean)
+         .join(" ");
  
-     common_sure_strike: {
-       name: "必中撃",
-       type: "active",
-       accuracy: 100,
-       alwaysHit: true,
-       job: "all",
-       maxLevel: 1,
-       cooldown: 3,
-       desc: "必ず命中する一撃（ダメージ{value}倍）",
-       effect: (_lv) => ({ damageMultiplier: 1.0 }),
-     },
+       const card = `
+         <div class="item-card ${equipped ? "equipped" : ""} ${locked ? "locked" : ""} ${categoryClass}" onclick="toggleEquip(${idx})">
+           <div class="item-row">
+             <div class="item-main">
+               <div class="item-name ${rarityClass}">${displayName}</div>
+               ${baseStatsText ? `<div class="item-stats">${baseStatsText}</div>` : ""}
  
+               <div class="item-effects">
+                 ${fixedSectionHtml}
+                 <div class="effect-section">
+                   <div class="effect-title">ランダムオプション</div>
+                   ${renderEffectListHtml(randomTexts, "なし")}
+                 </div>
