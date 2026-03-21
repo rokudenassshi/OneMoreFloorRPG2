@@ -40,6 +40,9 @@
 
     // `startdash` + 英数字10文字（固定）: 各紋章10個配布
     startdashi1u474nk3ks: "startDashEmblems",
+
+    // `autoskill` + 英数字10文字（固定）: たたかうでスキル1自動発動
+    autoskill52goi48goi545: "autoSkill1OnAttack",
   };
 
   const START_DASH_EMBLEMS = [
@@ -182,6 +185,35 @@
         }
       },
       logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
+    },
+
+    // たたかうボタンでスキル1を自動発動（使用可能時のみ）
+    autoSkill1OnAttack: {
+      isUnlocked: () => {
+        const s = loadStore();
+        if (s.autoSkill1OnAttack) return true;
+        const p = getPlayer();
+        return !!(p && p.serialUnlocks && p.serialUnlocks.autoSkill1OnAttack);
+      },
+      unlock: () => {
+        const s = loadStore();
+        s.autoSkill1OnAttack = true;
+        saveStore(s);
+
+        const p = getPlayer();
+        if (p) {
+          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
+            p.serialUnlocks = {};
+          }
+          p.serialUnlocks.autoSkill1OnAttack = true;
+        }
+
+        if (typeof window.checkAndUnlockAchievements === "function") {
+          window.checkAndUnlockAchievements({ silent: false });
+        }
+      },
+      logMessage:
+        "✨ 特典解放：スキル1が使用可能な時、たたかうでスキル1が発動します。",
     },
   };
 

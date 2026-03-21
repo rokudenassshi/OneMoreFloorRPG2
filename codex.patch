@@ -1,48 +1,39 @@
-diff --git a/js/core.js b/js/core.js
-index 5b5135809f9e8afea19c3b529cddaecf9c654767..9279598116ab621431dfb6b8573a65c80b36cc8a 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -72,52 +72,52 @@
-       return Math.min(floorCap, f);
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index d7138dc798f1fe731114fbe54ae8fc8c9cfbfb96..de5da2266e56351b5078af47a1e02bf8ec2e583a 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -18,50 +18,53 @@
+     } catch (e) {
+       return {};
      }
-     return f;
    }
  
-   // data/jobs.js は window.jobs に職業定義を載せる。
-   // 読み込み順や環境差で識別子 `jobs` が存在しないケースがあるため、
-   // ここで必ず参照先を確保して ReferenceError を防ぐ。
-   const jobs = window.jobs || window.JOBS || {};
-   // -------------------
-   // 状態異常: 追加ルール
-   // -------------------
-   // 毒：最大HP割合ダメージ（敵ターン開始時に1回）
-   const POISON_MAXHP_RATE = 0.03; // 3%
-   // 火傷：回復量が減少（回復時に適用）
-   const BURN_HEAL_MULT = 0.6; // 60%（=40%減少）
-   // 火傷：継続ダメージ（敵ターン開始時に1回、長めに継続）
-   const BURN_DOT_MAXHP_RATE = 0.015; // 最大HPの1.5%
-   const DEFAULT_BURN_TURNS = 6;
-   // 出血：継続ダメージ（最大HP割合。敵/プレイヤー共通で使用）
-   const BLEED_DOT_MAXHP_RATE = 0.02; // 最大HPの2%
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
+   }
  
-   // -------------------
-   // 貴重品（秘宝）：所持ボーナス
-   // -------------------
--  // 敵を倒すと 1/1000 の確率でドロップ
--  const RELIC_DROP_CHANCE = 0.001;
-+  // 敵を倒すと 1/100 の確率でドロップ
-+  const RELIC_DROP_CHANCE = 0.01;
-   const RELIC_FAMILY_NAME = "秘宝";
-   const MAP_FRAGMENT_ID = "ancient_map_fragment";
-   const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
-   const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
-   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
-   const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
-   const MAX_BATTLE_ACTIONS_BEFORE_ESCAPE = 50;
-   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
-   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
+   }
  
-   const RELIC_DEFS = [
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+   const serialCodeLookup = {
+     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+     stay8q2m1v7xk9: "stayBattle",
+ 
+     // `startdash` + 英数字10文字（固定）: 各紋章10個配布
+     startdashi1u474nk3ks: "startDashEmblems",
++
++    // `autoskill` + 英数字10文字（固定）: たたかうでスキル1自動発動
++    autoskill52goi48goi545: "autoSkill1OnAttack",
+   };
+ 
+   const START_DASH_EMBLEMS = [
      { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
      { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
      { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
@@ -50,63 +41,79 @@ index 5b5135809f9e8afea19c3b529cddaecf9c654767..9279598116ab621431dfb6b8573a65c8
      { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
    ];
  
-   const MAP_FRAGMENT_DEF = {
-     id: MAP_FRAGMENT_ID,
-     name: MAP_FRAGMENT_BASE_NAME,
-     statKey: "",
-     description: "5つ集めると・・・",
+ 
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.stayBattle) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
+@@ -161,31 +164,60 @@
+           for (const emblem of START_DASH_EMBLEMS) {
+             const found = p.valuables.find((v) => v && v.id === emblem.id);
+             if (found) {
+               found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
+               found.name = emblem.name;
+               found.statKey = emblem.statKey;
+               if (typeof found.description !== "string") found.description = "";
+             } else {
+               p.valuables.push({
+                 id: emblem.id,
+                 name: emblem.name,
+                 statKey: emblem.statKey,
+                 description: "",
+                 count: 10,
+               });
+             }
+           }
+         }
+ 
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
+       },
+       logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
+     },
++
++    // たたかうボタンでスキル1を自動発動（使用可能時のみ）
++    autoSkill1OnAttack: {
++      isUnlocked: () => {
++        const s = loadStore();
++        if (s.autoSkill1OnAttack) return true;
++        const p = getPlayer();
++        return !!(p && p.serialUnlocks && p.serialUnlocks.autoSkill1OnAttack);
++      },
++      unlock: () => {
++        const s = loadStore();
++        s.autoSkill1OnAttack = true;
++        saveStore(s);
++
++        const p = getPlayer();
++        if (p) {
++          if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
++            p.serialUnlocks = {};
++          }
++          p.serialUnlocks.autoSkill1OnAttack = true;
++        }
++
++        if (typeof window.checkAndUnlockAchievements === "function") {
++          window.checkAndUnlockAchievements({ silent: false });
++        }
++      },
++      logMessage:
++        "✨ 特典解放：スキル1が使用可能な時、たたかうでスキル1が発動します。",
++    },
    };
  
-@@ -4605,51 +4605,51 @@
-             typeof item._specialPrefixRarity === "string" &&
-             item._specialPrefixRarity
-               ? item._specialPrefixRarity
-               : typeof item.rarity === "string"
-                 ? item.rarity
-                 : "rare";
-           const rarityLabel =
-             rarityText === "legendary"
-               ? "レジェンダリー"
-               : rarityText === "epic"
-                 ? "エピック"
-                 : "レア";
-           window.showRareEnemyPopup(
-             item.name,
-             `${rarityLabel}装備を手に入れた！`,
-             {
-               autoClose: false,
-               allowOverlayClose: false,
-               showCloseButton: true,
-               hintText: "閉じるボタンで閉じる",
-             },
-           );
-         }
-       }
- 
--      // 貴重品（秘宝）ドロップ（固定 1/1000）
-+      // 貴重品（秘宝）ドロップ（固定 1/100）
-       if (Math.random() < RELIC_DROP_CHANCE) {
-         const def = RELIC_DEFS[Math.floor(Math.random() * RELIC_DEFS.length)];
-         addValuableByDef(def, 1);
-         log(`✨${RELIC_FAMILY_NAME}を発見！ ${def.name}を手に入れた！`);
-       }
- 
-       // 地図の切れ端ドロップ（通常ドロップとは別判定 / 固定 1/10,000,000）
-       // 5個持っている場合はドロップしない。
-       const mapFragmentCount = getValuableCountById(
-         gameData.player,
-         MAP_FRAGMENT_ID,
-       );
-       if (
-         mapFragmentCount < MAP_FRAGMENT_MAX_STACK_FOR_DROP &&
-         Math.random() < MAP_FRAGMENT_DROP_CHANCE
-       ) {
-         addValuableByDef(MAP_FRAGMENT_DEF, 1);
-         log(
-           `🗺️ ${getMapFragmentDisplayName(mapFragmentCount + 1)}を手に入れた！ (${mapFragmentCount + 1}/5)`,
-         );
-         if (typeof window.showRareEnemyPopup === "function") {
-           window.showRareEnemyPopup(
-             getMapFragmentDisplayName(mapFragmentCount + 1),
-             "超低確率ドロップ！",
-             {
+   // グローバルに公開（ui.js が参照する）
+   window.serialCodeLookup = serialCodeLookup;
+   window.serialCodeActions = serialCodeActions;
+ })();

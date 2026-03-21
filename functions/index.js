@@ -21,6 +21,9 @@ const serialCodeLookup = {
 
   // `startdash` + 英数字10文字（固定）: 各紋章10個配布
   startdashi1u474nk3ks: "startDashEmblems",
+
+  // `autoskill` + 英数字10文字（固定）: たたかうでスキル1自動発動
+  autoskill52goi48goi545: "autoSkill1OnAttack",
 };
 
 exports.verifySerialCode = onCall(

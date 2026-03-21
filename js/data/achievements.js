@@ -113,6 +113,18 @@
       bonus: {},
     },
     {
+      id: "serial_auto_skill1_on_attack",
+      title: "戦技の呼吸",
+      desc: "シリアルコード（たたかうでスキル1自動発動）を入力する",
+      isDone: (p) =>
+        !!(p && p.serialUnlocks && p.serialUnlocks.autoSkill1OnAttack),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.autoSkill1OnAttack
+          ? "1/1"
+          : "0/1",
+      bonus: {},
+    },
+    {
       id: "named_hunter",
       title: "二つ名狩り",
       desc: "二つ名モンスターを10体倒す",

@@ -56,6 +56,26 @@
     }
   }
 
+  function isAutoSkill1OnAttackUnlocked() {
+    const p = gameData && gameData.player;
+    if (
+      p &&
+      p.serialUnlocks &&
+      typeof p.serialUnlocks === "object" &&
+      p.serialUnlocks.autoSkill1OnAttack
+    ) {
+      return true;
+    }
+
+    try {
+      const raw = localStorage.getItem(SERIAL_UNLOCK_STORE_KEY);
+      const obj = raw ? JSON.parse(raw) : null;
+      return !!(obj && typeof obj === "object" && obj.autoSkill1OnAttack);
+    } catch (e) {
+      return false;
+    }
+  }
+
   function getCurrentFloorCap() {
     return isFloorCapLiftUnlocked() ? UNLOCKED_FLOOR_CAP : DEFAULT_FLOOR_CAP;
   }
@@ -2926,6 +2946,27 @@
 
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
+
+    // シリアル特典：スキル1が使用可能な時は、たたかうでスキル1を発動
+    if (isAutoSkill1OnAttackUnlocked()) {
+      const p = gameData.player || {};
+      const list = Array.isArray(p.equippedSkills)
+        ? p.equippedSkills
+        : [p.equippedSkill, null];
+      const skill1Key = list[0] != null ? String(list[0]) : "";
+      const st = p.status || {};
+      const cd = Number(p.skillCooldown || 0);
+      const skill1Usable =
+        !!skill1Key &&
+        !!skills[skill1Key] &&
+        Number(st.silenceTurns || 0) <= 0 &&
+        Number.isFinite(cd) &&
+        cd <= 0;
+      if (skill1Usable) {
+        useSkill(0);
+        return;
+      }
+    }
 
     if (incrementBattleActionAndCheckForcedEscape()) return;
 
