@@ -1,72 +1,126 @@
-diff --git a/style_new.css b/style_new.css
-index a2195fbc07bc88aacf6ebd3b8837782c274470bb..41b3823365ef932eb05da5173edfb64ca91c7290 100644
---- a/style_new.css
-+++ b/style_new.css
-@@ -770,50 +770,67 @@ button:active {
-   background: #2a2a2a;
-   border-radius: 6px;
-   margin-bottom: 8px;
- }
+diff --git a/js/ui.js b/js/ui.js
+index 0d6d63e379488776a1fa368a6d251e09e2903027..58f84dcb216094ed724b34da5ae40d4692091f9f 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -2828,96 +2828,116 @@
+           continue;
+         }
+         const maxAffordableLv = Math.floor(
+           Math.max(0, Number(p.skillPoints || 0)) / cost,
+         );
+         const appliedLv = Math.min(lv, maxAffordableLv);
+         if (appliedLv <= 0) continue;
+         p.skills[sk] = appliedLv;
+         p.skillPoints = Math.max(
+           0,
+           Math.floor(Number(p.skillPoints || 0)) - appliedLv * cost,
+         );
+       }
+     } else {
+       // 保存ビルドがない場合は、返却済みSPをそのまま使える状態にする
+     }
  
- .stat-alloc-controls {
-   display: flex;
-   gap: 8px;
-   align-items: center;
- }
+     log(`職業を${jd.name}に変更した（戦闘スキルは解除）`);
+     getCombatStats();
+     updateStatusUI();
+     closeJobSelector();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
  
- .stat-alloc-controls button {
-   width: 36px;
-   height: 36px;
-   padding: 0;
-   font-size: 18px;
-   margin: 0;
- }
- 
- .stat-alloc-value {
-   min-width: 30px;
-   text-align: center;
-   font-weight: bold;
- }
- 
-+.stat-step-row {
-+  display: flex;
-+  align-items: center;
-+  gap: 10px;
-+  margin-top: 10px;
-+}
+   // ステータス振り分け
++  function getStatAllocationStep() {
++    const input = document.getElementById("statAllocationStepInput");
++    const n = Math.floor(Number(input ? input.value : 1));
++    if (!Number.isFinite(n) || n <= 0) return 1;
++    return n;
++  }
 +
-+.stat-step-row input {
-+  width: 90px;
-+  height: 32px;
-+  padding: 4px 8px;
-+  border: 1px solid #666;
-+  border-radius: 6px;
-+  background: #222;
-+  color: #fff;
-+}
++  function setStatAllocationStep(value) {
++    const parsed = Math.floor(Number(value));
++    const normalized = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
++    const input = document.getElementById("statAllocationStepInput");
++    if (input) input.value = String(normalized);
++  }
 +
- .item-card {
-   padding: 10px;
-   background: #2a2a2a;
-   border: 2px solid #444;
-   border-radius: 8px;
-   margin-bottom: 8px;
-   cursor: pointer;
-   transition: all 0.2s;
- }
+   function openStatAllocation() {
+     const list = document.getElementById("statAllocationList");
+     list.innerHTML = "";
  
- .item-card:hover {
-   border-color: #4a6cf7;
- }
+     const statNames = {
+       strength: "⚔️ 力",
+       vitality: "❤️ 体力",
+       intelligence: "🧙 賢さ",
+       agility: "⚡ 素早さ",
+       dexterity: "🎯 器用さ",
+     };
  
- .item-card.equipped {
-   border-color: #4caf50;
-   background: #1a3d1a;
-   border-left: 4px solid #4caf50;
- }
+     for (let key in statNames) {
+       const current = gameData.player.allocatedStats[key];
  
- .item-card.locked {
-   border-style: dashed;
- }
+       list.innerHTML += `
+         <div class="stat-alloc-item">
+           <span>${statNames[key]}: <span id="alloc-${key}">${current}</span></span>
+           <div class="stat-alloc-controls">
+             <button onclick="adjustStat('${key}', -1)">-</button>
+             <button onclick="adjustStat('${key}', 1)">+</button>
+           </div>
+         </div>
+       `;
+     }
  
- .item-row {
+     document.getElementById("remainingPoints").textContent =
+       gameData.player.statPoints;
++    const stepInput = document.getElementById("statAllocationStepInput");
++    if (stepInput) stepInput.value = String(getStatAllocationStep());
+     document.getElementById("statModal").classList.remove("hidden");
+   }
+ 
+   function closeStatAllocation() {
+     document.getElementById("statModal").classList.add("hidden");
+     getCombatStats();
+     updateStatusUI();
+   }
+ 
+   function adjustStat(stat, delta) {
++    const step = getStatAllocationStep();
++    if (delta === 0) return;
+     const current = gameData.player.allocatedStats[stat];
+-    const newValue = current + delta;
+-
+-    if (newValue < 0) return;
+-    if (delta > 0 && gameData.player.statPoints <= 0) return;
++    const remaining = Math.max(0, Math.floor(Number(gameData.player.statPoints || 0)));
++    const maxAdjust = delta > 0 ? remaining : current;
++    if (maxAdjust <= 0) return;
++    const amount = Math.min(step, maxAdjust);
++    const signedDelta = delta > 0 ? amount : -amount;
++    const newValue = current + signedDelta;
+ 
+     gameData.player.allocatedStats[stat] = newValue;
+-    gameData.player.statPoints -= delta;
++    gameData.player.statPoints -= signedDelta;
+ 
+     document.getElementById(`alloc-${stat}`).textContent = newValue;
+     document.getElementById("remainingPoints").textContent =
+       gameData.player.statPoints;
+   }
+ 
+   function resetStatAllocation() {
+     let total = 0;
+     for (let stat in gameData.player.allocatedStats) {
+       total += gameData.player.allocatedStats[stat];
+       gameData.player.allocatedStats[stat] = 0;
+     }
+     gameData.player.statPoints += total;
+ 
+     openStatAllocation();
+   }
+ 
+   // -------------------
+   // UI - スキル
+   // -------------------
+   function openSkillScreen() {
+     document.getElementById("skillScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
+     updateSkillUI();
+   }

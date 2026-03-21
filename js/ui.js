@@ -2850,6 +2850,20 @@
   }
 
   // ステータス振り分け
+  function getStatAllocationStep() {
+    const input = document.getElementById("statAllocationStepInput");
+    const n = Math.floor(Number(input ? input.value : 1));
+    if (!Number.isFinite(n) || n <= 0) return 1;
+    return n;
+  }
+
+  function setStatAllocationStep(value) {
+    const parsed = Math.floor(Number(value));
+    const normalized = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    const input = document.getElementById("statAllocationStepInput");
+    if (input) input.value = String(normalized);
+  }
+
   function openStatAllocation() {
     const list = document.getElementById("statAllocationList");
     list.innerHTML = "";
@@ -2878,6 +2892,8 @@
 
     document.getElementById("remainingPoints").textContent =
       gameData.player.statPoints;
+    const stepInput = document.getElementById("statAllocationStepInput");
+    if (stepInput) stepInput.value = String(getStatAllocationStep());
     document.getElementById("statModal").classList.remove("hidden");
   }
 
@@ -2888,14 +2904,18 @@
   }
 
   function adjustStat(stat, delta) {
+    const step = getStatAllocationStep();
+    if (delta === 0) return;
     const current = gameData.player.allocatedStats[stat];
-    const newValue = current + delta;
-
-    if (newValue < 0) return;
-    if (delta > 0 && gameData.player.statPoints <= 0) return;
+    const remaining = Math.max(0, Math.floor(Number(gameData.player.statPoints || 0)));
+    const maxAdjust = delta > 0 ? remaining : current;
+    if (maxAdjust <= 0) return;
+    const amount = Math.min(step, maxAdjust);
+    const signedDelta = delta > 0 ? amount : -amount;
+    const newValue = current + signedDelta;
 
     gameData.player.allocatedStats[stat] = newValue;
-    gameData.player.statPoints -= delta;
+    gameData.player.statPoints -= signedDelta;
 
     document.getElementById(`alloc-${stat}`).textContent = newValue;
     document.getElementById("remainingPoints").textContent =

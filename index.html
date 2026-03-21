@@ -507,6 +507,11 @@
         <div class="stat-points-display">
           残りポイント: <strong id="remainingPoints">0</strong>
         </div>
+        <div class="stat-step-row">
+          <label for="statAllocationStepInput">割り振り単位:</label>
+          <input id="statAllocationStepInput" type="number" min="1" step="1" value="1"
+            oninput="setStatAllocationStep(this.value)" onchange="setStatAllocationStep(this.value)">
+        </div>
         <div class="skill-points-display">
           <label class="skill-auto-allocate-toggle"><input id="autoAllocateStatPointsToggle" type="checkbox"
               onchange="toggleAutoAllocateStatPoints(this.checked)"> レベルアップ時に自動割り振り</label>

@@ -792,6 +792,23 @@ button:active {
   font-weight: bold;
 }
 
+.stat-step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stat-step-row input {
+  width: 90px;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #666;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+}
+
 .item-card {
   padding: 10px;
   background: #2a2a2a;
