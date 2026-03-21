@@ -1,241 +1,262 @@
-diff --git a/js/ui.js b/js/ui.js
-index 57c3acc52208dee3aefbc2e713e3dda6710709ea..fce89a315408b05a729a3c5815ca321fd5a0af97 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -1809,78 +1809,132 @@
+diff --git a/js/core.js b/js/core.js
+index 5e20d125fbe65ea4bb249b55c2d46c08b29793ee..859b40d61cb8c69ae01ff20dbebcc2956bcd9872 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -433,50 +433,51 @@
  
-     item.count--;
-     if (item.count <= 0) {
-       gameData.player.items = gameData.player.items.filter(
-         (i) => i.name !== name,
-       );
+     const bf = Number(gameData && gameData.battleFloor);
+     if (
+       gameData &&
+       gameData.gameState === "BATTLE" &&
+       Number.isFinite(bf) &&
+       bf > 0
+     )
+       return bf;
+     const f = Number(gameData && gameData.floor);
+     return Number.isFinite(f) && f > 0 ? f : 1;
+   }
+ 
+   // -------------------
+   // オートセーブ
+   // -------------------
+   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
+   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
+   const AUTOSAVE_INTERVAL_MS = 5000;
+   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
+   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
+ 
+   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
+   const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
+   const CLOUD_SAVE_FUNCTION_SAVE = "saveUserGameData";
++  const DEFAULT_FUNCTIONS_REGION = "us-central1";
+   let autosaveEnabled = true;
+ 
+   function isAutosaveEnabled() {
+     try {
+       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
+       if (raw == null) return true;
+       return raw === "1";
+     } catch (e) {
+       return true;
      }
- 
-     let heal = Number(item.heal || 0);
- 
-     gameData.player.hp = Math.min(
-       gameData.player.maxHp,
-       gameData.player.hp + heal,
-     );
-     log(`${name}を使用！ ${heal}HP回復した！`);
- 
-     updateBagUI();
-     updateUI();
-     if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   // -------------------
-   // UI - ステータス
-   // -------------------
-   let currentStatusTab = "status";
-+  let currentOptionsTab = "main";
- 
-   function openStatus() {
-     // バージョン表示（記録タブ横）
-     applyGameVersionBadges();
- 
-     document.getElementById("statusScreen").style.display = "block";
-     document.getElementById("optionsScreen").style.display = "none";
-     document.getElementById("helpScreen").style.display = "none";
-     document.getElementById("exploreButtons").style.display = "none";
-     document.getElementById("battleButtons").style.display = "none";
-     setStatusTab(currentStatusTab || "status");
-     updateStatusUI();
-     updateAchievementsUI();
-     updateRecordsUI();
-     updateOptionsUI();
+   function setAutosaveEnabled(v) {
+     autosaveEnabled = !!v;
+     if (autosaveEnabled) autosaveDirty = true;
+     try {
+       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
+     } catch (e) {}
    }
  
-   function openOptions() {
-     // ステータス画面のタブではなく、独立したオプション画面を開く
-     document.getElementById("optionsScreen").style.display = "block";
-     document.getElementById("statusScreen").style.display = "none";
-     document.getElementById("helpScreen").style.display = "none";
-     document.getElementById("bagScreen").style.display = "none";
-     document.getElementById("exploreButtons").style.display = "none";
-     document.getElementById("battleButtons").style.display = "none";
-+    setOptionsTab(currentOptionsTab || "main");
-     updateOptionsUI();
+   let pendingAutosaveTimer = null;
+   let pendingThrottledSaveTimer = null;
+   let autosaveDirty = true;
+   let cloudSaveInFlight = false;
+   let cloudSaveQueued = false;
+@@ -495,50 +496,77 @@
+     };
+     return JSON.parse(JSON.stringify(payload));
    }
  
-+
-+
-+  function setOptionsTab(tab) {
-+    const allowed = ["main", "history"];
-+    if (!allowed.includes(tab)) tab = "main";
-+    currentOptionsTab = tab;
-+
-+    const mainEl = document.getElementById("optionsTabMain");
-+    const historyEl = document.getElementById("optionsTabHistory");
-+    if (mainEl) mainEl.style.display = tab === "main" ? "block" : "none";
-+    if (historyEl) historyEl.style.display = tab === "history" ? "block" : "none";
-+
-+    const btnMain = document.getElementById("optionsTabBtnMain");
-+    const btnHistory = document.getElementById("optionsTabBtnHistory");
-+    if (btnMain) btnMain.classList.toggle("is-active", tab === "main");
-+    if (btnHistory) btnHistory.classList.toggle("is-active", tab === "history");
-+
-+    if (tab === "history") {
-+      loadUpdateHistory();
-+    }
+   function savePayloadToLocalCache(payload) {
+     try {
+       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+       return true;
+     } catch (e) {
+       return false;
+     }
+   }
+ 
+   function loadPayloadFromLocalCache() {
+     try {
+       const raw = localStorage.getItem(SAVE_KEY);
+       if (!raw) return null;
+       const parsed = JSON.parse(raw);
+       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
+       return parsed;
+     } catch (e) {
+       return null;
+     }
+   }
+ 
++  function buildCloudFunctionUrl(functionName) {
++    const cfg = window.FIREBASE_CONFIG || null;
++    const projectId = cfg && cfg.projectId ? String(cfg.projectId) : "";
++    if (!projectId) return "";
++    const region = window.FIREBASE_FUNCTIONS_REGION || DEFAULT_FUNCTIONS_REGION;
++    return `https://${region}-${projectId}.cloudfunctions.net/${functionName}`;
 +  }
 +
-+  async function loadUpdateHistory() {
-+    const listEl = document.getElementById("updateHistoryList");
-+    if (!listEl) return;
-+
-+    listEl.innerHTML = '<div class="status-note">読み込み中...</div>';
-+
-+    try {
-+      const response = await fetch("update-history.html", { cache: "no-store" });
-+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-+      const text = await response.text();
-+
-+      const tmp = document.createElement("div");
-+      tmp.innerHTML = text;
-+
-+      const items = Array.from(tmp.querySelectorAll(".update-history-item"));
-+      const latestItems = items.slice(0, 3);
-+
-+      if (latestItems.length === 0) {
-+        listEl.innerHTML = '<div class="status-note">アップデート履歴がありません。</div>';
-+        return;
-+      }
-+
-+      listEl.innerHTML = "";
-+      latestItems.forEach((item) => listEl.appendChild(item.cloneNode(true)));
-+    } catch (error) {
-+      listEl.innerHTML = '<div class="status-note">アップデート履歴を読み込めませんでした。</div>';
-+      console.error("アップデート履歴の読み込みに失敗:", error);
++  async function postToCloudFunction(functionName, body, currentUser) {
++    const url = buildCloudFunctionUrl(functionName);
++    if (!url || !currentUser || typeof currentUser.getIdToken !== "function") {
++      return null;
 +    }
++    const token = await currentUser.getIdToken();
++    const response = await fetch(url, {
++      method: "POST",
++      headers: {
++        "Content-Type": "application/json",
++        Authorization: `Bearer ${token}`,
++      },
++      body: JSON.stringify(body || {}),
++    });
++    if (!response.ok) return null;
++    const json = await response.json().catch(() => null);
++    return json && typeof json === "object" ? json : null;
 +  }
 +
-   function closeOptions() {
-     document.getElementById("optionsScreen").style.display = "none";
-     updateUI();
+   function applySavePayload(payload) {
+     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
+ 
+     gameData.floor = clampFloor(payload.floor || 1);
+     gameData.gameState = payload.gameState || "EXPLORE";
+     gameData.player = payload.player || gameData.player;
+     gameData.enemy = payload.enemy || null;
+     gameData.battleFloor =
+       payload.battleFloor != null ? payload.battleFloor : null;
+     gameData.pendingFloorAfterWin =
+       payload.pendingFloorAfterWin != null
+         ? payload.pendingFloorAfterWin
+         : null;
+ 
+     ensureAutoSellConfig(gameData.player);
+     ensureAutoAllocateExpUpConfig(gameData.player);
+     ensureAutoAllocateStatPointsConfig(gameData.player);
+     ensureSerialOptionsConfig(gameData.player);
+     ensureWorldStateConfig(gameData.player);
+     // テスト上限を越えたセーブが来ても破綻しないように丸める
+     try {
+       if (gameData && gameData.player) {
+         gameData.player.maxReachedFloor = clampFloor(
+           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
+         );
+@@ -576,115 +604,105 @@
+       }
+ 
+       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
+       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
+         if (!pendingThrottledSaveTimer) {
+           const delay = Math.max(
+             0,
+             MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave,
+           );
+           pendingThrottledSaveTimer = setTimeout(() => {
+             pendingThrottledSaveTimer = null;
+             saveGameNow();
+           }, delay);
+         }
+         return;
+       }
+ 
+       if (cloudSaveInFlight) {
+         cloudSaveQueued = true;
+         return false;
+       }
+ 
+       const payload = buildSavePayload();
+       autosaveDirty = false;
+ 
+-      const functionsInstance = window.firebaseFunctions || null;
+-      const httpsCallableFactory = window.firebaseHttpsCallable || null;
+-      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
+-        autosaveDirty = true;
+-        return false;
+-      }
+-
+       cloudSaveInFlight = true;
+-      const saveUserGameData = httpsCallableFactory(
+-        functionsInstance,
+-        CLOUD_SAVE_FUNCTION_SAVE,
+-      );
+       try {
+-        await saveUserGameData({ payload });
++        const result = await postToCloudFunction(
++          CLOUD_SAVE_FUNCTION_SAVE,
++          { payload },
++          currentUser,
++        );
++        if (!result || result.ok !== true) {
++          autosaveDirty = true;
++          return false;
++        }
+         lastCloudSaveAt = Date.now();
+       } finally {
+         cloudSaveInFlight = false;
+       }
+ 
+       if (cloudSaveQueued) {
+         cloudSaveQueued = false;
+         if (autosaveDirty) saveGameNow();
+       }
+       return true;
+     } catch (e) {
+       autosaveDirty = true;
+       return false;
+     }
    }
  
-   function openHelpScreen() {
-     document.getElementById("helpScreen").style.display = "block";
-     document.getElementById("optionsScreen").style.display = "none";
+   function requestAutosave() {
+     if (!autosaveEnabled) return;
+     autosaveDirty = true;
+     if (pendingAutosaveTimer) return;
+     pendingAutosaveTimer = setTimeout(() => {
+       pendingAutosaveTimer = null;
+       saveGameNow();
+     }, REQUEST_AUTOSAVE_DEBOUNCE_MS);
    }
  
-   function closeHelpScreen() {
-     document.getElementById("helpScreen").style.display = "none";
-     document.getElementById("optionsScreen").style.display = "block";
-   }
+   async function loadGameIfExists() {
+     try {
+       const authBridge = window.firebaseAuthBridge || null;
+       const currentUser =
+         authBridge && typeof authBridge.getCurrentUser === "function"
+           ? authBridge.getCurrentUser()
+           : null;
+       if (!currentUser) {
+         const cachedPayload = loadPayloadFromLocalCache();
+         if (!cachedPayload) return false;
+         return applySavePayload(cachedPayload);
+       }
  
-   function closeStatus() {
-     document.getElementById("statusScreen").style.display = "none";
-     updateUI();
+-      const functionsInstance = window.firebaseFunctions || null;
+-      const httpsCallableFactory = window.firebaseHttpsCallable || null;
+-      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
+-        return false;
+-      }
+-
+-      const loadUserGameData = httpsCallableFactory(
+-        functionsInstance,
++      const data = await postToCloudFunction(
+         CLOUD_SAVE_FUNCTION_LOAD,
++        {},
++        currentUser,
+       );
+-      const response = await loadUserGameData({});
+-      const data = response && response.data ? response.data : null;
+       if (!data || !data.hasSave || !data.payload) return false;
+       const payload = data.payload;
+       return applySavePayload(payload);
+     } catch (e) {
+       return false;
+     }
    }
  
    // -------------------
-   // UI - 転移（50階層刻み）
+   // 装備UID（永続化用）
+   // ※ロード時の互換補正は行わない（リリース前のため）
    // -------------------
-   let lastTeleportFocusEl = null;
+   let uidSeed = 0;
  
-@@ -3391,50 +3445,51 @@
- 
-     log("🔄 スキルをリセットした");
-     getCombatStats();
-     updateSkillUI();
-     updateStatusUI();
-     updateSkillButtons();
-     if (typeof requestAutosave === "function") requestAutosave();
+   function generateUid() {
+     uidSeed = (uidSeed + 1) >>> 0;
+     return `i_${Date.now().toString(36)}_${uidSeed.toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
    }
- 
-   // ポップアップ
-   window.showRareEnemyPopup = showRareEnemyPopup;
-   window.showEventPopup = showEventPopup;
- 
    // -------------------
-   // グローバル公開
+   // 上級職 解放進捗
    // -------------------
-   window.updateUI = updateUI;
-   window.updateRecordsUI = updateRecordsUI;
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
- 
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-+  window.setOptionsTab = setOptionsTab;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   window.useValuableById = useValuableById;
-   // =====================
-   // セーブ設定
-@@ -3541,50 +3596,51 @@
+   function getJobSkillGroup(jobKey) {
+     const def = jobs && jobs[jobKey] ? jobs[jobKey] : null;
+     return def && def.skillGroup ? def.skillGroup : jobKey;
    }
- 
-   // -------------------
-   // 初期化（モーダル外タップなど）
-   // -------------------
-   // HTMLが読み込まれた後に ui.js が読み込まれる想定だが、念のため存在チェック済み。
-   bindModalCloseOnBackdrop("jobModal", closeJobSelector);
-   bindModalCloseOnBackdrop("autoSellConfigModal", closeAutoSellConfigModal);
- 
-   // ステータス画面の記録タブ横にバージョンを表示
-   applyGameVersionBadges();
- 
-   // グローバル公開（HTML onclick 用）
-   window.setStatusTab = setStatusTab;
-   window.postRecordToX = postRecordToX;
-   window.toggleAutosave = toggleAutosave;
-   window.handleManualSave = handleManualSave;
- 
-   window.promptGoogleLoginAtStart = promptGoogleLoginAtStart;
-   window.startWithGoogleLogin = startWithGoogleLogin;
-   window.startWithoutLogin = startWithoutLogin;
-   window.handleFirebaseAuthChanged = handleFirebaseAuthChanged;
- 
-   window.openStatus = openStatus;
-   window.openOptions = openOptions;
-+  window.setOptionsTab = setOptionsTab;
-   window.closeOptions = closeOptions;
-   window.openHelpScreen = openHelpScreen;
-   window.closeHelpScreen = closeHelpScreen;
-   window.closeStatus = closeStatus;
-   window.updateStatusUI = updateStatusUI;
- 
-   // シリアルコード（オプション画面）
-   window.handleSerialCodeKeydown = handleSerialCodeKeydown;
-   window.handleSerialCodeSubmit = handleSerialCodeSubmit;
- 
-   window.openJobSelector = openJobSelector;
-   window.closeJobSelector = closeJobSelector;
-   window.selectJob = selectJob;
- 
-   window.openStatAllocation = openStatAllocation;
-   window.closeStatAllocation = closeStatAllocation;
-   window.adjustStat = adjustStat;
-   window.resetStatAllocation = resetStatAllocation;
- 
-   window.openSkillScreen = openSkillScreen;
-   window.closeSkillScreen = closeSkillScreen;
-   window.toggleAutoAllocateExpUp = toggleAutoAllocateExpUp;
-   window.toggleAutoAllocateStatPoints = toggleAutoAllocateStatPoints;
-   window.setAutoAllocateStatTarget = setAutoAllocateStatTarget;
-   window.updateSkillUI = updateSkillUI;

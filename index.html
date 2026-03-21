@@ -281,36 +281,36 @@
 
       <div id="optionsTabMain">
 
-      <div class="status-section">
-        <h4>セーブデータ</h4>
-        <div class="status-note">※セーブデータはGoogleログイン中のアカウントへ保存されます</div>
-        <div class="options-row">
-          <button id="manualSaveBtn" class="small-btn" type="button" onclick="handleManualSave()">手動セーブ</button>
+        <div class="status-section">
+          <h4>セーブデータ</h4>
+          <div class="status-note">※セーブデータはGoogleログイン中のアカウントへ保存されます</div>
+          <div class="options-row">
+            <button id="manualSaveBtn" class="small-btn" type="button" onclick="handleManualSave()">手動セーブ</button>
+          </div>
         </div>
-      </div>
 
-      <div class="status-section">
-        <h4>シリアルコード</h4>
-        <div class="options-row serial-row">
-          <input id="serialCodeInput" class="serial-input" type="text" autocomplete="off" placeholder="シリアルコードを入力"
-            onkeydown="handleSerialCodeKeydown(event)">
-          <button id="serialCodeSubmitBtn" class="small-btn" type="button"
-            onclick="handleSerialCodeSubmit()">確認</button>
+        <div class="status-section">
+          <h4>シリアルコード</h4>
+          <div class="options-row serial-row">
+            <input id="serialCodeInput" class="serial-input" type="text" autocomplete="off" placeholder="シリアルコードを入力"
+              onkeydown="handleSerialCodeKeydown(event)">
+            <button id="serialCodeSubmitBtn" class="small-btn" type="button"
+              onclick="handleSerialCodeSubmit()">確認</button>
+          </div>
+          <div class="status-note">※大文字/小文字は区別しません</div>
         </div>
-        <div class="status-note">※大文字/小文字は区別しません</div>
-      </div>
 
-      <div class="status-section">
-        <h4>作者リンク</h4>
-        <div class="author-links">
-          <a href="https://x.com/rokudenassshi64" target="_blank" rel="noopener noreferrer">X: @rokudenassshi64</a>
-          <a href="https://note.com/rokudenassshi" target="_blank" rel="noopener noreferrer">note: rokudenassshi</a>
+        <div class="status-section">
+          <h4>作者リンク</h4>
+          <div class="author-links">
+            <a href="https://x.com/rokudenassshi64" target="_blank" rel="noopener noreferrer">X: @rokudenassshi64</a>
+            <a href="https://note.com/rokudenassshi" target="_blank" rel="noopener noreferrer">note: rokudenassshi</a>
+          </div>
         </div>
-      </div>
 
-      <div class="status-section">
-        <a href="#" onclick="openHelpScreen(); return false;">ヘルプ（各名称の説明）</a>
-      </div>
+        <div class="status-section">
+          <a href="#" onclick="openHelpScreen(); return false;">ヘルプ（各名称の説明）</a>
+        </div>
       </div>
 
       <div id="optionsTabHistory" style="display:none;">
@@ -586,13 +586,13 @@
     // Firebase コンソール > プロジェクト設定 > マイアプリ（Web）の設定値に合わせてください
     // すでに同じ Firebase プロジェクトを使う場合は、このままでも動きます（必要なら差し替え）。
     window.FIREBASE_CONFIG = {
-      apiKey: "AIzaSyCytQKP_QxthSoJC-V508W8YDz7O7bIBJU",
-      authDomain: "onemorefloorrpg2test.firebaseapp.com",
-      projectId: "onemorefloorrpg2test",
-      storageBucket: "onemorefloorrpg2test.firebasestorage.app",
-      messagingSenderId: "1050146619508",
-      appId: "1:1050146619508:web:9a44aa3aeb1dbc45025121",
-      measurementId: "G-LSF0D2ZMTS"
+      apiKey: "AIzaSyDTen986itdXVggJ-JlxnPExVCLrXt8YLs",
+      authDomain: "onemorefloorrpg2.firebaseapp.com",
+      projectId: "onemorefloorrpg2",
+      storageBucket: "onemorefloorrpg2.firebasestorage.app",
+      messagingSenderId: "1053749907050",
+      appId: "1:1053749907050:web:624dad72926d801c228413",
+      measurementId: "G-6FEYHGLT32"
     };
     window.FIREBASE_FUNCTIONS_REGION = "us-central1";
   </script>
