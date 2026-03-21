@@ -1206,7 +1206,7 @@
       agi: 11,
       dex: 16,
       exp: 220,
-      minFloor: 95,
+      minFloor: 80,
       maxFloor: 100,
       skills: ["fireball", "power_strike", "roar"],
     },
@@ -1327,7 +1327,7 @@
       agi: 20,
       dex: 22,
       exp: 420,
-      minFloor: 165,
+      minFloor: 155,
       maxFloor: 200,
       skills: ["thunder_strike", "ice_lance"],
     },
@@ -1340,7 +1340,7 @@
       agi: 18,
       dex: 20,
       exp: 450,
-      minFloor: 175,
+      minFloor: 155,
       maxFloor: 200,
       skills: ["fireball", "power_strike", "silence_hex"],
     },
@@ -1370,7 +1370,7 @@
       dex: 28,
       exp: 600,
       minFloor: 201,
-      maxFloor: 240,
+      maxFloor: 500,
       skills: ["fireball", "silence_hex"],
     },
     {
@@ -1383,7 +1383,7 @@
       dex: 22,
       exp: 640,
       minFloor: 210,
-      maxFloor: 260,
+      maxFloor: 500,
       skills: ["crushing_blow", "power_strike"],
     },
     {
@@ -1396,7 +1396,7 @@
       dex: 36,
       exp: 680,
       minFloor: 230,
-      maxFloor: 300,
+      maxFloor: 500,
       skills: ["multi_slash", "doom_mark", "roar"],
     },
     {
@@ -1409,7 +1409,7 @@
       dex: 28,
       exp: 720,
       minFloor: 250,
-      maxFloor: 330,
+      maxFloor: 500,
       skills: ["fireball", "ice_lance", "heal", "silence_hex"],
     },
     {
@@ -1422,7 +1422,7 @@
       dex: 20,
       exp: 760,
       minFloor: 270,
-      maxFloor: 360,
+      maxFloor: 500,
       skills: ["crushing_blow", "power_strike"],
     },
     {
@@ -1435,7 +1435,7 @@
       dex: 40,
       exp: 820,
       minFloor: 300,
-      maxFloor: 400,
+      maxFloor: 500,
       skills: ["multi_slash", "power_strike", "doom_mark"],
     },
     {
@@ -1448,7 +1448,7 @@
       dex: 44,
       exp: 880,
       minFloor: 330,
-      maxFloor: 420,
+      maxFloor: 500,
       skills: ["fireball", "thunder_strike", "crushing_blow"],
     },
     {
@@ -1460,8 +1460,8 @@
       agi: 34,
       dex: 40,
       exp: 940,
-      minFloor: 360,
-      maxFloor: 450,
+      minFloor: 350,
+      maxFloor: 500,
       skills: ["power_strike", "crushing_blow", "doom_mark"],
     },
     {
@@ -1473,8 +1473,8 @@
       agi: 42,
       dex: 48,
       exp: 1020,
-      minFloor: 390,
-      maxFloor: 470,
+      minFloor: 350,
+      maxFloor: 500,
       skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"],
     },
     {
@@ -1499,7 +1499,7 @@
       agi: 40,
       dex: 56,
       exp: 1250,
-      minFloor: 460,
+      minFloor: 450,
       maxFloor: 500,
       skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow"],
     },
@@ -1512,7 +1512,7 @@
       agi: 42,
       dex: 60,
       exp: 1400,
-      minFloor: 485,
+      minFloor: 450,
       maxFloor: 500,
       skills: ["fireball", "doom_mark", "silence_hex", "heal"],
     },
@@ -1530,7 +1530,7 @@
       dex: 62,
       exp: 1500,
       minFloor: 501,
-      maxFloor: 600,
+      maxFloor: 800,
       skills: ["multi_slash", "power_strike"],
     },
     {
@@ -1543,7 +1543,7 @@
       dex: 55,
       exp: 1600,
       minFloor: 530,
-      maxFloor: 640,
+      maxFloor: 800,
       skills: ["crushing_blow", "roar", "power_strike"],
     },
     {
@@ -1556,7 +1556,7 @@
       dex: 66,
       exp: 1750,
       minFloor: 560,
-      maxFloor: 680,
+      maxFloor: 800,
       skills: ["fireball", "ice_lance", "thunder_strike"],
     },
     {
@@ -1569,7 +1569,7 @@
       dex: 74,
       exp: 1900,
       minFloor: 600,
-      maxFloor: 730,
+      maxFloor: 800,
       skills: ["fireball", "doom_mark", "crushing_blow"],
     },
     {
@@ -1582,7 +1582,7 @@
       dex: 82,
       exp: 2100,
       minFloor: 650,
-      maxFloor: 780,
+      maxFloor: 800,
       skills: ["multi_slash", "doom_mark", "power_strike"],
     },
     {
@@ -1638,7 +1638,7 @@
       dex: 80,
       exp: 3000,
       minFloor: 801,
-      maxFloor: 900,
+      maxFloor: 1000,
       skills: [
         "fireball",
         "thunder_strike",
@@ -1657,7 +1657,7 @@
       dex: 90,
       exp: 3350,
       minFloor: 830,
-      maxFloor: 930,
+      maxFloor: 1000,
       skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"],
     },
     {
@@ -1670,7 +1670,7 @@
       dex: 94,
       exp: 3750,
       minFloor: 870,
-      maxFloor: 960,
+      maxFloor: 1000,
       skills: [
         "fireball",
         "thunder_strike",
@@ -1689,7 +1689,7 @@
       dex: 104,
       exp: 4400,
       minFloor: 910,
-      maxFloor: 985,
+      maxFloor: 1000,
       skills: [
         "fireball",
         "ice_lance",
@@ -1744,7 +1744,7 @@
       dex: 118,
       exp: 7600,
       minFloor: 1001,
-      maxFloor: 1125,
+      maxFloor: 1500,
       skills: ["power_strike", "crushing_blow", "roar", "heal"],
     },
     {
@@ -1757,7 +1757,7 @@
       dex: 122,
       exp: 7900,
       minFloor: 1040,
-      maxFloor: 1180,
+      maxFloor: 1500,
       skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"],
     },
     {
@@ -1770,7 +1770,7 @@
       dex: 130,
       exp: 8400,
       minFloor: 1090,
-      maxFloor: 1240,
+      maxFloor: 1500,
       skills: ["thunder_strike", "crushing_blow", "multi_slash", "doom_mark"],
     },
     {
@@ -1783,7 +1783,7 @@
       dex: 134,
       exp: 9000,
       minFloor: 1160,
-      maxFloor: 1320,
+      maxFloor: 1500,
       skills: [
         "fireball",
         "thunder_strike",
@@ -1802,7 +1802,7 @@
       dex: 146,
       exp: 9600,
       minFloor: 1230,
-      maxFloor: 1400,
+      maxFloor: 1500,
       skills: ["ice_lance", "silence_hex", "doom_mark", "multi_slash", "heal"],
     },
     {
@@ -1815,7 +1815,7 @@
       dex: 160,
       exp: 10300,
       minFloor: 1300,
-      maxFloor: 1460,
+      maxFloor: 1500,
       skills: ["multi_slash", "power_strike", "doom_mark", "bite_poison"],
     },
     {
@@ -1866,7 +1866,7 @@
       dex: 170,
       exp: 13800,
       minFloor: 1501,
-      maxFloor: 1620,
+      maxFloor: 2000,
       skills: ["multi_slash", "power_strike", "doom_mark", "heal"],
     },
     {
@@ -1879,7 +1879,7 @@
       dex: 182,
       exp: 14600,
       minFloor: 1530,
-      maxFloor: 1680,
+      maxFloor: 2000,
       skills: ["thunder_strike", "crushing_blow", "doom_mark", "roar", "heal"],
     },
     {
@@ -1892,7 +1892,7 @@
       dex: 176,
       exp: 15000,
       minFloor: 1560,
-      maxFloor: 1720,
+      maxFloor: 2000,
       skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"],
     },
     {
@@ -1905,7 +1905,7 @@
       dex: 188,
       exp: 16200,
       minFloor: 1610,
-      maxFloor: 1780,
+      maxFloor: 2000,
       skills: ["power_strike", "crushing_blow", "multi_slash", "doom_mark"],
     },
     {
@@ -1918,7 +1918,7 @@
       dex: 194,
       exp: 17100,
       minFloor: 1660,
-      maxFloor: 1840,
+      maxFloor: 2000,
       skills: [
         "ice_lance",
         "thunder_strike",
@@ -1937,7 +1937,7 @@
       dex: 206,
       exp: 18400,
       minFloor: 1720,
-      maxFloor: 1910,
+      maxFloor: 2000,
       skills: ["fireball", "doom_mark", "silence_hex", "heal"],
     },
     {
@@ -1950,7 +1950,7 @@
       dex: 202,
       exp: 19800,
       minFloor: 1790,
-      maxFloor: 1970,
+      maxFloor: 2000,
       skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"],
     },
     {
@@ -1987,7 +1987,7 @@
       dex: 250,
       exp: 29000,
       minFloor: 2001,
-      maxFloor: 2240,
+      maxFloor: 3000,
       skills: ["crushing_blow", "power_strike", "doom_mark", "heal"],
     },
     {
@@ -2000,7 +2000,7 @@
       dex: 264,
       exp: 31500,
       minFloor: 2140,
-      maxFloor: 2440,
+      maxFloor: 3000,
       skills: ["thunder_strike", "silence_hex", "doom_mark", "roar", "heal"],
     },
     {
@@ -2013,7 +2013,7 @@
       dex: 270,
       exp: 33800,
       minFloor: 2260,
-      maxFloor: 2620,
+      maxFloor: 3000,
       skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"],
     },
     {
@@ -2026,7 +2026,7 @@
       dex: 282,
       exp: 36500,
       minFloor: 2400,
-      maxFloor: 2800,
+      maxFloor: 3000,
       skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"],
     },
     {
@@ -2063,7 +2063,7 @@
       dex: 328,
       exp: 45500,
       minFloor: 3001,
-      maxFloor: 3360,
+      maxFloor: 4500,
       skills: ["power_strike", "crushing_blow", "doom_mark", "heal"],
     },
     {
@@ -2076,7 +2076,7 @@
       dex: 342,
       exp: 48800,
       minFloor: 3200,
-      maxFloor: 3680,
+      maxFloor: 4500,
       skills: [
         "fireball",
         "ice_lance",
@@ -2096,7 +2096,7 @@
       dex: 358,
       exp: 52500,
       minFloor: 3440,
-      maxFloor: 3980,
+      maxFloor: 4500,
       skills: [
         "thunder_strike",
         "multi_slash",
@@ -2115,7 +2115,7 @@
       dex: 372,
       exp: 56000,
       minFloor: 3700,
-      maxFloor: 4260,
+      maxFloor: 4500,
       skills: [
         "power_strike",
         "multi_slash",
@@ -2158,7 +2158,7 @@
       dex: 420,
       exp: 68200,
       minFloor: 4501,
-      maxFloor: 4680,
+      maxFloor: 5000,
       skills: ["crushing_blow", "thunder_strike", "doom_mark", "heal"],
     },
     {
@@ -2171,7 +2171,7 @@
       dex: 438,
       exp: 73000,
       minFloor: 4600,
-      maxFloor: 4820,
+      maxFloor: 5000,
       skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"],
     },
     {
@@ -2184,7 +2184,7 @@
       dex: 456,
       exp: 78800,
       minFloor: 4720,
-      maxFloor: 4920,
+      maxFloor: 5000,
       skills: [
         "multi_slash",
         "power_strike",
