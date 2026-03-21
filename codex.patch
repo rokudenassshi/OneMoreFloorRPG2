@@ -1,112 +1,127 @@
-diff --git a/js/core.js b/js/core.js
-index 4e584b81746f73cd04d1b8a2a493f0a4915f14a3..537da71cf45ef3e754d215244880383adcd4cb3b 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -4537,50 +4537,51 @@
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index 2b6738bd1f3dded72364a271925947c32342e3cd..d7138dc798f1fe731114fbe54ae8fc8c9cfbfb96 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -20,56 +20,56 @@
+     }
+   }
  
-       checkLevelUp();
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
+   }
  
-       // ドロップ判定
-       let dropChance = 30;
-       dropChance += getAccessoryBonus("dropRate");
-       dropChance += getAchievementItemDropRateBonus();
-       dropChance +=
-         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
-           ? jobs[gameData.player.job].traits.dropRateBonus
-           : 0;
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
+   }
  
-       const willDrop = Math.random() * 100 < dropChance;
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+   const serialCodeLookup = {
+     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+     stay8q2m1v7xk9: "stayBattle",
  
-       if (willDrop) {
-         const isNamedEnemy = !!enemy.isNamed;
-         const isHighSearchNamedEnemy =
-           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
-         const forcedSpecialPrefixRarityPool = isNamedEnemy
-           ? isHighSearchNamedEnemy
-             ? ["rare", "epic", "legendary"]
-             : ["rare", "epic"]
-           : null;
-         const item = generateEquipment({
-           player: gameData.player,
-+          specialPrefixEnabled: isNamedEnemy,
-           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
-         });
-         if (isInAsuraWorld() && item && typeof item === "object") {
-           ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
-             const v = Number(item[k]);
-             if (Number.isFinite(v) && v > 0) {
-               item[k] = Math.max(1, Math.round(v * ASURA_ITEM_STAT_MULTIPLIER));
+     // `startdash` + 英数字10文字（固定）: 各紋章10個配布
+     startdashi1u474nk3ks: "startDashEmblems",
+   };
+ 
+-  const START_DASH_EMBLEM_IDS = [
+-    "emblem_strength",
+-    "emblem_vitality",
+-    "emblem_intelligence",
+-    "emblem_agility",
+-    "emblem_dexterity",
++  const START_DASH_EMBLEMS = [
++    { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
++    { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
++    { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
++    { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
++    { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
+   ];
+ 
+ 
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.stayBattle) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
+ 
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.stayBattle = true;
+         }
+ 
+@@ -136,47 +136,56 @@
+       },
+       logMessage: "✨ シリアルコードを確認しました。",
+     },
+ 
+     // スタートダッシュ（各紋章 ×10）
+     startDashEmblems: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.startDashEmblems) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.startDashEmblems);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.startDashEmblems = true;
+         saveStore(s);
+ 
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
+             p.serialUnlocks = {};
+           }
+           p.serialUnlocks.startDashEmblems = true;
+ 
+           if (!Array.isArray(p.valuables)) p.valuables = [];
+-          for (const id of START_DASH_EMBLEM_IDS) {
+-            const found = p.valuables.find((v) => v && v.id === id);
++          for (const emblem of START_DASH_EMBLEMS) {
++            const found = p.valuables.find((v) => v && v.id === emblem.id);
+             if (found) {
+               found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
++              found.name = emblem.name;
++              found.statKey = emblem.statKey;
++              if (typeof found.description !== "string") found.description = "";
+             } else {
+-              p.valuables.push({ id, count: 10 });
++              p.valuables.push({
++                id: emblem.id,
++                name: emblem.name,
++                statKey: emblem.statKey,
++                description: "",
++                count: 10,
++              });
              }
-           });
-         }
-         const soldByAutoSell = evaluateAutoSellDropItem(item);
-         const skipAccessoryPickup = shouldSkipAccessoryPickupByOwnedValue(
-           item,
-           gameData.player,
-         );
- 
-         if (skipAccessoryPickup) {
-           log(`⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`);
-         } else if (soldByAutoSell) {
-           log(`💸 ${item.name}を自動売却した。`);
-         } else {
-           gameData.player.inventory.push(item);
-           log(`${item.name}を手に入れた！`);
-         }
- 
-@@ -5676,52 +5677,54 @@
- 
-     const typeKey = typeOptions[Math.floor(Math.random() * typeOptions.length)];
-     const type = equipTypes[typeKey];
- 
-     const rarity = getRarity(floor);
- 
-     const item = {
-       baseName: type.name,
-       name: type.name,
-       type: typeKey,
-       category: type.category,
-       hands: type.hands,
-       rarity,
-       locked: false,
-     };
- 
-     // UI表示用（固有能力/ランダムオプションの内訳）
-     item.fixedEffects = [];
-     item.randomOptionDetails = [];
- 
-     // 特殊接頭語（固有効果付きの追加接頭語）
-     // - weapon/armor のみに付与（accessory は元から効果が多いため対象外）
-     // - 見た目: item.name の先頭に接頭語を付ける
-     // - 効果: item.effects に付与（既存の集計ロジックで反映される）
-     // - UI: 固有能力（fixedEffects）として表示
-+    const specialPrefixEnabled =
-+      options?.specialPrefixEnabled !== false && category !== "accessory";
-     if (
--      category !== "accessory" &&
-+      specialPrefixEnabled &&
-       typeof window.rollSpecialPrefix === "function" &&
-       typeof window.applySpecialPrefixEffects === "function"
-     ) {
-       // 特殊接頭語抽選（rarity / category / typeKey）
-       const forceSpecialPrefixRarityPool =
-         options && Array.isArray(options.specialPrefixRarityPool)
-           ? options.specialPrefixRarityPool
-           : null;
-       let sp = window.rollSpecialPrefix(rarity, category, typeKey, {
-         forceRarityPool: forceSpecialPrefixRarityPool,
-       });
-       if (sp) {
-         window.applySpecialPrefixEffects(item, sp);
- 
-         // 表示名に追加（例: 全知全能の破邪の剣）
-         if (sp.name && typeof sp.name === "string") {
-           item._specialPrefixName = sp.name;
- 
-           // UIで「特殊接頭語のレア度」を参照できるよう保持
-           if (typeof sp.rarity === "string" && sp.rarity) {
-             item._specialPrefixRarity = sp.rarity;
            }
          }
  
-         // UIの「装備固有能力」に表示
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
+       },
+       logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
+     },
+   };
+ 
+   // グローバルに公開（ui.js が参照する）
+   window.serialCodeLookup = serialCodeLookup;
+   window.serialCodeActions = serialCodeActions;
+ })();

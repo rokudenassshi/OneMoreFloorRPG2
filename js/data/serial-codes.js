@@ -42,12 +42,12 @@
     startdashi1u474nk3ks: "startDashEmblems",
   };
 
-  const START_DASH_EMBLEM_IDS = [
-    "emblem_strength",
-    "emblem_vitality",
-    "emblem_intelligence",
-    "emblem_agility",
-    "emblem_dexterity",
+  const START_DASH_EMBLEMS = [
+    { id: "emblem_strength", name: "力の紋章", statKey: "strength" },
+    { id: "emblem_vitality", name: "体力の紋章", statKey: "vitality" },
+    { id: "emblem_intelligence", name: "賢さの紋章", statKey: "intelligence" },
+    { id: "emblem_agility", name: "素早さの紋章", statKey: "agility" },
+    { id: "emblem_dexterity", name: "器用さの紋章", statKey: "dexterity" },
   ];
 
 
@@ -158,12 +158,21 @@
           p.serialUnlocks.startDashEmblems = true;
 
           if (!Array.isArray(p.valuables)) p.valuables = [];
-          for (const id of START_DASH_EMBLEM_IDS) {
-            const found = p.valuables.find((v) => v && v.id === id);
+          for (const emblem of START_DASH_EMBLEMS) {
+            const found = p.valuables.find((v) => v && v.id === emblem.id);
             if (found) {
               found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
+              found.name = emblem.name;
+              found.statKey = emblem.statKey;
+              if (typeof found.description !== "string") found.description = "";
             } else {
-              p.valuables.push({ id, count: 10 });
+              p.valuables.push({
+                id: emblem.id,
+                name: emblem.name,
+                statKey: emblem.statKey,
+                description: "",
+                count: 10,
+              });
             }
           }
         }

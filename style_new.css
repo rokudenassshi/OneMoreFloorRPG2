@@ -462,6 +462,7 @@ button:active {
 }
 
 .stat-value {
+  font-size: 14px;
   font-weight: bold;
   color: #4a6cf7;
 }
@@ -1028,6 +1029,9 @@ button.item-action-btn.item-action-btn-text {
   .status-tab-btn{
     padding:8px 6px;
     font-size: 13px;
+  }
+  .stat-value {
+    font-size: 12px;
   }
 }
 
