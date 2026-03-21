@@ -72,6 +72,15 @@
       bonus: {},
     },
     {
+      id: "serial_stay_current_floor",
+      title: "階層に留まる",
+      desc: "シリアルコード（現在階層連戦）を入力する",
+      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
+      progress: (p) =>
+        p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
+      bonus: {},
+    },
+    {
       id: "serial_floor_cap_lift_250",
       title: "深淵への通行証",
       desc: "シリアルコード（階層上限解放）を入力する",

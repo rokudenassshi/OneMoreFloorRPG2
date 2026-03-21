@@ -1,70 +1,64 @@
-diff --git a/js/core.js b/js/core.js
-index 04ff20ad53e45e070b33a58e722b2273e423b5fd..60e42756235facfc2c876932221825bfdea9af2d 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -4498,59 +4498,65 @@
-       // 撃破カウント
-       if (
-         !gameData.player.jobKills ||
-         typeof gameData.player.jobKills !== "object"
-       ) {
-         gameData.player.jobKills = {};
-       }
-       const jk = Number(gameData.player.jobKills[gameData.player.job] || 0);
-       gameData.player.jobKills[gameData.player.job] =
-         (Number.isFinite(jk) ? jk : 0) + 1;
-       gameData.player.totalKills = (gameData.player.totalKills || 0) + 1;
-       if (enemy && enemy.isNamed) {
-         gameData.player.namedKills = (gameData.player.namedKills || 0) + 1;
-       }
- 
-       // 実績チェック（解除ログはここで出す）
-       checkAndUnlockAchievements();
- 
-       // 経験値
-       let exp = enemy.exp;
-       const expBonus = getAccessoryBonus("expBonus");
-       const expSkillBonus =
-         gameData.player.skills && gameData.player.skills.exp_up
-           ? gameData.player.skills.exp_up
-           : 0;
-+      const hasExpLevelMultiplier =
-+        Number(gameData.player?.skills?.common_exp_level_mult || 0) > 0;
-+      const levelExpMultiplier = hasExpLevelMultiplier
-+        ? Math.max(1, Number(gameData.player?.level || 1))
-+        : 1;
-       const expAchRate = getAchievementExpBonusRate();
-       const jobExpRate =
-         typeof jobs?.[gameData.player?.job]?.traits?.expRate === "number"
-           ? jobs[gameData.player.job].traits.expRate
-           : 0;
-       exp = Math.round(
-         exp *
-           (1 + expBonus / 100) *
-           (1 + expSkillBonus / 100) *
-+          levelExpMultiplier *
-           (1 + expAchRate) *
-           (1 + jobExpRate),
-       );
- 
-       gameData.player.exp += exp;
-       log(`${exp}EXPを獲得！`);
- 
-       checkLevelUp();
- 
-       // ドロップ判定
-       let dropChance = 30;
-       dropChance += getAccessoryBonus("dropRate");
-       dropChance += getAchievementItemDropRateBonus();
-       dropChance +=
-         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
-           ? jobs[gameData.player.job].traits.dropRateBonus
-           : 0;
- 
-       const willDrop = Math.random() * 100 < dropChance;
- 
-       if (willDrop) {
-         const isNamedEnemy = !!enemy.isNamed;
-         const isHighSearchNamedEnemy =
-           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
-         const forcedSpecialPrefixRarityPool = isNamedEnemy
+diff --git a/js/data/achievements.js b/js/data/achievements.js
+index 723a888543190765f3d194477672bbffe4710f5d..28c0ecd10ac71a6f79387b5343f8d367f5a54413 100644
+--- a/js/data/achievements.js
++++ b/js/data/achievements.js
+@@ -49,50 +49,59 @@
+       id: "elite_adventurer",
+       title: "百戦錬磨",
+       desc: "敵を1000体倒す",
+       isDone: (p) => Number(p.totalKills || 0) >= 1000,
+       progress: (p) => `${Math.min(Number(p.totalKills || 0), 1000)}/1000`,
+       // 経験値 +10%
+       bonus: { expRate: 0.1 },
+     },
+     {
+       id: "level_50",
+       title: "力の芽生え",
+       desc: "プレイヤーレベル50に到達する",
+       isDone: (p) => Number(p.level || 1) >= 50,
+       progress: (p) => `${Math.min(Number(p.level || 1), 50)}/50`,
+       bonus: { expRate: 0.05 },
+     },
+     {
+       id: "serial_stay_battle",
+       title: "連戦の心得",
+       desc: "シリアルコード（連戦）を入力する",
+       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
+       bonus: {},
+     },
++    {
++      id: "serial_stay_current_floor",
++      title: "階層に留まる",
++      desc: "シリアルコード（現在階層連戦）を入力する",
++      isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle),
++      progress: (p) =>
++        p && p.serialUnlocks && p.serialUnlocks.stayBattle ? "1/1" : "0/1",
++      bonus: {},
++    },
+     {
+       id: "serial_floor_cap_lift_250",
+       title: "深淵への通行証",
+       desc: "シリアルコード（階層上限解放）を入力する",
+       isDone: (p) =>
+         !!(p && p.serialUnlocks && p.serialUnlocks.floorCapLift250),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.floorCapLift250 ? "1/1" : "0/1",
+       bonus: {},
+     },
+     {
+       id: "past_life_memory",
+       title: "前世の記憶",
+       desc: "シリアルコードで解放する",
+       isDone: (p) => !!(p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory),
+       progress: (p) =>
+         p && p.serialUnlocks && p.serialUnlocks.pastLifeMemory ? "1/1" : "0/1",
+       // 経験値 +20%
+       bonus: { expRate: 0.2 },
+     },
+     {
+       id: "serial_start_dash_emblems",
+       title: "スタートダッシュ",
+       desc: "シリアルコード（スタートダッシュ）を入力する",
+       isDone: (p) =>
