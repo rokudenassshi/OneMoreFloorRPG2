@@ -1,60 +1,64 @@
-diff --git a/js/core.js b/js/core.js
-index 7cb7b4746b69ac818379857f4a66b5ac89634b3c..ac75eaff71f78dd19979b73328419111895fc894 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -518,53 +518,54 @@
+diff --git a/js/data/skills.js b/js/data/skills.js
+index 9d373cfed0748fa8750fcb4cb94fbe025acd1ba1..e1e4a0c076f8743366eab319542efd03715a88ce 100644
+--- a/js/data/skills.js
++++ b/js/data/skills.js
+@@ -118,50 +118,59 @@
+       requiredPoints: 10,
+       requiredMaxReachedFloor: 5000,
+       desc: "追撃率+{skillFollowUpChance}%（最大60%）",
+       effect: (lv) => ({ skillFollowUpChance: lv * 0.005 }),
+     },
+     common_followup_damage_tuning: {
+       name: "追撃威力強化",
+       type: "passive",
+       job: "all",
+       maxLevel: Infinity,
+       requiredPoints: 10,
+       requiredMaxReachedFloor: 5000,
+       desc: "追撃威力+{followUpDamageMulBonus}%（上限なし）",
+       effect: (lv) => ({ followUpDamageMulBonus: lv * 0.1 }),
+     },
+     common_crit_rate_tuning: {
+       name: "会心率強化",
+       type: "passive",
+       job: "all",
+       maxLevel: 200,
+       requiredPoints: 10,
+       requiredMaxReachedFloor: 5000,
+       desc: "会心率+{critBonus}%（最大100%）",
+       effect: (lv) => ({ critBonus: lv * 0.5 }),
+     },
++    common_guarded_attack: {
++      name: "護りの構え",
++      type: "passive",
++      job: "all",
++      maxLevel: 1,
++      requiredPoints: 1,
++      desc: "たたかう時に攻撃せず、防御を行う",
++      effect: (_lv) => ({}),
++    },
  
-   function savePayloadToLocalCache(payload) {
-     try {
-       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-       return true;
-     } catch (e) {
-       return false;
-     }
-   }
- 
-   function loadPayloadFromLocalCache() {
-     try {
-       const raw = localStorage.getItem(SAVE_KEY);
-       if (!raw) return null;
-       const parsed = JSON.parse(raw);
-       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
-       return parsed;
-     } catch (e) {
-       return null;
-     }
-   }
- 
-   function applySavePayload(payload) {
-     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
- 
-+    gameData.player = payload.player || gameData.player;
-+    // 階層上限は serialUnlocks に依存するため、player 復元後に clamp する
-     gameData.floor = clampFloor(payload.floor || 1);
-     gameData.gameState = payload.gameState || "EXPLORE";
--    gameData.player = payload.player || gameData.player;
-     gameData.enemy = payload.enemy || null;
-     gameData.battleFloor =
-       payload.battleFloor != null ? payload.battleFloor : null;
-     gameData.pendingFloorAfterWin =
-       payload.pendingFloorAfterWin != null
-         ? payload.pendingFloorAfterWin
-         : null;
- 
-     ensureAutoSellConfig(gameData.player);
-     ensureAutoAllocateExpUpConfig(gameData.player);
-     ensureAutoAllocateStatPointsConfig(gameData.player);
-     ensureSerialOptionsConfig(gameData.player);
-     ensureWorldStateConfig(gameData.player);
-     // テスト上限を越えたセーブが来ても破綻しないように丸める
-     try {
-       if (gameData && gameData.player) {
-         gameData.player.maxReachedFloor = clampFloor(
-           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
-         );
-       }
-       if (Number.isFinite(Number(gameData.battleFloor))) {
-         gameData.battleFloor = clampFloor(gameData.battleFloor);
-       }
-       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
-         gameData.pendingFloorAfterWin = clampFloor(
+     // ===================================
+     // 剣士 (swordsman)
+     // ===================================
+     sword_mastery: {
+       name: "剣術マスタリー",
+       type: "passive",
+       job: "swordsman",
+       maxLevel: 5,
+       desc: "物理攻撃力+{value}",
+       effect: (lv) => ({ attackBonus: lv * 5 }),
+     },
+     sword_focus: {
+       name: "剣の心得",
+       type: "passive",
+       job: "swordsman",
+       maxLevel: 5,
+       desc: "命中率+{value}%",
+       effect: (lv) => ({ accuracyBonus: lv * 2 }),
+     },
+     power_slash: {
+       name: "パワースラッシュ",
+       type: "active",
+       accuracy: 100,
+       job: "swordsman",
