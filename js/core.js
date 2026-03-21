@@ -4559,6 +4559,7 @@
           : null;
         const item = generateEquipment({
           player: gameData.player,
+          specialPrefixEnabled: isNamedEnemy,
           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
         });
         if (isInAsuraWorld() && item && typeof item === "object") {
@@ -5698,8 +5699,10 @@
     // - 見た目: item.name の先頭に接頭語を付ける
     // - 効果: item.effects に付与（既存の集計ロジックで反映される）
     // - UI: 固有能力（fixedEffects）として表示
+    const specialPrefixEnabled =
+      options?.specialPrefixEnabled !== false && category !== "accessory";
     if (
-      category !== "accessory" &&
+      specialPrefixEnabled &&
       typeof window.rollSpecialPrefix === "function" &&
       typeof window.applySpecialPrefixEffects === "function"
     ) {
