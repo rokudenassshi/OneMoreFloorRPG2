@@ -572,123 +572,129 @@
     { name: "スライム", hp: 55, str: 5, vit: 3, int: 1, agi: 2, dex: 3, exp: 22, minFloor: 1, maxFloor: 100, skills: ["multi_slash"] },
     { name: "コウモリ", hp: 60, str: 6, vit: 3, int: 2, agi: 10, dex: 8, exp: 26, minFloor: 1, maxFloor: 100, skills: ["multi_slash"] },
     { name: "ゴブリン", hp: 85, str: 8, vit: 5, int: 2, agi: 6, dex: 7, exp: 35, minFloor: 1, maxFloor: 100, skills: ["power_strike", "roar"] },
-    { name: "コボルド", hp: 95, str: 9, vit: 5, int: 2, agi: 8, dex: 9, exp: 40, minFloor: 3, maxFloor: 100, skills: ["power_strike"] },
-    { name: "ウルフ", hp: 110, str: 10, vit: 7, int: 2, agi: 12, dex: 9, exp: 46, minFloor: 5, maxFloor: 100, skills: ["multi_slash", "bite_poison"] },
-    { name: "スケルトン", hp: 130, str: 11, vit: 9, int: 3, agi: 6, dex: 8, exp: 55, minFloor: 8, maxFloor: 100, skills: ["power_strike"] },
-    { name: "盗賊", hp: 120, str: 10, vit: 7, int: 3, agi: 14, dex: 14, exp: 60, minFloor: 10, maxFloor: 100, skills: ["multi_slash", "roar"] },
-    { name: "オーク", hp: 170, str: 14, vit: 12, int: 3, agi: 5, dex: 6, exp: 70, minFloor: 15, maxFloor: 100, skills: ["power_strike", "crushing_blow"] },
-    { name: "ハーピー", hp: 155, str: 12, vit: 10, int: 6, agi: 16, dex: 12, exp: 75, minFloor: 18, maxFloor: 100, skills: ["roar", "ice_lance"] },
-    { name: "リザードマン", hp: 190, str: 15, vit: 13, int: 4, agi: 9, dex: 9, exp: 85, minFloor: 22, maxFloor: 100, skills: ["bite_poison", "power_strike"] },
-    { name: "トロール", hp: 280, str: 18, vit: 16, int: 3, agi: 4, dex: 5, exp: 110, minFloor: 28, maxFloor: 100, skills: ["heal", "crushing_blow"] },
-    { name: "ダークエルフ", hp: 220, str: 12, vit: 11, int: 18, agi: 14, dex: 13, exp: 120, minFloor: 32, maxFloor: 100, skills: ["fireball", "ice_lance", "multi_slash"] },
-    { name: "サソリ", hp: 240, str: 16, vit: 14, int: 3, agi: 10, dex: 10, exp: 125, minFloor: 40, maxFloor: 100, skills: ["toxic_spit", "bite_poison"] },
-    { name: "ゴーレム", hp: 380, str: 18, vit: 22, int: 2, agi: 3, dex: 6, exp: 150, minFloor: 55, maxFloor: 100, skills: ["crushing_blow"] },
-    { name: "リッチ", hp: 330, str: 10, vit: 14, int: 30, agi: 8, dex: 11, exp: 180, minFloor: 65, maxFloor: 100, skills: ["fireball", "ice_lance", "heal"] },
-    { name: "ミノタウロス", hp: 420, str: 24, vit: 20, int: 4, agi: 9, dex: 10, exp: 190, minFloor: 80, maxFloor: 100, skills: ["power_strike", "roar", "crushing_blow"] },
-    { name: "ドラゴン", hp: 520, str: 28, vit: 22, int: 18, agi: 11, dex: 16, exp: 220, minFloor: 95, maxFloor: 100, skills: ["fireball", "power_strike", "roar"] },
+    { name: "コボルド", hp: 95, str: 9, vit: 5, int: 2, agi: 8, dex: 9, exp: 40, minFloor: 1, maxFloor: 100, skills: ["power_strike"] },
+    { name: "ウルフ", hp: 110, str: 10, vit: 7, int: 2, agi: 12, dex: 9, exp: 46, minFloor: 1, maxFloor: 100, skills: ["multi_slash", "bite_poison"] },
+    { name: "スケルトン", hp: 130, str: 11, vit: 9, int: 3, agi: 6, dex: 8, exp: 55, minFloor: 1, maxFloor: 100, skills: ["power_strike"] },
+    { name: "盗賊", hp: 120, str: 10, vit: 7, int: 3, agi: 14, dex: 14, exp: 60, minFloor: 1, maxFloor: 100, skills: ["multi_slash", "roar"] },
+    { name: "オーク", hp: 170, str: 14, vit: 12, int: 3, agi: 5, dex: 6, exp: 70, minFloor: 1, maxFloor: 100, skills: ["power_strike", "crushing_blow"] },
+    { name: "ハーピー", hp: 155, str: 12, vit: 10, int: 6, agi: 16, dex: 12, exp: 75, minFloor: 1, maxFloor: 100, skills: ["roar", "ice_lance"] },
+    { name: "リザードマン", hp: 190, str: 15, vit: 13, int: 4, agi: 9, dex: 9, exp: 85, minFloor: 1, maxFloor: 100, skills: ["bite_poison", "power_strike"] },
+    { name: "トロール", hp: 280, str: 18, vit: 16, int: 3, agi: 4, dex: 5, exp: 110, minFloor: 1, maxFloor: 100, skills: ["heal", "crushing_blow"] },
+    { name: "ダークエルフ", hp: 220, str: 12, vit: 11, int: 18, agi: 14, dex: 13, exp: 120, minFloor: 1, maxFloor: 100, skills: ["fireball", "ice_lance", "multi_slash"] },
+    { name: "サソリ", hp: 240, str: 16, vit: 14, int: 3, agi: 10, dex: 10, exp: 125, minFloor: 1, maxFloor: 100, skills: ["toxic_spit", "bite_poison"] },
+    { name: "ゴーレム", hp: 380, str: 18, vit: 22, int: 2, agi: 3, dex: 6, exp: 150, minFloor: 1, maxFloor: 100, skills: ["crushing_blow"] },
+    { name: "リッチ", hp: 330, str: 10, vit: 14, int: 30, agi: 8, dex: 11, exp: 180, minFloor: 1, maxFloor: 100, skills: ["fireball", "ice_lance", "heal"] },
+    { name: "ミノタウロス", hp: 420, str: 24, vit: 20, int: 4, agi: 9, dex: 10, exp: 190, minFloor: 1, maxFloor: 100, skills: ["power_strike", "roar", "crushing_blow"] },
+    { name: "ドラゴン", hp: 520, str: 28, vit: 22, int: 18, agi: 11, dex: 16, exp: 220, minFloor: 1, maxFloor: 100, skills: ["fireball", "power_strike", "roar"] },
 
     // --------------------
     // 100〜200F
     // --------------------
     { name: "装甲オーク", hp: 650, str: 30, vit: 30, int: 5, agi: 6, dex: 10, exp: 260, minFloor: 101, maxFloor: 200, skills: ["crushing_blow", "power_strike"] },
-    { name: "影の暗殺者", hp: 520, str: 28, vit: 18, int: 8, agi: 26, dex: 24, exp: 275, minFloor: 105, maxFloor: 200, skills: ["multi_slash", "power_strike", "roar"] },
-    { name: "ワーウルフ", hp: 720, str: 34, vit: 22, int: 6, agi: 22, dex: 18, exp: 290, minFloor: 112, maxFloor: 200, skills: ["multi_slash", "bite_poison", "power_strike"] },
-    { name: "死霊騎士", hp: 820, str: 36, vit: 32, int: 10, agi: 12, dex: 16, exp: 310, minFloor: 120, maxFloor: 200, skills: ["crushing_blow", "doom_mark"] },
-    { name: "邪術師", hp: 640, str: 20, vit: 22, int: 40, agi: 14, dex: 16, exp: 330, minFloor: 128, maxFloor: 200, skills: ["fireball", "ice_lance", "silence_hex"] },
-    { name: "ワイバーン", hp: 900, str: 38, vit: 28, int: 18, agi: 18, dex: 20, exp: 350, minFloor: 135, maxFloor: 200, skills: ["fireball", "thunder_strike", "roar"] },
-    { name: "バジリスク", hp: 980, str: 40, vit: 30, int: 16, agi: 14, dex: 18, exp: 370, minFloor: 145, maxFloor: 200, skills: ["toxic_spit", "doom_mark"] },
-    { name: "キマイラ", hp: 1050, str: 42, vit: 34, int: 20, agi: 16, dex: 18, exp: 390, minFloor: 155, maxFloor: 200, skills: ["multi_slash", "fireball", "bite_poison"] },
-    { name: "雷の精霊", hp: 760, str: 24, vit: 20, int: 44, agi: 20, dex: 22, exp: 420, minFloor: 165, maxFloor: 200, skills: ["thunder_strike", "ice_lance"] },
-    { name: "上級デーモン", hp: 1150, str: 44, vit: 36, int: 30, agi: 18, dex: 20, exp: 450, minFloor: 175, maxFloor: 200, skills: ["fireball", "power_strike", "silence_hex"] },
-    { name: "古きドラゴン", hp: 1400, str: 50, vit: 40, int: 26, agi: 16, dex: 22, exp: 500, minFloor: 190, maxFloor: 200, skills: ["fireball", "crushing_blow", "doom_mark"] },
+    { name: "影の暗殺者", hp: 520, str: 28, vit: 18, int: 8, agi: 26, dex: 24, exp: 275, minFloor: 101, maxFloor: 200, skills: ["multi_slash", "power_strike", "roar"] },
+    { name: "ワーウルフ", hp: 720, str: 34, vit: 22, int: 6, agi: 22, dex: 18, exp: 290, minFloor: 101, maxFloor: 200, skills: ["multi_slash", "bite_poison", "power_strike"] },
+    { name: "死霊騎士", hp: 820, str: 36, vit: 32, int: 10, agi: 12, dex: 16, exp: 310, minFloor: 101, maxFloor: 200, skills: ["crushing_blow", "doom_mark"] },
+    { name: "邪術師", hp: 640, str: 20, vit: 22, int: 40, agi: 14, dex: 16, exp: 330, minFloor: 101, maxFloor: 200, skills: ["fireball", "ice_lance", "silence_hex"] },
+    { name: "ワイバーン", hp: 900, str: 38, vit: 28, int: 18, agi: 18, dex: 20, exp: 350, minFloor: 101, maxFloor: 200, skills: ["fireball", "thunder_strike", "roar"] },
+    { name: "バジリスク", hp: 980, str: 40, vit: 30, int: 16, agi: 14, dex: 18, exp: 370, minFloor: 101, maxFloor: 200, skills: ["toxic_spit", "doom_mark"] },
+    { name: "キマイラ", hp: 1050, str: 42, vit: 34, int: 20, agi: 16, dex: 18, exp: 390, minFloor: 101, maxFloor: 200, skills: ["multi_slash", "fireball", "bite_poison"] },
+    { name: "雷の精霊", hp: 760, str: 24, vit: 20, int: 44, agi: 20, dex: 22, exp: 420, minFloor: 101, maxFloor: 200, skills: ["thunder_strike", "ice_lance"] },
+    { name: "上級デーモン", hp: 1150, str: 44, vit: 36, int: 30, agi: 18, dex: 20, exp: 450, minFloor: 101, maxFloor: 200, skills: ["fireball", "power_strike", "silence_hex"] },
+    { name: "古きドラゴン", hp: 1400, str: 50, vit: 40, int: 26, agi: 16, dex: 22, exp: 500, minFloor: 101, maxFloor: 200, skills: ["fireball", "crushing_blow", "doom_mark"] },
     // --------------------
     // 200〜500F（テーブル見直し）
     // --------------------
     { name: "深淵の教徒", hp: 1600, str: 60, vit: 70, int: 55, agi: 20, dex: 28, exp: 600, minFloor: 201, maxFloor: 240, skills: ["fireball", "silence_hex"] },
-    { name: "黒鎧の守衛", hp: 1900, str: 78, vit: 110, int: 18, agi: 18, dex: 22, exp: 640, minFloor: 210, maxFloor: 260, skills: ["crushing_blow", "power_strike"] },
-    { name: "影狩り", hp: 1750, str: 74, vit: 90, int: 28, agi: 34, dex: 36, exp: 680, minFloor: 230, maxFloor: 300, skills: ["multi_slash", "doom_mark", "roar"] },
-    { name: "堕天の司祭", hp: 2100, str: 62, vit: 105, int: 95, agi: 22, dex: 28, exp: 720, minFloor: 250, maxFloor: 330, skills: ["fireball", "ice_lance", "heal", "silence_hex"] },
-    { name: "鉄巨兵", hp: 2600, str: 98, vit: 150, int: 16, agi: 12, dex: 20, exp: 760, minFloor: 270, maxFloor: 360, skills: ["crushing_blow", "power_strike"] },
-    { name: "虚無の死神", hp: 2400, str: 120, vit: 130, int: 60, agi: 40, dex: 40, exp: 820, minFloor: 300, maxFloor: 400, skills: ["multi_slash", "power_strike", "doom_mark"] },
-    { name: "冥界の竜", hp: 3200, str: 140, vit: 180, int: 120, agi: 30, dex: 44, exp: 880, minFloor: 330, maxFloor: 420, skills: ["fireball", "thunder_strike", "crushing_blow"] },
-    { name: "終焉の騎士", hp: 3600, str: 160, vit: 230, int: 45, agi: 34, dex: 40, exp: 940, minFloor: 360, maxFloor: 450, skills: ["power_strike", "crushing_blow", "doom_mark"] },
-    { name: "虚空の天使", hp: 3400, str: 130, vit: 210, int: 140, agi: 42, dex: 48, exp: 1020, minFloor: 390, maxFloor: 470, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
-    { name: "災禍の大公", hp: 4600, str: 190, vit: 300, int: 170, agi: 38, dex: 50, exp: 1120, minFloor: 420, maxFloor: 500, skills: ["fireball", "doom_mark", "heal", "crushing_blow"] },
-    { name: "原初の龍王", hp: 5600, str: 220, vit: 380, int: 200, agi: 40, dex: 56, exp: 1250, minFloor: 460, maxFloor: 500, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow"] },
-    { name: "終末の審判者", hp: 6200, str: 240, vit: 420, int: 210, agi: 42, dex: 60, exp: 1400, minFloor: 485, maxFloor: 500, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
+    { name: "黒鎧の守衛", hp: 1900, str: 78, vit: 110, int: 18, agi: 18, dex: 22, exp: 640, minFloor: 201, maxFloor: 260, skills: ["crushing_blow", "power_strike"] },
+    { name: "影狩り", hp: 1750, str: 74, vit: 90, int: 28, agi: 34, dex: 36, exp: 680, minFloor: 201, maxFloor: 300, skills: ["multi_slash", "doom_mark", "roar"] },
+    { name: "堕天の司祭", hp: 2100, str: 62, vit: 105, int: 95, agi: 22, dex: 28, exp: 720, minFloor: 201, maxFloor: 330, skills: ["fireball", "ice_lance", "heal", "silence_hex"] },
+    { name: "鉄巨兵", hp: 2600, str: 98, vit: 150, int: 16, agi: 12, dex: 20, exp: 760, minFloor: 201, maxFloor: 360, skills: ["crushing_blow", "power_strike"] },
+    { name: "虚無の死神", hp: 2400, str: 120, vit: 130, int: 60, agi: 40, dex: 40, exp: 820, minFloor: 201, maxFloor: 400, skills: ["multi_slash", "power_strike", "doom_mark"] },
+    { name: "冥界の竜", hp: 3200, str: 140, vit: 180, int: 120, agi: 30, dex: 44, exp: 880, minFloor: 201, maxFloor: 420, skills: ["fireball", "thunder_strike", "crushing_blow"] },
+    { name: "終焉の騎士", hp: 3600, str: 160, vit: 230, int: 45, agi: 34, dex: 40, exp: 940, minFloor: 201, maxFloor: 450, skills: ["power_strike", "crushing_blow", "doom_mark"] },
+    { name: "虚空の天使", hp: 3400, str: 130, vit: 210, int: 140, agi: 42, dex: 48, exp: 1020, minFloor: 201, maxFloor: 470, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
+    { name: "災禍の大公", hp: 4600, str: 190, vit: 300, int: 170, agi: 38, dex: 50, exp: 1120, minFloor: 201, maxFloor: 500, skills: ["fireball", "doom_mark", "heal", "crushing_blow"] },
+    { name: "原初の龍王", hp: 5600, str: 220, vit: 380, int: 200, agi: 40, dex: 56, exp: 1250, minFloor: 201, maxFloor: 500, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow"] },
+    { name: "終末の審判者", hp: 6200, str: 240, vit: 420, int: 210, agi: 42, dex: 60, exp: 1400, minFloor: 201, maxFloor: 500, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
 
     // --------------------
     // 500〜800F
     // --------------------
     { name: "深層の獣王", hp: 8200, str: 260, vit: 500, int: 80, agi: 60, dex: 62, exp: 1500, minFloor: 501, maxFloor: 600, skills: ["multi_slash", "power_strike"] },
-    { name: "魔晶機兵", hp: 9000, str: 280, vit: 560, int: 60, agi: 40, dex: 55, exp: 1600, minFloor: 530, maxFloor: 640, skills: ["crushing_blow", "roar", "power_strike"] },
-    { name: "星喰らい", hp: 9800, str: 290, vit: 590, int: 220, agi: 48, dex: 66, exp: 1750, minFloor: 560, maxFloor: 680, skills: ["fireball", "ice_lance", "thunder_strike"] },
-    { name: "黒曜竜", hp: 11200, str: 320, vit: 640, int: 180, agi: 52, dex: 74, exp: 1900, minFloor: 600, maxFloor: 730, skills: ["fireball", "doom_mark", "crushing_blow"] },
-    { name: "冥府の死神", hp: 12400, str: 360, vit: 680, int: 150, agi: 72, dex: 82, exp: 2100, minFloor: 650, maxFloor: 780, skills: ["multi_slash", "doom_mark", "power_strike"] },
-    { name: "神罰の天使", hp: 13600, str: 340, vit: 720, int: 260, agi: 68, dex: 78, exp: 2280, minFloor: 690, maxFloor: 800, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
-    { name: "機神の番人", hp: 14800, str: 390, vit: 790, int: 110, agi: 46, dex: 64, exp: 2450, minFloor: 730, maxFloor: 800, skills: ["crushing_blow", "power_strike", "roar"] },
-    { name: "虚無の覇者", hp: 15800, str: 430, vit: 820, int: 300, agi: 60, dex: 80, exp: 2650, minFloor: 760, maxFloor: 800, skills: ["fireball", "doom_mark", "heal"] },
+    { name: "魔晶機兵", hp: 9000, str: 280, vit: 560, int: 60, agi: 40, dex: 55, exp: 1600, minFloor: 501, maxFloor: 640, skills: ["crushing_blow", "roar", "power_strike"] },
+    { name: "星喰らい", hp: 9800, str: 290, vit: 590, int: 220, agi: 48, dex: 66, exp: 1750, minFloor: 501, maxFloor: 680, skills: ["fireball", "ice_lance", "thunder_strike"] },
+    { name: "黒曜竜", hp: 11200, str: 320, vit: 640, int: 180, agi: 52, dex: 74, exp: 1900, minFloor: 501, maxFloor: 730, skills: ["fireball", "doom_mark", "crushing_blow"] },
+    { name: "冥府の死神", hp: 12400, str: 360, vit: 680, int: 150, agi: 72, dex: 82, exp: 2100, minFloor: 501, maxFloor: 780, skills: ["multi_slash", "doom_mark", "power_strike"] },
+    { name: "神罰の天使", hp: 13600, str: 340, vit: 720, int: 260, agi: 68, dex: 78, exp: 2280, minFloor: 501, maxFloor: 800, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex"] },
+    { name: "機神の番人", hp: 14800, str: 390, vit: 790, int: 110, agi: 46, dex: 64, exp: 2450, minFloor: 501, maxFloor: 800, skills: ["crushing_blow", "power_strike", "roar"] },
+    { name: "虚無の覇者", hp: 15800, str: 430, vit: 820, int: 300, agi: 60, dex: 80, exp: 2650, minFloor: 501, maxFloor: 800, skills: ["fireball", "doom_mark", "heal"] },
 
     // --------------------
     // 800〜1000F
     // --------------------
     { name: "終焉の大魔王", hp: 18000, str: 490, vit: 920, int: 340, agi: 60, dex: 80, exp: 3000, minFloor: 801, maxFloor: 900, skills: ["fireball", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
-    { name: "天輪の裁定者", hp: 19800, str: 520, vit: 980, int: 370, agi: 74, dex: 90, exp: 3350, minFloor: 830, maxFloor: 930, skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"] },
-    { name: "万象の龍帝", hp: 22000, str: 570, vit: 1080, int: 390, agi: 78, dex: 94, exp: 3750, minFloor: 870, maxFloor: 960, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
-    { name: "深淵の観測者", hp: 24400, str: 500, vit: 1040, int: 500, agi: 84, dex: 104, exp: 4400, minFloor: 910, maxFloor: 985, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
-    { name: "原初の終末", hp: 28500, str: 660, vit: 1250, int: 440, agi: 78, dex: 94, exp: 5300, minFloor: 950, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
-    { name: "時界の破壊神", hp: 31000, str: 720, vit: 1320, int: 480, agi: 86, dex: 108, exp: 6200, minFloor: 980, maxFloor: 1000, skills: ["thunder_strike", "doom_mark", "crushing_blow", "silence_hex", "heal"] },
+    { name: "天輪の裁定者", hp: 19800, str: 520, vit: 980, int: 370, agi: 74, dex: 90, exp: 3350, minFloor: 801, maxFloor: 930, skills: ["ice_lance", "thunder_strike", "doom_mark", "heal"] },
+    { name: "万象の龍帝", hp: 22000, str: 570, vit: 1080, int: 390, agi: 78, dex: 94, exp: 3750, minFloor: 801, maxFloor: 960, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
+    { name: "深淵の観測者", hp: 24400, str: 500, vit: 1040, int: 500, agi: 84, dex: 104, exp: 4400, minFloor: 801, maxFloor: 985, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "heal"] },
+    { name: "刻喰いの魔狼", hp: 26600, str: 620, vit: 1180, int: 360, agi: 96, dex: 116, exp: 4900, minFloor: 801, maxFloor: 1000, skills: ["multi_slash", "bite_poison", "doom_mark", "power_strike"] },
+    { name: "原初の終末", hp: 28500, str: 660, vit: 1250, int: 440, agi: 78, dex: 94, exp: 5300, minFloor: 801, maxFloor: 1000, skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"] },
+    { name: "時界の破壊神", hp: 31000, str: 720, vit: 1320, int: 480, agi: 86, dex: 108, exp: 6200, minFloor: 801, maxFloor: 1000, skills: ["thunder_strike", "doom_mark", "crushing_blow", "silence_hex", "heal"] },
 
     // --------------------
     // 1000〜1500F（新テーブル）
     // --------------------
     { name: "星墓の守護獣", hp: 36000, str: 820, vit: 1500, int: 520, agi: 92, dex: 118, exp: 7600, minFloor: 1001, maxFloor: 1125, skills: ["power_strike", "crushing_blow", "roar", "heal"] },
-    { name: "深淵魔導司祭", hp: 34500, str: 700, vit: 1420, int: 680, agi: 98, dex: 122, exp: 7900, minFloor: 1040, maxFloor: 1180, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
-    { name: "断罪の雷帝", hp: 39000, str: 880, vit: 1560, int: 620, agi: 108, dex: 130, exp: 8400, minFloor: 1090, maxFloor: 1240, skills: ["thunder_strike", "crushing_blow", "multi_slash", "doom_mark"] },
-    { name: "虚界の竜神", hp: 42000, str: 940, vit: 1680, int: 700, agi: 102, dex: 134, exp: 9000, minFloor: 1160, maxFloor: 1320, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
-    { name: "冥刻の監視者", hp: 45500, str: 910, vit: 1760, int: 780, agi: 118, dex: 146, exp: 9600, minFloor: 1230, maxFloor: 1400, skills: ["ice_lance", "silence_hex", "doom_mark", "multi_slash", "heal"] },
-    { name: "奈落の絶影", hp: 48000, str: 990, vit: 1820, int: 640, agi: 132, dex: 160, exp: 10300, minFloor: 1300, maxFloor: 1460, skills: ["multi_slash", "power_strike", "doom_mark", "bite_poison"] },
-    { name: "天滅の機神", hp: 52000, str: 1080, vit: 1960, int: 760, agi: 110, dex: 142, exp: 11200, minFloor: 1380, maxFloor: 1500, skills: ["crushing_blow", "thunder_strike", "roar", "doom_mark", "heal"] },
-    { name: "彼岸の統治者", hp: 56000, str: 1150, vit: 2100, int: 860, agi: 124, dex: 154, exp: 12200, minFloor: 1450, maxFloor: 1500, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+    { name: "深淵魔導司祭", hp: 34500, str: 700, vit: 1420, int: 680, agi: 98, dex: 122, exp: 7900, minFloor: 1001, maxFloor: 1180, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "断罪の雷帝", hp: 39000, str: 880, vit: 1560, int: 620, agi: 108, dex: 130, exp: 8400, minFloor: 1001, maxFloor: 1240, skills: ["thunder_strike", "crushing_blow", "multi_slash", "doom_mark"] },
+    { name: "虚界の竜神", hp: 42000, str: 940, vit: 1680, int: 700, agi: 102, dex: 134, exp: 9000, minFloor: 1001, maxFloor: 1320, skills: ["fireball", "thunder_strike", "doom_mark", "crushing_blow", "heal"] },
+    { name: "冥刻の監視者", hp: 45500, str: 910, vit: 1760, int: 780, agi: 118, dex: 146, exp: 9600, minFloor: 1001, maxFloor: 1400, skills: ["ice_lance", "silence_hex", "doom_mark", "multi_slash", "heal"] },
+    { name: "奈落の絶影", hp: 48000, str: 990, vit: 1820, int: 640, agi: 132, dex: 160, exp: 10300, minFloor: 1001, maxFloor: 1460, skills: ["multi_slash", "power_strike", "doom_mark", "bite_poison"] },
+    { name: "霊環の断罪鳥", hp: 50500, str: 960, vit: 1880, int: 840, agi: 138, dex: 168, exp: 10850, minFloor: 1001, maxFloor: 1500, skills: ["thunder_strike", "multi_slash", "silence_hex", "doom_mark"] },
+    { name: "天滅の機神", hp: 52000, str: 1080, vit: 1960, int: 760, agi: 110, dex: 142, exp: 11200, minFloor: 1001, maxFloor: 1500, skills: ["crushing_blow", "thunder_strike", "roar", "doom_mark", "heal"] },
+    { name: "彼岸の統治者", hp: 56000, str: 1150, vit: 2100, int: 860, agi: 124, dex: 154, exp: 12200, minFloor: 1001, maxFloor: 1500, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
 
     // --------------------
     // 1500〜2000F（新テーブル）
     // ※core.js 側で50階層ごとの追加ステータスブーストあり
     // --------------------
     { name: "虚星の侵略者", hp: 62000, str: 1260, vit: 2300, int: 920, agi: 136, dex: 170, exp: 13800, minFloor: 1501, maxFloor: 1620, skills: ["multi_slash", "power_strike", "doom_mark", "heal"] },
-    { name: "冥雷の皇子", hp: 65500, str: 1340, vit: 2380, int: 980, agi: 148, dex: 182, exp: 14600, minFloor: 1530, maxFloor: 1680, skills: ["thunder_strike", "crushing_blow", "doom_mark", "roar", "heal"] },
-    { name: "蒼獄の司書", hp: 64000, str: 1210, vit: 2360, int: 1180, agi: 144, dex: 176, exp: 15000, minFloor: 1560, maxFloor: 1720, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
-    { name: "断界の処刑騎士", hp: 70000, str: 1450, vit: 2540, int: 1020, agi: 154, dex: 188, exp: 16200, minFloor: 1610, maxFloor: 1780, skills: ["power_strike", "crushing_blow", "multi_slash", "doom_mark"] },
-    { name: "極夜の聖獣", hp: 73500, str: 1500, vit: 2640, int: 1100, agi: 160, dex: 194, exp: 17100, minFloor: 1660, maxFloor: 1840, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex", "doom_mark"] },
-    { name: "原罪の審判眼", hp: 78000, str: 1580, vit: 2760, int: 1240, agi: 172, dex: 206, exp: 18400, minFloor: 1720, maxFloor: 1910, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
-    { name: "無窮の戦神", hp: 84000, str: 1720, vit: 2920, int: 1080, agi: 166, dex: 202, exp: 19800, minFloor: 1790, maxFloor: 1970, skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"] },
-    { name: "終刻の創壊王", hp: 91000, str: 1860, vit: 3100, int: 1320, agi: 180, dex: 218, exp: 22000, minFloor: 1880, maxFloor: 2000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+    { name: "冥雷の皇子", hp: 65500, str: 1340, vit: 2380, int: 980, agi: 148, dex: 182, exp: 14600, minFloor: 1501, maxFloor: 1680, skills: ["thunder_strike", "crushing_blow", "doom_mark", "roar", "heal"] },
+    { name: "蒼獄の司書", hp: 64000, str: 1210, vit: 2360, int: 1180, agi: 144, dex: 176, exp: 15000, minFloor: 1501, maxFloor: 1720, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "断界の処刑騎士", hp: 70000, str: 1450, vit: 2540, int: 1020, agi: 154, dex: 188, exp: 16200, minFloor: 1501, maxFloor: 1780, skills: ["power_strike", "crushing_blow", "multi_slash", "doom_mark"] },
+    { name: "極夜の聖獣", hp: 73500, str: 1500, vit: 2640, int: 1100, agi: 160, dex: 194, exp: 17100, minFloor: 1501, maxFloor: 1840, skills: ["ice_lance", "thunder_strike", "heal", "silence_hex", "doom_mark"] },
+    { name: "原罪の審判眼", hp: 78000, str: 1580, vit: 2760, int: 1240, agi: 172, dex: 206, exp: 18400, minFloor: 1501, maxFloor: 1910, skills: ["fireball", "doom_mark", "silence_hex", "heal"] },
+    { name: "深冥の封印機構", hp: 81200, str: 1660, vit: 2840, int: 1360, agi: 170, dex: 210, exp: 19050, minFloor: 1501, maxFloor: 2000, skills: ["crushing_blow", "silence_hex", "doom_mark", "heal"] },
+    { name: "無窮の戦神", hp: 84000, str: 1720, vit: 2920, int: 1080, agi: 166, dex: 202, exp: 19800, minFloor: 1501, maxFloor: 1970, skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"] },
+    { name: "終刻の創壊王", hp: 91000, str: 1860, vit: 3100, int: 1320, agi: 180, dex: 218, exp: 22000, minFloor: 1501, maxFloor: 2000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
 
     // --------------------
     // 2000〜3000F（新テーブル）
     // --------------------
     { name: "深淵界の蹂躙兵", hp: 120000, str: 2350, vit: 3900, int: 1500, agi: 210, dex: 250, exp: 29000, minFloor: 2001, maxFloor: 2240, skills: ["crushing_blow", "power_strike", "doom_mark", "heal"] },
-    { name: "災雷の審問官", hp: 132000, str: 2480, vit: 4100, int: 1720, agi: 224, dex: 264, exp: 31500, minFloor: 2140, maxFloor: 2440, skills: ["thunder_strike", "silence_hex", "doom_mark", "roar", "heal"] },
-    { name: "蒼滅の禁書王", hp: 138000, str: 2260, vit: 4200, int: 2140, agi: 230, dex: 270, exp: 33800, minFloor: 2260, maxFloor: 2620, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
-    { name: "天冥の断罪機", hp: 152000, str: 2710, vit: 4480, int: 1840, agi: 240, dex: 282, exp: 36500, minFloor: 2400, maxFloor: 2800, skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"] },
-    { name: "星喰らう魔王", hp: 168000, str: 2860, vit: 4720, int: 2260, agi: 252, dex: 294, exp: 39800, minFloor: 2580, maxFloor: 3000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+    { name: "災雷の審問官", hp: 132000, str: 2480, vit: 4100, int: 1720, agi: 224, dex: 264, exp: 31500, minFloor: 2001, maxFloor: 2440, skills: ["thunder_strike", "silence_hex", "doom_mark", "roar", "heal"] },
+    { name: "蒼滅の禁書王", hp: 138000, str: 2260, vit: 4200, int: 2140, agi: 230, dex: 270, exp: 33800, minFloor: 2001, maxFloor: 2620, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "天冥の断罪機", hp: 152000, str: 2710, vit: 4480, int: 1840, agi: 240, dex: 282, exp: 36500, minFloor: 2001, maxFloor: 2800, skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"] },
+    { name: "黙示の星詠者", hp: 160000, str: 2620, vit: 4560, int: 2360, agi: 246, dex: 288, exp: 38200, minFloor: 2001, maxFloor: 3000, skills: ["fireball", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+    { name: "星喰らう魔王", hp: 168000, str: 2860, vit: 4720, int: 2260, agi: 252, dex: 294, exp: 39800, minFloor: 2001, maxFloor: 3000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
 
     // --------------------
     // 3000〜4500F（新テーブル）
     // --------------------
     { name: "虚空の征服者", hp: 205000, str: 3320, vit: 5600, int: 2520, agi: 286, dex: 328, exp: 45500, minFloor: 3001, maxFloor: 3360, skills: ["power_strike", "crushing_blow", "doom_mark", "heal"] },
-    { name: "冥府の天文学者", hp: 218000, str: 3140, vit: 5760, int: 3040, agi: 300, dex: 342, exp: 48800, minFloor: 3200, maxFloor: 3680, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
-    { name: "断章の雷神", hp: 236000, str: 3580, vit: 6020, int: 2800, agi: 316, dex: 358, exp: 52500, minFloor: 3440, maxFloor: 3980, skills: ["thunder_strike", "multi_slash", "crushing_blow", "doom_mark", "roar"] },
-    { name: "万劫の冥騎士", hp: 254000, str: 3740, vit: 6380, int: 2920, agi: 326, dex: 372, exp: 56000, minFloor: 3700, maxFloor: 4260, skills: ["power_strike", "multi_slash", "doom_mark", "silence_hex", "heal"] },
-    { name: "天壊の終末炉", hp: 278000, str: 4020, vit: 6900, int: 3360, agi: 340, dex: 388, exp: 60800, minFloor: 4040, maxFloor: 4500, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
+    { name: "冥府の天文学者", hp: 218000, str: 3140, vit: 5760, int: 3040, agi: 300, dex: 342, exp: 48800, minFloor: 3001, maxFloor: 3680, skills: ["fireball", "ice_lance", "thunder_strike", "silence_hex", "doom_mark", "heal"] },
+    { name: "断章の雷神", hp: 236000, str: 3580, vit: 6020, int: 2800, agi: 316, dex: 358, exp: 52500, minFloor: 3001, maxFloor: 3980, skills: ["thunder_strike", "multi_slash", "crushing_blow", "doom_mark", "roar"] },
+    { name: "万劫の冥騎士", hp: 254000, str: 3740, vit: 6380, int: 2920, agi: 326, dex: 372, exp: 56000, minFloor: 3001, maxFloor: 4260, skills: ["power_strike", "multi_slash", "doom_mark", "silence_hex", "heal"] },
+    { name: "虚数の審級王", hp: 266000, str: 3880, vit: 6640, int: 3220, agi: 334, dex: 380, exp: 58400, minFloor: 3001, maxFloor: 4500, skills: ["fireball", "crushing_blow", "silence_hex", "doom_mark", "heal"] },
+    { name: "天壊の終末炉", hp: 278000, str: 4020, vit: 6900, int: 3360, agi: 340, dex: 388, exp: 60800, minFloor: 3001, maxFloor: 4500, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "heal"] },
 
     // --------------------
     // 4500〜5000F（新テーブル）
     // --------------------
     { name: "神罰の絶鎖竜", hp: 320000, str: 4560, vit: 7800, int: 3680, agi: 370, dex: 420, exp: 68200, minFloor: 4501, maxFloor: 4680, skills: ["crushing_blow", "thunder_strike", "doom_mark", "heal"] },
-    { name: "虚皇の冠位者", hp: 346000, str: 4820, vit: 8240, int: 4020, agi: 386, dex: 438, exp: 73000, minFloor: 4600, maxFloor: 4820, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
-    { name: "界穿つ殲滅神", hp: 372000, str: 5160, vit: 8720, int: 4200, agi: 402, dex: 456, exp: 78800, minFloor: 4720, maxFloor: 4920, skills: ["multi_slash", "power_strike", "crushing_blow", "doom_mark", "roar"] },
-    { name: "零域の支配核", hp: 405000, str: 5480, vit: 9260, int: 4520, agi: 418, dex: 474, exp: 86000, minFloor: 4850, maxFloor: 5000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "silence_hex", "heal"] },
+    { name: "虚皇の冠位者", hp: 346000, str: 4820, vit: 8240, int: 4020, agi: 386, dex: 438, exp: 73000, minFloor: 4501, maxFloor: 4820, skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"] },
+    { name: "界穿つ殲滅神", hp: 372000, str: 5160, vit: 8720, int: 4200, agi: 402, dex: 456, exp: 78800, minFloor: 4501, maxFloor: 4920, skills: ["multi_slash", "power_strike", "crushing_blow", "doom_mark", "roar"] },
+    { name: "無明の裁断機", hp: 388000, str: 5340, vit: 8980, int: 4380, agi: 410, dex: 464, exp: 82400, minFloor: 4501, maxFloor: 5000, skills: ["thunder_strike", "crushing_blow", "silence_hex", "doom_mark", "heal"] },
+    { name: "零域の支配核", hp: 405000, str: 5480, vit: 9260, int: 4520, agi: 418, dex: 474, exp: 86000, minFloor: 4501, maxFloor: 5000, skills: ["fireball", "thunder_strike", "crushing_blow", "multi_slash", "doom_mark", "silence_hex", "heal"] },
   ];
 
   // --------------------
