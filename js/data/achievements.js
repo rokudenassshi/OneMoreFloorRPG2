@@ -416,20 +416,6 @@
         unlockAfterLabel: "修羅の境地2",
         needKills: 2000,
       },
-      {
-        id: "asura_slayer_2500",
-        title: "修羅の境地 4",
-        unlockAfterId: "asura_slayer_2000",
-        unlockAfterLabel: "修羅の境地3",
-        needKills: 2500,
-      },
-      {
-        id: "asura_slayer_3000",
-        title: "修羅の境地 5",
-        unlockAfterId: "asura_slayer_2500",
-        unlockAfterLabel: "修羅の境地4",
-        needKills: 3000,
-      },
     ];
 
     const ensureAsuraMilestoneStartMap = (p) => {

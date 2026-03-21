@@ -2381,6 +2381,24 @@
     return Math.max(0, Math.round(agi));
   }
 
+  function getPlayerHitChance(combat, enemy, skillAcc = 100) {
+    const accuracy = Number(combat?.accuracy || 0);
+    const diff = accuracy - getEnemyAgiForHit(enemy);
+    const baseChance = clamp(70 + diff * 0.6, 10, 95);
+    const primaryChance = clamp(
+      baseChance * (clamp(Number(skillAcc) || 0, 0, 200) / 100),
+      0,
+      100,
+    );
+
+    // 案4: 命中100以上は外した場合に救済再抽選（期待値として合成）
+    if (accuracy < 100) return primaryChance;
+    const rescueChance = clamp((accuracy - 100) * 0.8, 0, 100);
+    return (
+      primaryChance + (100 - primaryChance) * (rescueChance / 100)
+    );
+  }
+
   function applyEnemyVulnerableTaken(enemy, damage) {
     const st = enemy && enemy.status ? enemy.status : null;
     if (!st || !(st.vulnerableTurns > 0)) return damage;
@@ -2996,7 +3014,7 @@
     const enemy = gameData.enemy;
 
     // 命中判定
-    const hitChance = Math.min(95, combat.accuracy - getEnemyAgiForHit(enemy));
+    const hitChance = getPlayerHitChance(combat, enemy, 100);
     if (Math.random() * 100 > hitChance) {
       log("攻撃は外れた！");
       // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
@@ -3514,12 +3532,8 @@
     const skillAcc = Number.isFinite(skillAccRaw) ? skillAccRaw : 100;
     const skillAlwaysHit = !!(skillDef && skillDef.alwaysHit);
 
-    // 通常攻撃と同じ基礎命中（上限95%）
-    const baseSkillHitChance = Math.min(
-      95,
-      combat.accuracy - getEnemyAgiForHit(enemy),
-    );
-    const skillHitChance = baseSkillHitChance * (clamp(skillAcc, 0, 200) / 100);
+    // 通常攻撃と同じ基礎命中（緩和式＋高命中救済）
+    const skillHitChance = getPlayerHitChance(combat, enemy, skillAcc);
 
     const rollSkillHit = () =>
       skillAlwaysHit ? true : Math.random() * 100 <= skillHitChance;
