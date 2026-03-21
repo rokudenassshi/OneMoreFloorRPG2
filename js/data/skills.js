@@ -37,6 +37,15 @@
       desc: "獲得経験値+{value}%（上限なし）",
       effect: (lv) => ({ expBonus: lv }),
     },
+    common_exp_level_mult: {
+      name: "成長加速",
+      type: "passive",
+      job: "all",
+      maxLevel: 1,
+      requiredPoints: 50,
+      desc: "獲得経験値がレベル倍になる",
+      effect: (_lv) => ({}),
+    },
 
     common_heal: {
       name: "ヒール",
