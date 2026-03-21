@@ -284,9 +284,6 @@
     // -------------------
     // アクセは「指輪 / 耳飾り / 首飾り / 腕輪」の4種類のみ
     ring: { name: "指輪", category: "accessory", hands: 0 },
-    earrings: { name: "耳飾り", category: "accessory", hands: 0 },
-    necklace: { name: "首飾り", category: "accessory", hands: 0 },
-    bracelet: { name: "腕輪", category: "accessory", hands: 0 },
   };
 
   // -------------------
