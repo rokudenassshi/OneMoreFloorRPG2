@@ -5893,6 +5893,10 @@
       // 防具でも命中補正を持てる（例：篭手、盾など）
       if (typeof bias.accuracy !== "undefined")
         item.accuracy = Math.round(getBias("accuracy", 0));
+      // 防具の命中補正も武器と同様に +30 / -30 を上限にする
+      if (typeof item.accuracy === "number") {
+        item.accuracy = clamp(item.accuracy, -30, 30);
+      }
     } else {
       item.effects = [];
       // 装飾品の効果は常に1つ（多効果は廃止）

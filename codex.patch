@@ -1,185 +1,59 @@
 diff --git a/js/core.js b/js/core.js
-index 2298ec8d3f0ac12f2cb807f4293c846d9fd6778f..b6a9a1d9ab7934774e32e4e1630203fd366b3051 100644
+index 2298ec8d3f0ac12f2cb807f4293c846d9fd6778f..75cc644a53f08cc8e5afd9432575acee07ff7f9b 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -2359,50 +2359,68 @@
-     if (!Number.isFinite(st.vulnerableTurns)) st.vulnerableTurns = 0;
-     if (!Number.isFinite(st.vulnerableRate)) st.vulnerableRate = 0;
- 
-     if (!Number.isFinite(st.accuracyDownTurns)) st.accuracyDownTurns = 0;
-     if (!Number.isFinite(st.accuracyDownRate)) st.accuracyDownRate = 0;
- 
-     if (!Number.isFinite(st.silenceTurns)) st.silenceTurns = 0;
- 
-     return st;
-   }
- 
-   function getEnemyAgiForHit(enemy) {
-     const st = ensureEnemyStatus(enemy) || {};
-     let agi = Number(enemy && enemy.agi) || 0;
- 
-     // 鈍足：回避（agi）を下げる
-     if (st.slowTurns > 0) {
-       const rateRaw = typeof st.slowRate === "number" ? st.slowRate : 0.2;
-       const rate = clamp(rateRaw, 0, 0.9);
-       agi = agi * (1 - rate);
-     }
- 
-     return Math.max(0, Math.round(agi));
-   }
- 
-+  function getPlayerHitChance(combat, enemy, skillAcc = 100) {
-+    const accuracy = Number(combat?.accuracy || 0);
-+    const diff = accuracy - getEnemyAgiForHit(enemy);
-+    const baseChance = clamp(70 + diff * 0.6, 10, 95);
-+    const primaryChance = clamp(
-+      baseChance * (clamp(Number(skillAcc) || 0, 0, 200) / 100),
-+      0,
-+      100,
-+    );
-+
-+    // 案4: 命中100以上は外した場合に救済再抽選（期待値として合成）
-+    if (accuracy < 100) return primaryChance;
-+    const rescueChance = clamp((accuracy - 100) * 0.8, 0, 100);
-+    return (
-+      primaryChance + (100 - primaryChance) * (rescueChance / 100)
-+    );
-+  }
-+
-   function applyEnemyVulnerableTaken(enemy, damage) {
-     const st = enemy && enemy.status ? enemy.status : null;
-     if (!st || !(st.vulnerableTurns > 0)) return damage;
- 
-     const rateRaw =
-       typeof st.vulnerableRate === "number" ? st.vulnerableRate : 0.25;
-     const rate = clamp(rateRaw, 0, 0.9);
-     return Math.max(1, Math.round(damage * (1 + rate)));
-   }
- 
-   function collectPlayerOnHitSpecialEffects() {
-     const eq = (gameData.player && gameData.player.equipment) || {};
-     const items = [];
-     if (eq.slot1) items.push(eq.slot1);
-     if (eq.slot2 && eq.slot2 !== eq.slot1) items.push(eq.slot2);
-     if (eq.accessory) items.push(eq.accessory);
- 
-     const out = [];
-     for (const item of items) {
-       if (!item || !Array.isArray(item.specialEffects)) continue;
-       for (const se of item.specialEffects) {
-         if (se && se.type === "onHit") out.push(se);
+@@ -5857,50 +5857,54 @@
+       // 固有能力（固定効果）を付与
+       // equipment.js 側で bias.fixedEffects: { counterChance: {base,max}, ... } の形で定義
+       if (bias.fixedEffects && typeof bias.fixedEffects === "object") {
+         if (!item.effects) item.effects = [];
+         const defs = bias.fixedEffects;
+         Object.keys(defs).forEach((typeKey) => {
+           const def = defs[typeKey];
+           if (!def || typeof def !== "object") return;
+           const base = Number(def.base) || 0;
+           const max = Number.isFinite(Number(def.max)) ? Number(def.max) : null;
+           // 低層でも特徴が出るように、緩やかにスケール
+           let v = Math.round(base + floor * 0.012);
+           if (max != null) v = Math.min(v, max);
+           if (v <= 0) return;
+           const eff = { name: null, type: typeKey, value: v };
+           item.effects.push(eff);
+           if (!Array.isArray(item.fixedEffects)) item.fixedEffects = [];
+           // UIは effect の整形に任せる
+           item.fixedEffects.push(eff);
+         });
        }
-     }
-     return out;
-@@ -2974,51 +2992,51 @@
-         return;
-       }
-     }
  
-     if (incrementBattleActionAndCheckForcedEscape()) return;
+       // 防具でも命中補正を持てる（例：篭手、盾など）
+       if (typeof bias.accuracy !== "undefined")
+         item.accuracy = Math.round(getBias("accuracy", 0));
++      // 防具の命中補正も武器と同様に +30 / -30 を上限にする
++      if (typeof item.accuracy === "number") {
++        item.accuracy = clamp(item.accuracy, -30, 30);
++      }
+     } else {
+       item.effects = [];
+       // 装飾品の効果は常に1つ（多効果は廃止）
+       const numEffects = 1;
+       for (let i = 0; i < numEffects; i++) {
+         const poolRaw = Array.isArray(window.accessoryOptionEffects)
+           ? window.accessoryOptionEffects
+           : [];
+         if (!poolRaw.length) continue;
  
-     const st = gameData.player.status || (gameData.player.status = {});
-     if (st.stunTurns > 0) {
-       st.stunTurns--;
-       log("⚡ しびれて動けない！");
-       enemyTurn();
-       return;
-     }
+         // minFloor を持つ効果は、到達階層以降でのみ候補に入れる
+         const poolFiltered = poolRaw.filter((e) => {
+           if (!e || typeof e !== "object") return false;
+           const mf = Number(e.minFloor);
+           return !Number.isFinite(mf) || mf <= 0 || floor >= mf;
+         });
+         const pool = (poolFiltered.length ? poolFiltered : poolRaw).filter(
+           (e) =>
+             !blockedAccessorySignatures.has(
+               getAccessoryEffectSignature(typeKey, e),
+             ),
+         );
+         if (!pool.length) continue;
  
-     addJobProgress("attack", 1);
- 
-     // このアクション内の追撃は1回まで
-     beginPlayerAction();
- 
-     const isAsura = gameData.player?.job === "asura";
- 
-     const combat = getCombatStats();
-     const enemy = gameData.enemy;
- 
-     // 命中判定
--    const hitChance = Math.min(95, combat.accuracy - getEnemyAgiForHit(enemy));
-+    const hitChance = getPlayerHitChance(combat, enemy, 100);
-     if (Math.random() * 100 > hitChance) {
-       log("攻撃は外れた！");
-       // 修羅：攻撃を行うたびに気を溜める（命中に関係なく）
-       if (isAsura) gainQi(1);
-       enemyTurn();
-       return;
-     }
- 
-     addJobProgress("attackHit", 1);
- 
-     // 会心判定
-     const forceCrit = consumeNextCritFlag();
-     const isCrit = forceCrit ? true : Math.random() * 100 < combat.critRate;
-     const jt = jobs?.[gameData.player?.job]?.traits || {};
-     const baseCritMul =
-       typeof jt.critDamageMul === "number" ? jt.critDamageMul : 2;
-     const critDmgPct = Number(getAccessoryBonus("critDamage") || 0);
-     const critMul = isCrit
-       ? baseCritMul * (1 + (Number.isFinite(critDmgPct) ? critDmgPct : 0) / 100)
-       : 1;
- 
-     if (isCrit) addJobProgress("crit", 1);
- 
-     // ダメージ計算
-     // 追い打ち：敵HPが50%以下のとき与ダメージUP（%）
-@@ -3492,56 +3510,52 @@
-             d.turns,
-             d.rate,
-             `🐢 ${name}の動きが鈍った！`,
-           );
-         } else if (type === "accuracyDown") {
-           applyRateAndTurns(
-             "accuracyDownTurns",
-             "accuracyDownRate",
-             d.turns,
-             d.rate,
-             `🎯 ${name}の命中が下がった！`,
-           );
-         }
-       }
-     };
- 
-     // -------------------
-     // スキル命中判定
-     // - skillDef.accuracy: 1 = 1%（未設定は100%）
-     // - combat.accuracy / enemy.agi を基礎に、スキル固有命中率で補正する
-     // -------------------
-     const skillAccRaw = Number(skillDef && skillDef.accuracy);
-     const skillAcc = Number.isFinite(skillAccRaw) ? skillAccRaw : 100;
-     const skillAlwaysHit = !!(skillDef && skillDef.alwaysHit);
- 
--    // 通常攻撃と同じ基礎命中（上限95%）
--    const baseSkillHitChance = Math.min(
--      95,
--      combat.accuracy - getEnemyAgiForHit(enemy),
--    );
--    const skillHitChance = baseSkillHitChance * (clamp(skillAcc, 0, 200) / 100);
-+    // 通常攻撃と同じ基礎命中（緩和式＋高命中救済）
-+    const skillHitChance = getPlayerHitChance(combat, enemy, skillAcc);
- 
-     const rollSkillHit = () =>
-       skillAlwaysHit ? true : Math.random() * 100 <= skillHitChance;
- 
-     // 装飾品：スキル威力UP（%）
-     const skillPowerPct = Number(getAccessoryBonus("skillPower") || 0);
-     const skillMul = Number.isFinite(skillPowerPct)
-       ? 1 + skillPowerPct / 100
-       : 1;
- 
-     // スキル効果
-     // 追い打ち：敵HPが50%以下のとき与ダメージUP（%）
-     const execPctSkill = Number(getAccessoryBonus("executeDamage") || 0);
- 
-     if (typeof effect.healRate === "number") {
-       // 回復スキル（%回復。自分対象のため命中判定なし）
-       const rate = clamp(Number(effect.healRate) || 0, 0, 2);
-       const baseHeal = Math.round(combat.maxHp * rate);
-       const r = applyPlayerHeal(baseHeal);
-       if (r.healed > 0 && r.barrierGained > 0) {
-         log(`${r.healed}HP回復した！（🛡+${r.barrierGained}）`);
-       } else if (r.healed > 0) {
-         log(`${r.healed}HP回復した！`);
-       } else if (r.barrierGained > 0) {
-         log(`🛡 バリア+${r.barrierGained}`);
+         const effect =

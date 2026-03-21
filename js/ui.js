@@ -3422,7 +3422,12 @@
     // ポイント返却（スキルごとに必要SPが違う）
     const cost = getSkillPointCost(skill);
     const refund = amount * cost;
-    p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) + refund);
+    const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+    const nextSkillPoints = Math.max(
+      0,
+      Math.floor(Number(p.skillPoints || 0)) + refund,
+    );
+    p.skillPoints = Math.min(skillPointCap, nextSkillPoints);
 
     log(`${skill?.name || key}のレベルを${amount}下げた（ポイント+${refund}）`);
     updateSkillUI();
@@ -3514,10 +3519,12 @@
     }
 
     p.skills = {};
-    p.skillPoints = Math.max(
+    const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+    const nextSkillPoints = Math.max(
       0,
       Math.floor(Number(p.skillPoints || 0)) + refund,
     );
+    p.skillPoints = Math.min(skillPointCap, nextSkillPoints);
 
     // 装備中スキルを解除
     p.equippedSkills = [null, null];
