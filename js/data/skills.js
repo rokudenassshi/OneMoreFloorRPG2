@@ -43,8 +43,8 @@
       job: "all",
       maxLevel: 1,
       requiredPoints: 50,
-      desc: "獲得経験値がレベル倍になる",
-      effect: (_lv) => ({}),
+      desc: "獲得経験値が{value}倍になる",
+      effect: (lv) => ({ value: lv + 2 }),
     },
 
     common_heal: {

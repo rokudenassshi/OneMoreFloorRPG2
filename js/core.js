@@ -4520,11 +4520,11 @@
         gameData.player.skills && gameData.player.skills.exp_up
           ? gameData.player.skills.exp_up
           : 0;
-      const hasExpLevelMultiplier =
-        Number(gameData.player?.skills?.common_exp_level_mult || 0) > 0;
-      const levelExpMultiplier = hasExpLevelMultiplier
-        ? Math.max(1, Number(gameData.player?.level || 1))
-        : 1;
+      const expLevelMultiplierSkillLv = Number(
+        gameData.player?.skills?.common_exp_level_mult || 0,
+      );
+      const levelExpMultiplier =
+        expLevelMultiplierSkillLv > 0 ? 2 + expLevelMultiplierSkillLv : 1;
       const expAchRate = getAchievementExpBonusRate();
       const jobExpRate =
         typeof jobs?.[gameData.player?.job]?.traits?.expRate === "number"
