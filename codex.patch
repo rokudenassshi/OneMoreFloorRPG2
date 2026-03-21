@@ -1,508 +1,70 @@
-diff --git a/js/data/enemies.js b/js/data/enemies.js
-index 0976b372a0af46cc1f487338e39b529dc84fe7ea..6beb59c8d242ca457ceea2b4b51b881872bb2e5a 100644
---- a/js/data/enemies.js
-+++ b/js/data/enemies.js
-@@ -1708,50 +1708,88 @@
-       dex: 94,
-       exp: 5300,
-       minFloor: 850,
-       maxFloor: 1000,
-       skills: ["fireball", "doom_mark", "crushing_blow", "multi_slash", "heal"],
-     },
-     {
-       name: "時界の破壊神",
-       hp: 31000,
-       str: 720,
-       vit: 1320,
-       int: 480,
-       agi: 86,
-       dex: 108,
-       exp: 6200,
-       minFloor: 900,
-       maxFloor: 1000,
-       skills: [
-         "thunder_strike",
-         "doom_mark",
-         "crushing_blow",
-         "silence_hex",
-         "heal",
-       ],
-     },
-+    {
-+      name: "深淵の星巫女",
-+      hp: 29600,
-+      str: 640,
-+      vit: 1180,
-+      int: 560,
-+      agi: 92,
-+      dex: 112,
-+      exp: 5750,
-+      minFloor: 920,
-+      maxFloor: 1000,
-+      skills: [
-+        "fireball",
-+        "ice_lance",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "紅蓮の断罪翼",
-+      hp: 32400,
-+      str: 760,
-+      vit: 1360,
-+      int: 520,
-+      agi: 88,
-+      dex: 110,
-+      exp: 6480,
-+      minFloor: 950,
-+      maxFloor: 1000,
-+      skills: [
-+        "fireball",
-+        "thunder_strike",
-+        "crushing_blow",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
+diff --git a/js/core.js b/js/core.js
+index 04ff20ad53e45e070b33a58e722b2273e423b5fd..60e42756235facfc2c876932221825bfdea9af2d 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -4498,59 +4498,65 @@
+       // 撃破カウント
+       if (
+         !gameData.player.jobKills ||
+         typeof gameData.player.jobKills !== "object"
+       ) {
+         gameData.player.jobKills = {};
+       }
+       const jk = Number(gameData.player.jobKills[gameData.player.job] || 0);
+       gameData.player.jobKills[gameData.player.job] =
+         (Number.isFinite(jk) ? jk : 0) + 1;
+       gameData.player.totalKills = (gameData.player.totalKills || 0) + 1;
+       if (enemy && enemy.isNamed) {
+         gameData.player.namedKills = (gameData.player.namedKills || 0) + 1;
+       }
  
-     // --------------------
-     // 1000〜1500F（新テーブル）
-     // --------------------
-     {
-       name: "星墓の守護獣",
-       hp: 36000,
-       str: 820,
-       vit: 1500,
-       int: 520,
-       agi: 92,
-       dex: 118,
-       exp: 7600,
-       minFloor: 1001,
-       maxFloor: 1500,
-       skills: ["power_strike", "crushing_blow", "roar", "heal"],
-     },
-     {
-       name: "深淵魔導司祭",
-       hp: 34500,
-       str: 700,
-       vit: 1420,
-       int: 680,
-       agi: 98,
-       dex: 122,
-@@ -1829,50 +1867,69 @@
-       exp: 11200,
-       minFloor: 1100,
-       maxFloor: 1500,
-       skills: ["crushing_blow", "thunder_strike", "roar", "doom_mark", "heal"],
-     },
-     {
-       name: "彼岸の統治者",
-       hp: 56000,
-       str: 1150,
-       vit: 2100,
-       int: 860,
-       agi: 124,
-       dex: 154,
-       exp: 12200,
-       minFloor: 1100,
-       maxFloor: 1500,
-       skills: [
-         "fireball",
-         "ice_lance",
-         "thunder_strike",
-         "silence_hex",
-         "doom_mark",
-         "heal",
-       ],
-     },
-+    {
-+      name: "空蝕の魔装伯",
-+      hp: 58800,
-+      str: 1210,
-+      vit: 2180,
-+      int: 900,
-+      agi: 132,
-+      dex: 164,
-+      exp: 12900,
-+      minFloor: 1320,
-+      maxFloor: 1500,
-+      skills: [
-+        "thunder_strike",
-+        "crushing_blow",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
+       // 実績チェック（解除ログはここで出す）
+       checkAndUnlockAchievements();
  
-     // --------------------
-     // 1500〜2000F（新テーブル）
-     // ※core.js 側で50階層ごとの追加ステータスブーストあり
-     // --------------------
-     {
-       name: "虚星の侵略者",
-       hp: 62000,
-       str: 1260,
-       vit: 2300,
-       int: 920,
-       agi: 136,
-       dex: 170,
-       exp: 13800,
-       minFloor: 1501,
-       maxFloor: 2000,
-       skills: ["multi_slash", "power_strike", "doom_mark", "heal"],
-     },
-     {
-       name: "冥雷の皇子",
-       hp: 65500,
-       str: 1340,
-       vit: 2380,
-       int: 980,
-       agi: 148,
-@@ -1951,50 +2008,89 @@
-       exp: 19800,
-       minFloor: 1610,
-       maxFloor: 2000,
-       skills: ["crushing_blow", "power_strike", "roar", "doom_mark", "heal"],
-     },
-     {
-       name: "終刻の創壊王",
-       hp: 91000,
-       str: 1860,
-       vit: 3100,
-       int: 1320,
-       agi: 180,
-       dex: 218,
-       exp: 22000,
-       minFloor: 1800,
-       maxFloor: 2000,
-       skills: [
-         "fireball",
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "doom_mark",
-         "heal",
-       ],
-     },
-+    {
-+      name: "煉獄の星喰騎",
-+      hp: 86500,
-+      str: 1780,
-+      vit: 3000,
-+      int: 1160,
-+      agi: 176,
-+      dex: 212,
-+      exp: 20600,
-+      minFloor: 1720,
-+      maxFloor: 2000,
-+      skills: [
-+        "multi_slash",
-+        "crushing_blow",
-+        "doom_mark",
-+        "roar",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "天冥の葬送者",
-+      hp: 93800,
-+      str: 1900,
-+      vit: 3180,
-+      int: 1380,
-+      agi: 186,
-+      dex: 224,
-+      exp: 23100,
-+      minFloor: 1860,
-+      maxFloor: 2000,
-+      skills: [
-+        "fireball",
-+        "ice_lance",
-+        "multi_slash",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
+       // 経験値
+       let exp = enemy.exp;
+       const expBonus = getAccessoryBonus("expBonus");
+       const expSkillBonus =
+         gameData.player.skills && gameData.player.skills.exp_up
+           ? gameData.player.skills.exp_up
+           : 0;
++      const hasExpLevelMultiplier =
++        Number(gameData.player?.skills?.common_exp_level_mult || 0) > 0;
++      const levelExpMultiplier = hasExpLevelMultiplier
++        ? Math.max(1, Number(gameData.player?.level || 1))
++        : 1;
+       const expAchRate = getAchievementExpBonusRate();
+       const jobExpRate =
+         typeof jobs?.[gameData.player?.job]?.traits?.expRate === "number"
+           ? jobs[gameData.player.job].traits.expRate
+           : 0;
+       exp = Math.round(
+         exp *
+           (1 + expBonus / 100) *
+           (1 + expSkillBonus / 100) *
++          levelExpMultiplier *
+           (1 + expAchRate) *
+           (1 + jobExpRate),
+       );
  
-     // --------------------
-     // 2000〜3000F（新テーブル）
-     // --------------------
-     {
-       name: "深淵界の蹂躙兵",
-       hp: 120000,
-       str: 2350,
-       vit: 3900,
-       int: 1500,
-       agi: 210,
-       dex: 250,
-       exp: 29000,
-       minFloor: 2001,
-       maxFloor: 3000,
-       skills: ["crushing_blow", "power_strike", "doom_mark", "heal"],
-     },
-     {
-       name: "災雷の審問官",
-       hp: 132000,
-       str: 2480,
-       vit: 4100,
-       int: 1720,
-       agi: 224,
-       dex: 264,
-@@ -2027,50 +2123,90 @@
-       exp: 36500,
-       minFloor: 2260,
-       maxFloor: 3000,
-       skills: ["crushing_blow", "multi_slash", "thunder_strike", "doom_mark"],
-     },
-     {
-       name: "星喰らう魔王",
-       hp: 168000,
-       str: 2860,
-       vit: 4720,
-       int: 2260,
-       agi: 252,
-       dex: 294,
-       exp: 39800,
-       minFloor: 2260,
-       maxFloor: 3000,
-       skills: [
-         "fireball",
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "doom_mark",
-         "heal",
-       ],
-     },
-+    {
-+      name: "深淵導く神託機",
-+      hp: 176000,
-+      str: 2940,
-+      vit: 4860,
-+      int: 2360,
-+      agi: 260,
-+      dex: 302,
-+      exp: 42200,
-+      minFloor: 2520,
-+      maxFloor: 3000,
-+      skills: [
-+        "fireball",
-+        "ice_lance",
-+        "thunder_strike",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "虚無踏破の剣聖",
-+      hp: 186000,
-+      str: 3080,
-+      vit: 5020,
-+      int: 2100,
-+      agi: 274,
-+      dex: 318,
-+      exp: 44800,
-+      minFloor: 2780,
-+      maxFloor: 3000,
-+      skills: [
-+        "power_strike",
-+        "multi_slash",
-+        "crushing_blow",
-+        "doom_mark",
-+        "roar",
-+        "heal",
-+      ],
-+    },
+       gameData.player.exp += exp;
+       log(`${exp}EXPを獲得！`);
  
-     // --------------------
-     // 3000〜4500F（新テーブル）
-     // --------------------
-     {
-       name: "虚空の征服者",
-       hp: 205000,
-       str: 3320,
-       vit: 5600,
-       int: 2520,
-       agi: 286,
-       dex: 328,
-       exp: 45500,
-       minFloor: 3001,
-       maxFloor: 4500,
-       skills: ["power_strike", "crushing_blow", "doom_mark", "heal"],
-     },
-     {
-       name: "冥府の天文学者",
-       hp: 218000,
-       str: 3140,
-       vit: 5760,
-       int: 3040,
-       agi: 300,
-       dex: 342,
-@@ -2122,50 +2258,70 @@
-         "doom_mark",
-         "silence_hex",
-         "heal",
-       ],
-     },
-     {
-       name: "天壊の終末炉",
-       hp: 278000,
-       str: 4020,
-       vit: 6900,
-       int: 3360,
-       agi: 340,
-       dex: 388,
-       exp: 60800,
-       minFloor: 3440,
-       maxFloor: 4500,
-       skills: [
-         "fireball",
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "doom_mark",
-         "heal",
-       ],
-     },
-+    {
-+      name: "宵闇の連星王",
-+      hp: 292000,
-+      str: 4180,
-+      vit: 7160,
-+      int: 3520,
-+      agi: 352,
-+      dex: 402,
-+      exp: 64200,
-+      minFloor: 3880,
-+      maxFloor: 4500,
-+      skills: [
-+        "fireball",
-+        "thunder_strike",
-+        "multi_slash",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
+       checkLevelUp();
  
-     // --------------------
-     // 4500〜5000F（新テーブル）
-     // --------------------
-     {
-       name: "神罰の絶鎖竜",
-       hp: 320000,
-       str: 4560,
-       vit: 7800,
-       int: 3680,
-       agi: 370,
-       dex: 420,
-       exp: 68200,
-       minFloor: 4501,
-       maxFloor: 5000,
-       skills: ["crushing_blow", "thunder_strike", "doom_mark", "heal"],
-     },
-     {
-       name: "虚皇の冠位者",
-       hp: 346000,
-       str: 4820,
-       vit: 8240,
-       int: 4020,
-       agi: 386,
-       dex: 438,
-@@ -2192,50 +2348,92 @@
-         "doom_mark",
-         "roar",
-       ],
-     },
-     {
-       name: "零域の支配核",
-       hp: 405000,
-       str: 5480,
-       vit: 9260,
-       int: 4520,
-       agi: 418,
-       dex: 474,
-       exp: 86000,
-       minFloor: 4600,
-       maxFloor: 5000,
-       skills: [
-         "fireball",
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "doom_mark",
-         "silence_hex",
-         "heal",
-       ],
-     },
-+    {
-+      name: "終焉刻む天魔将",
-+      hp: 428000,
-+      str: 5740,
-+      vit: 9640,
-+      int: 4760,
-+      agi: 432,
-+      dex: 492,
-+      exp: 90800,
-+      minFloor: 4820,
-+      maxFloor: 5000,
-+      skills: [
-+        "fireball",
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "doom_mark",
-+        "roar",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "万雷の虚王",
-+      hp: 446000,
-+      str: 5920,
-+      vit: 9980,
-+      int: 4920,
-+      agi: 444,
-+      dex: 506,
-+      exp: 94400,
-+      minFloor: 4920,
-+      maxFloor: 5000,
-+      skills: [
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "silence_hex",
-+        "doom_mark",
-+        "roar",
-+        "heal",
-+      ],
-+    },
-   ];
+       // ドロップ判定
+       let dropChance = 30;
+       dropChance += getAccessoryBonus("dropRate");
+       dropChance += getAchievementItemDropRateBonus();
+       dropChance +=
+         typeof jobs?.[gameData.player?.job]?.traits?.dropRateBonus === "number"
+           ? jobs[gameData.player.job].traits.dropRateBonus
+           : 0;
  
-   // --------------------
-   // 修羅の国専用モンスターテーブル
-   // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
-   // --------------------
-   const asuraTierConfigs = [
-     {
-       maxFloor: 100,
-       target: {
-         hp: 280000,
-         str: 4000,
-         vit: 6800,
-         int: 3000,
-         agi: 330,
-         dex: 390,
-         exp: 62000,
-       },
-     },
-     {
-       maxFloor: 200,
-       target: {
-         hp: 380000,
-         str: 5200,
-         vit: 8400,
+       const willDrop = Math.random() * 100 < dropChance;
+ 
+       if (willDrop) {
+         const isNamedEnemy = !!enemy.isNamed;
+         const isHighSearchNamedEnemy =
+           isNamedEnemy && Number(enemy?.epithet?.minSearch || 0) >= 150;
+         const forcedSpecialPrefixRarityPool = isNamedEnemy
