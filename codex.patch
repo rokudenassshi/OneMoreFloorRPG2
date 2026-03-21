@@ -1,262 +1,139 @@
-diff --git a/js/core.js b/js/core.js
-index 5e20d125fbe65ea4bb249b55c2d46c08b29793ee..859b40d61cb8c69ae01ff20dbebcc2956bcd9872 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -433,50 +433,51 @@
+diff --git a/functions/index.js b/functions/index.js
+index 9482efe386f6c239905562026b72034ac4061bf3..7c7c6321fc3e3430b246bccceea1b5aca4c4f898 100644
+--- a/functions/index.js
++++ b/functions/index.js
+@@ -1,99 +1,105 @@
+-const functions = require("firebase-functions");
++const { onCall, HttpsError } = require("firebase-functions/v2/https");
+ const admin = require("firebase-admin");
  
-     const bf = Number(gameData && gameData.battleFloor);
-     if (
-       gameData &&
-       gameData.gameState === "BATTLE" &&
-       Number.isFinite(bf) &&
-       bf > 0
-     )
-       return bf;
-     const f = Number(gameData && gameData.floor);
-     return Number.isFinite(f) && f > 0 ? f : 1;
-   }
+ admin.initializeApp();
  
-   // -------------------
-   // オートセーブ
-   // -------------------
-   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
-   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
-   const AUTOSAVE_INTERVAL_MS = 5000;
-   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
-   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
+ const db = admin.firestore();
+ const SAVE_COLLECTION = "userSaves";
+ const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
  
-   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
-   const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
-   const CLOUD_SAVE_FUNCTION_SAVE = "saveUserGameData";
-+  const DEFAULT_FUNCTIONS_REGION = "us-central1";
-   let autosaveEnabled = true;
+ // ✅ “シリアルコード → 解放キー” をサーバー側に置く（クライアントには公開しない）
+ // ランダム文字列部分は固定（外部から推測されにくくするために付与）
+ const serialCodeLookup = {
+   // `OMFPRG1` + 英数字10文字（固定）: 前世の記憶（経験値+20%）
+   omfprg1h30n98jqmo: "pastLifeMemory",
  
-   function isAutosaveEnabled() {
-     try {
-       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
-       if (raw == null) return true;
-       return raw === "1";
-     } catch (e) {
-       return true;
+   // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+   stay8q2m1v7xk9: "stayBattle",
+ 
+   // `startadventure` + 英数字15文字（固定）: 250階層テスト上限解除
+   startadventure7x9k2m4p8q1r5tz: "floorCapLift250",
+ 
+   // `startdash` + 英数字10文字（固定）: 各紋章10個配布
+   startdashi1u474nk3ks: "startDashEmblems",
+ };
+ 
+-exports.verifySerialCode = functions
+-  .region("us-central1")
+-  .https.onCall((data) => {
+-    const code = String(data?.code || "")
++exports.verifySerialCode = onCall(
++  {
++    region: "us-central1",
++    cpu: 1,
++  },
++  (request) => {
++    const code = String(request.data?.code || "")
+       .trim()
+       .toLowerCase();
+     if (!code) return { ok: false, message: "empty" };
+ 
+     const unlock = serialCodeLookup[code];
+     if (unlock) return { ok: true, unlock };
+ 
+     return { ok: false, message: "invalid" };
+-  });
+-
+-exports.loadUserGameData = functions
+-  .region("us-central1")
+-  .https.onCall(async (_, context) => {
+-    const uid = context.auth?.uid;
++  },
++);
++
++exports.loadUserGameData = onCall(
++  {
++    region: "us-central1",
++    cpu: 1,
++  },
++  async (request) => {
++    const uid = request.auth?.uid;
+     if (!uid) {
+-      throw new functions.https.HttpsError("unauthenticated", "auth required");
++      throw new HttpsError("unauthenticated", "auth required");
      }
-   }
  
-   function setAutosaveEnabled(v) {
-     autosaveEnabled = !!v;
-     if (autosaveEnabled) autosaveDirty = true;
-     try {
-       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
-     } catch (e) {}
-   }
+     const snap = await db.collection(SAVE_COLLECTION).doc(uid).get();
+     if (!snap.exists) {
+       return { ok: true, hasSave: false };
+     }
  
-   let pendingAutosaveTimer = null;
-   let pendingThrottledSaveTimer = null;
-   let autosaveDirty = true;
-   let cloudSaveInFlight = false;
-   let cloudSaveQueued = false;
-@@ -495,50 +496,77 @@
+     const data = snap.data() || {};
+     const payload = data.payload;
+ 
+     if (!payload || payload.schema !== SAVE_SCHEMA) {
+       return { ok: true, hasSave: false };
+     }
+ 
+     return {
+       ok: true,
+       hasSave: true,
+       payload,
+       updatedAt: data.updatedAt || null,
      };
-     return JSON.parse(JSON.stringify(payload));
-   }
- 
-   function savePayloadToLocalCache(payload) {
-     try {
-       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-       return true;
-     } catch (e) {
-       return false;
-     }
-   }
- 
-   function loadPayloadFromLocalCache() {
-     try {
-       const raw = localStorage.getItem(SAVE_KEY);
-       if (!raw) return null;
-       const parsed = JSON.parse(raw);
-       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
-       return parsed;
-     } catch (e) {
-       return null;
-     }
-   }
- 
-+  function buildCloudFunctionUrl(functionName) {
-+    const cfg = window.FIREBASE_CONFIG || null;
-+    const projectId = cfg && cfg.projectId ? String(cfg.projectId) : "";
-+    if (!projectId) return "";
-+    const region = window.FIREBASE_FUNCTIONS_REGION || DEFAULT_FUNCTIONS_REGION;
-+    return `https://${region}-${projectId}.cloudfunctions.net/${functionName}`;
-+  }
-+
-+  async function postToCloudFunction(functionName, body, currentUser) {
-+    const url = buildCloudFunctionUrl(functionName);
-+    if (!url || !currentUser || typeof currentUser.getIdToken !== "function") {
-+      return null;
-+    }
-+    const token = await currentUser.getIdToken();
-+    const response = await fetch(url, {
-+      method: "POST",
-+      headers: {
-+        "Content-Type": "application/json",
-+        Authorization: `Bearer ${token}`,
-+      },
-+      body: JSON.stringify(body || {}),
-+    });
-+    if (!response.ok) return null;
-+    const json = await response.json().catch(() => null);
-+    return json && typeof json === "object" ? json : null;
-+  }
-+
-   function applySavePayload(payload) {
-     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
- 
-     gameData.floor = clampFloor(payload.floor || 1);
-     gameData.gameState = payload.gameState || "EXPLORE";
-     gameData.player = payload.player || gameData.player;
-     gameData.enemy = payload.enemy || null;
-     gameData.battleFloor =
-       payload.battleFloor != null ? payload.battleFloor : null;
-     gameData.pendingFloorAfterWin =
-       payload.pendingFloorAfterWin != null
-         ? payload.pendingFloorAfterWin
-         : null;
- 
-     ensureAutoSellConfig(gameData.player);
-     ensureAutoAllocateExpUpConfig(gameData.player);
-     ensureAutoAllocateStatPointsConfig(gameData.player);
-     ensureSerialOptionsConfig(gameData.player);
-     ensureWorldStateConfig(gameData.player);
-     // テスト上限を越えたセーブが来ても破綻しないように丸める
-     try {
-       if (gameData && gameData.player) {
-         gameData.player.maxReachedFloor = clampFloor(
-           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
-         );
-@@ -576,115 +604,105 @@
-       }
- 
-       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
-       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
-         if (!pendingThrottledSaveTimer) {
-           const delay = Math.max(
-             0,
-             MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave,
-           );
-           pendingThrottledSaveTimer = setTimeout(() => {
-             pendingThrottledSaveTimer = null;
-             saveGameNow();
-           }, delay);
-         }
-         return;
-       }
- 
-       if (cloudSaveInFlight) {
-         cloudSaveQueued = true;
-         return false;
-       }
- 
-       const payload = buildSavePayload();
-       autosaveDirty = false;
- 
--      const functionsInstance = window.firebaseFunctions || null;
--      const httpsCallableFactory = window.firebaseHttpsCallable || null;
--      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
--        autosaveDirty = true;
--        return false;
--      }
+-  });
 -
-       cloudSaveInFlight = true;
--      const saveUserGameData = httpsCallableFactory(
--        functionsInstance,
--        CLOUD_SAVE_FUNCTION_SAVE,
+-exports.saveUserGameData = functions
+-  .region("us-central1")
+-  .https.onCall(async (data, context) => {
+-    const uid = context.auth?.uid;
++  },
++);
++
++exports.saveUserGameData = onCall(
++  {
++    region: "us-central1",
++    cpu: 1,
++  },
++  async (request) => {
++    const uid = request.auth?.uid;
+     if (!uid) {
+-      throw new functions.https.HttpsError("unauthenticated", "auth required");
++      throw new HttpsError("unauthenticated", "auth required");
+     }
+ 
+-    const payload = data?.payload;
++    const payload = request.data?.payload;
+     if (!payload || typeof payload !== "object") {
+-      throw new functions.https.HttpsError(
+-        "invalid-argument",
+-        "payload required",
 -      );
-       try {
--        await saveUserGameData({ payload });
-+        const result = await postToCloudFunction(
-+          CLOUD_SAVE_FUNCTION_SAVE,
-+          { payload },
-+          currentUser,
-+        );
-+        if (!result || result.ok !== true) {
-+          autosaveDirty = true;
-+          return false;
-+        }
-         lastCloudSaveAt = Date.now();
-       } finally {
-         cloudSaveInFlight = false;
-       }
- 
-       if (cloudSaveQueued) {
-         cloudSaveQueued = false;
-         if (autosaveDirty) saveGameNow();
-       }
-       return true;
-     } catch (e) {
-       autosaveDirty = true;
-       return false;
++      throw new HttpsError("invalid-argument", "payload required");
      }
-   }
- 
-   function requestAutosave() {
-     if (!autosaveEnabled) return;
-     autosaveDirty = true;
-     if (pendingAutosaveTimer) return;
-     pendingAutosaveTimer = setTimeout(() => {
-       pendingAutosaveTimer = null;
-       saveGameNow();
-     }, REQUEST_AUTOSAVE_DEBOUNCE_MS);
-   }
- 
-   async function loadGameIfExists() {
-     try {
-       const authBridge = window.firebaseAuthBridge || null;
-       const currentUser =
-         authBridge && typeof authBridge.getCurrentUser === "function"
-           ? authBridge.getCurrentUser()
-           : null;
-       if (!currentUser) {
-         const cachedPayload = loadPayloadFromLocalCache();
-         if (!cachedPayload) return false;
-         return applySavePayload(cachedPayload);
-       }
- 
--      const functionsInstance = window.firebaseFunctions || null;
--      const httpsCallableFactory = window.firebaseHttpsCallable || null;
--      if (!functionsInstance || typeof httpsCallableFactory !== "function") {
--        return false;
--      }
--
--      const loadUserGameData = httpsCallableFactory(
--        functionsInstance,
-+      const data = await postToCloudFunction(
-         CLOUD_SAVE_FUNCTION_LOAD,
-+        {},
-+        currentUser,
-       );
--      const response = await loadUserGameData({});
--      const data = response && response.data ? response.data : null;
-       if (!data || !data.hasSave || !data.payload) return false;
-       const payload = data.payload;
-       return applySavePayload(payload);
-     } catch (e) {
-       return false;
+     if (payload.schema !== SAVE_SCHEMA) {
+-      throw new functions.https.HttpsError(
+-        "invalid-argument",
+-        "invalid schema",
+-      );
++      throw new HttpsError("invalid-argument", "invalid schema");
      }
-   }
  
-   // -------------------
-   // 装備UID（永続化用）
-   // ※ロード時の互換補正は行わない（リリース前のため）
-   // -------------------
-   let uidSeed = 0;
+     await db.collection(SAVE_COLLECTION).doc(uid).set(
+       {
+         payload,
+         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+       },
+       { merge: true },
+     );
  
-   function generateUid() {
-     uidSeed = (uidSeed + 1) >>> 0;
-     return `i_${Date.now().toString(36)}_${uidSeed.toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-   }
-   // -------------------
-   // 上級職 解放進捗
-   // -------------------
-   function getJobSkillGroup(jobKey) {
-     const def = jobs && jobs[jobKey] ? jobs[jobKey] : null;
-     return def && def.skillGroup ? def.skillGroup : jobKey;
-   }
+     return { ok: true };
+-  });
++  },
++);

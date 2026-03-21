@@ -1,4 +1,4 @@
-const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -23,10 +23,13 @@ const serialCodeLookup = {
   startdashi1u474nk3ks: "startDashEmblems",
 };
 
-exports.verifySerialCode = functions
-  .region("us-central1")
-  .https.onCall((data) => {
-    const code = String(data?.code || "")
+exports.verifySerialCode = onCall(
+  {
+    region: "us-central1",
+    cpu: 1,
+  },
+  (request) => {
+    const code = String(request.data?.code || "")
       .trim()
       .toLowerCase();
     if (!code) return { ok: false, message: "empty" };
@@ -35,14 +38,18 @@ exports.verifySerialCode = functions
     if (unlock) return { ok: true, unlock };
 
     return { ok: false, message: "invalid" };
-  });
+  },
+);
 
-exports.loadUserGameData = functions
-  .region("us-central1")
-  .https.onCall(async (_, context) => {
-    const uid = context.auth?.uid;
+exports.loadUserGameData = onCall(
+  {
+    region: "us-central1",
+    cpu: 1,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
     if (!uid) {
-      throw new functions.https.HttpsError("unauthenticated", "auth required");
+      throw new HttpsError("unauthenticated", "auth required");
     }
 
     const snap = await db.collection(SAVE_COLLECTION).doc(uid).get();
@@ -63,28 +70,26 @@ exports.loadUserGameData = functions
       payload,
       updatedAt: data.updatedAt || null,
     };
-  });
+  },
+);
 
-exports.saveUserGameData = functions
-  .region("us-central1")
-  .https.onCall(async (data, context) => {
-    const uid = context.auth?.uid;
+exports.saveUserGameData = onCall(
+  {
+    region: "us-central1",
+    cpu: 1,
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
     if (!uid) {
-      throw new functions.https.HttpsError("unauthenticated", "auth required");
+      throw new HttpsError("unauthenticated", "auth required");
     }
 
-    const payload = data?.payload;
+    const payload = request.data?.payload;
     if (!payload || typeof payload !== "object") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "payload required",
-      );
+      throw new HttpsError("invalid-argument", "payload required");
     }
     if (payload.schema !== SAVE_SCHEMA) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "invalid schema",
-      );
+      throw new HttpsError("invalid-argument", "invalid schema");
     }
 
     await db.collection(SAVE_COLLECTION).doc(uid).set(
@@ -96,4 +101,5 @@ exports.saveUserGameData = functions
     );
 
     return { ok: true };
-  });
+  },
+);
