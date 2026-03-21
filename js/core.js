@@ -3236,7 +3236,6 @@
     }
   }
 
-
   function incrementBattleActionAndCheckForcedEscape() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return false;
 
@@ -4609,7 +4608,7 @@
                 : "レア";
           window.showRareEnemyPopup(
             item.name,
-            `${rarityLabel}特殊接頭語装備を手に入れた！`,
+            `${rarityLabel}装備を手に入れた！`,
             {
               autoClose: false,
               allowOverlayClose: false,

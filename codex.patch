@@ -1,151 +1,122 @@
-diff --git a/js/ui.js b/js/ui.js
-index fce89a315408b05a729a3c5815ca321fd5a0af97..3d30072be9ba50c88f52b252aa5be3d648cbed2e 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -2021,70 +2021,81 @@
-     setTimeout(() => {
-       try {
-         select.focus();
-       } catch (e) {}
-     }, 0);
-   }
- 
-   function closeTeleportModal() {
-     const modal = document.getElementById("teleportModal");
-     if (!modal) return;
-     modal.classList.add("hidden");
-     modal.setAttribute("aria-hidden", "true");
- 
-     // フォーカスを戻す（aria-hidden警告回避）
-     const btn = document.getElementById("teleportBtn");
-     const target = btn || lastTeleportFocusEl;
-     if (target && typeof target.focus === "function") {
-       setTimeout(() => {
-         try {
-           target.focus();
-         } catch (e) {}
-       }, 0);
+diff --git a/js/data/serial-codes.js b/js/data/serial-codes.js
+index 5304fa8daf250349b94c026bede5805a4c1527bf..2b6738bd1f3dded72364a271925947c32342e3cd 100644
+--- a/js/data/serial-codes.js
++++ b/js/data/serial-codes.js
+@@ -20,50 +20,59 @@
      }
    }
  
--  function confirmTeleport() {
--    const select = document.getElementById("teleportSelect");
--    const stayToggle = document.getElementById("teleportStayBattleToggle");
--    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
-+  function applyStayBattleCurrentFloorOption(checked) {
-+    if (!gameData || !gameData.player) return;
- 
-     const unlocked =
-       typeof window.isStayBattleUnlocked === "function"
-         ? !!window.isStayBattleUnlocked()
-         : false;
--    if (gameData && gameData.player) {
--      if (
--        !gameData.player.serialOptions ||
--        typeof gameData.player.serialOptions !== "object"
--      ) {
--        gameData.player.serialOptions = {};
--      }
--      gameData.player.serialOptions.stayBattleCurrentFloor =
--        unlocked && !!(stayToggle && stayToggle.checked);
-+
-+    if (
-+      !gameData.player.serialOptions ||
-+      typeof gameData.player.serialOptions !== "object"
-+    ) {
-+      gameData.player.serialOptions = {};
-     }
- 
-+    gameData.player.serialOptions.stayBattleCurrentFloor = unlocked && !!checked;
-+
-+    if (typeof requestAutosave === "function") requestAutosave();
-+  }
-+
-+  function onTeleportStayBattleToggleChange(el) {
-+    applyStayBattleCurrentFloorOption(!!(el && el.checked));
-+  }
-+
-+  function confirmTeleport() {
-+    const select = document.getElementById("teleportSelect");
-+    const stayToggle = document.getElementById("teleportStayBattleToggle");
-+    const dest = Math.max(1, Math.floor(Number(select ? select.value : 1)));
-+
-+    applyStayBattleCurrentFloorOption(!!(stayToggle && stayToggle.checked));
-+
-     if (typeof window.teleportToFloor === "function") {
-       const ok = window.teleportToFloor(dest);
-       if (ok) closeTeleportModal();
-     }
+   function saveStore(store) {
+     try {
+       localStorage.setItem(STORE_KEY, JSON.stringify(store || {}));
+     } catch (e) {}
    }
  
-   function setStatusTab(tab) {
-     const allowed = ["status", "achievements", "records"];
-     if (!allowed.includes(tab)) tab = "status";
-     currentStatusTab = tab;
- 
-     const tabStatus = document.getElementById("tabStatus");
-     const tabAch = document.getElementById("tabAchievements");
-     const tabRec = document.getElementById("tabRecords");
- 
-     if (tabStatus)
-       tabStatus.style.display = tab === "status" ? "block" : "none";
-     if (tabAch)
-       tabAch.style.display = tab === "achievements" ? "block" : "none";
-     if (tabRec) tabRec.style.display = tab === "records" ? "block" : "none";
- 
-     const btnS = document.getElementById("statusTabBtnStatus");
-     const btnA = document.getElementById("statusTabBtnAchievements");
-     const btnR = document.getElementById("statusTabBtnRecords");
-     if (btnS) btnS.classList.toggle("is-active", tab === "status");
-@@ -3450,50 +3461,51 @@
-     updateSkillButtons();
-     if (typeof requestAutosave === "function") requestAutosave();
+   function getPlayer() {
+     return window.gameData && window.gameData.player
+       ? window.gameData.player
+       : null;
    }
  
-   // ポップアップ
-   window.showRareEnemyPopup = showRareEnemyPopup;
-   window.showEventPopup = showEventPopup;
+   // ✅ “シリアルコード → 解放キー”
+   // セキュリティのため通常は空（サーバー側で検証）。
+   const serialCodeLookup = {
+     // `stay` + 英数字10文字（固定）: 現在階層連戦モード解放
+     stay8q2m1v7xk9: "stayBattle",
  
-   // -------------------
-   // グローバル公開
-   // -------------------
-   window.updateUI = updateUI;
-   window.updateRecordsUI = updateRecordsUI;
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
+     // `startdash` + 英数字10文字（固定）: 各紋章10個配布
+     startdashi1u474nk3ks: "startDashEmblems",
+   };
  
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.setOptionsTab = setOptionsTab;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-+  window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   window.useValuableById = useValuableById;
-   // =====================
-   // セーブ設定
-   // =====================
-   function toggleAutosave(enabled) {
-     setAutosaveEnabled(!!enabled);
-     updateOptionsUI();
++  const START_DASH_EMBLEM_IDS = [
++    "emblem_strength",
++    "emblem_vitality",
++    "emblem_intelligence",
++    "emblem_agility",
++    "emblem_dexterity",
++  ];
++
++
+   // ✅ “解放キー → 実行内容”
+   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
+   const serialCodeActions = {
+     stayBattle: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.stayBattle) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.stayBattle);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.stayBattle = true;
+         saveStore(s);
+ 
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object")
+             p.serialUnlocks = {};
+           p.serialUnlocks.stayBattle = true;
+         }
+ 
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
+@@ -127,54 +136,47 @@
+       },
+       logMessage: "✨ シリアルコードを確認しました。",
+     },
+ 
+     // スタートダッシュ（各紋章 ×10）
+     startDashEmblems: {
+       isUnlocked: () => {
+         const s = loadStore();
+         if (s.startDashEmblems) return true;
+         const p = getPlayer();
+         return !!(p && p.serialUnlocks && p.serialUnlocks.startDashEmblems);
+       },
+       unlock: () => {
+         const s = loadStore();
+         s.startDashEmblems = true;
+         saveStore(s);
+ 
+         const p = getPlayer();
+         if (p) {
+           if (!p.serialUnlocks || typeof p.serialUnlocks !== "object") {
+             p.serialUnlocks = {};
+           }
+           p.serialUnlocks.startDashEmblems = true;
+ 
+           if (!Array.isArray(p.valuables)) p.valuables = [];
+-          const emblemIds = [
+-            "emblem_strength",
+-            "emblem_vitality",
+-            "emblem_intelligence",
+-            "emblem_agility",
+-            "emblem_dexterity",
+-          ];
+-          for (const id of emblemIds) {
++          for (const id of START_DASH_EMBLEM_IDS) {
+             const found = p.valuables.find((v) => v && v.id === id);
+             if (found) {
+-              found.amount = Math.max(0, Number(found.amount || 0)) + 10;
++              found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
+             } else {
+-              p.valuables.push({ id, amount: 10, keepOnReset: true });
++              p.valuables.push({ id, count: 10 });
+             }
+           }
+         }
+ 
+         if (typeof window.checkAndUnlockAchievements === "function") {
+           window.checkAndUnlockAchievements({ silent: false });
+         }
+       },
+       logMessage: "✨ スタートダッシュ特典で各紋章を10個獲得しました。",
+     },
+   };
+ 
+   // グローバルに公開（ui.js が参照する）
+   window.serialCodeLookup = serialCodeLookup;
+   window.serialCodeActions = serialCodeActions;
+ })();

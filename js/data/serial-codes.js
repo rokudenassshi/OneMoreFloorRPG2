@@ -42,6 +42,15 @@
     startdashi1u474nk3ks: "startDashEmblems",
   };
 
+  const START_DASH_EMBLEM_IDS = [
+    "emblem_strength",
+    "emblem_vitality",
+    "emblem_intelligence",
+    "emblem_agility",
+    "emblem_dexterity",
+  ];
+
+
   // ✅ “解放キー → 実行内容”
   // 現時点では「解放済みフラグ」を保存するだけ（後で挙動を追加しやすい）
   const serialCodeActions = {
@@ -149,19 +158,12 @@
           p.serialUnlocks.startDashEmblems = true;
 
           if (!Array.isArray(p.valuables)) p.valuables = [];
-          const emblemIds = [
-            "emblem_strength",
-            "emblem_vitality",
-            "emblem_intelligence",
-            "emblem_agility",
-            "emblem_dexterity",
-          ];
-          for (const id of emblemIds) {
+          for (const id of START_DASH_EMBLEM_IDS) {
             const found = p.valuables.find((v) => v && v.id === id);
             if (found) {
-              found.amount = Math.max(0, Number(found.amount || 0)) + 10;
+              found.count = Math.max(0, Math.floor(Number(found.count || 0))) + 10;
             } else {
-              p.valuables.push({ id, amount: 10, keepOnReset: true });
+              p.valuables.push({ id, count: 10 });
             }
           }
         }
