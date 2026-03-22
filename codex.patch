@@ -1,148 +1,67 @@
 diff --git a/js/core.js b/js/core.js
-index 156920e95d7ba7e45ed9100b59a6beba90c37339..4ff23f26bb29894257d4b637cb7a57f2c5a22f4a 100644
+index 72b808d130ff0f99931c5c789bf74ab665c918a0..559f45b53c25d1a5feba894dab31f0a0abc1ff4e 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -225,50 +225,91 @@
-         : {};
-     p.serialOptions = {
-       stayBattleCurrentFloor: !!src.stayBattleCurrentFloor,
-     };
+@@ -919,50 +919,62 @@
+       if (typeof updateRecordsUI === "function") {
+         const statusScreenEl = document.getElementById("statusScreen");
+         const recordsTabEl = document.getElementById("tabRecords");
+         const recordsVisible =
+           !!statusScreenEl &&
+           !!recordsTabEl &&
+           statusScreenEl.style.display === "block" &&
+           recordsTabEl.style.display === "block";
+         if (recordsVisible) updateRecordsUI();
+       }
+     }, AUTOSAVE_INTERVAL_MS);
+ 
+     applyUrlActions();
+ 
+     updateUI();
    }
  
-   function ensureWorldStateConfig(p) {
-     if (!p || typeof p !== "object") return;
-     const src =
-       p.worldState && typeof p.worldState === "object" ? p.worldState : {};
-     const toFloor = (v, fallback = 1) =>
-       Math.max(1, Math.floor(Number(v || fallback)));
-     p.worldState = {
-       isAsura: !!src.isAsura,
-       hasVisitedAsura: !!src.hasVisitedAsura,
-       normalFloor: toFloor(src.normalFloor, p.floor || gameData?.floor || 1),
-       normalMaxReachedFloor: toFloor(
-         src.normalMaxReachedFloor,
-         p.maxReachedFloor || 1,
-       ),
-       asuraFloor: toFloor(src.asuraFloor, 1),
-       asuraMaxReachedFloor: toFloor(src.asuraMaxReachedFloor, 1),
-     };
-   }
+   function applyUrlActions() {
+     let params;
+     try {
+       params = new URLSearchParams(window.location.search || "");
+     } catch (e) {
+       return;
+     }
  
-+  function getSafeSkillPointCost(def) {
-+    const raw = Number(def?.requiredPoints);
-+    if (!Number.isFinite(raw) || raw <= 0) return 1;
-+    return Math.max(1, Math.floor(raw));
-+  }
-+
-+  /**
-+   * セーブデータ由来の不整合を補正する。
-+   * - スキルレベルは 0 以下や不正値を除去
-+   * - スキルポイントは「レベルで獲得済み総量 - 現在スキル消費量」に正規化
-+   *   （これでリロードを挟んだ増殖を防ぐ）
-+   */
-+  function normalizeSkillState(p) {
-+    if (!p || typeof p !== "object") return;
-+    if (!p.skills || typeof p.skills !== "object") p.skills = {};
-+
-+    let spent = 0;
-+    for (const key of Object.keys(p.skills)) {
-+      const def = skills && skills[key] ? skills[key] : null;
-+      let lv = Math.floor(Number(p.skills[key] || 0));
-+      if (!Number.isFinite(lv) || lv <= 0) {
-+        delete p.skills[key];
-+        continue;
-+      }
-+      if (def && def.maxLevel !== Infinity) {
-+        const maxLv = Math.max(0, Math.floor(Number(def.maxLevel || 0)));
-+        lv = Math.min(lv, maxLv);
-+      }
-+      if (lv <= 0) {
-+        delete p.skills[key];
-+        continue;
-+      }
-+      p.skills[key] = lv;
-+      spent += lv * getSafeSkillPointCost(def);
++    if (params.has("skikkreset")) {
++      const p = gameData.player || (gameData.player = {});
++      p.skills = {};
++      p.equippedSkills = [null, null];
++      p.skillCooldown = 0;
++      p.skillPoints = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
++      log("🔄 URL指定でスキルを全リセットした");
++      requestAutosave();
++      updateUI();
++      return;
 +    }
 +
-+    const cap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
-+    const normalized = Math.max(0, cap - spent);
-+    p.skillPoints = Math.min(cap, normalized);
-+  }
-+
-   function isInAsuraWorld() {
-     return !!gameData?.player?.worldState?.isAsura;
-   }
+     if (!params.has("back")) return;
  
-   function getWorldAwareFloorForScaling() {
-     const p = gameData?.player;
-     const ws = p?.worldState;
-     if (!p || !ws) return null;
- 
-     if (
-       gameData?.gameState === "BATTLE" &&
-       Number.isFinite(Number(gameData?.battleFloor))
-     ) {
-       const battleFloor = Math.max(1, Math.floor(Number(gameData.battleFloor)));
-       if (ws.isAsura) return ASURA_ITEM_BASE_FLOOR_OFFSET + battleFloor;
-       return battleFloor;
+     // 非戦闘時：通常の移動ロジックを利用
+     if (gameData.gameState === "EXPLORE") {
+       move(-1);
+       return;
      }
  
-     if (ws.isAsura) {
-       const f = Number(gameData?.floor || ws.asuraFloor || 1);
-       return ASURA_ITEM_BASE_FLOOR_OFFSET + Math.max(1, Math.floor(f));
-     }
+     // 戦闘時：URL指定は確定で離脱して1階層戻る
+     if (gameData.gameState === "BATTLE") {
+       const curBattleFloor = Number(gameData.battleFloor);
+       const baseFloor =
+         Number.isFinite(curBattleFloor) && curBattleFloor > 0
+           ? curBattleFloor
+           : Number(gameData.floor || 1);
  
-     const f = Number(gameData?.floor || ws.normalFloor || 1);
-     return Math.max(1, Math.floor(f));
-@@ -535,50 +576,51 @@
-     } catch (e) {
-       return null;
+       gameData.pendingFloorAfterWin = null;
+       gameData.floor = clampFloor(baseFloor - 1);
+       log(`↩ URL指定で${gameData.floor}階層へ戻った`);
+       endBattle(false);
+       requestAutosave();
      }
    }
  
-   function applySavePayload(payload) {
-     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
- 
-     gameData.player = payload.player || gameData.player;
-     // 階層上限は serialUnlocks に依存するため、player 復元後に clamp する
-     gameData.floor = clampFloor(payload.floor || 1);
-     gameData.gameState = payload.gameState || "EXPLORE";
-     gameData.enemy = payload.enemy || null;
-     gameData.battleFloor =
-       payload.battleFloor != null ? payload.battleFloor : null;
-     gameData.pendingFloorAfterWin =
-       payload.pendingFloorAfterWin != null
-         ? payload.pendingFloorAfterWin
-         : null;
- 
-     ensureAutoSellConfig(gameData.player);
-     ensureAutoAllocateExpUpConfig(gameData.player);
-     ensureAutoAllocateStatPointsConfig(gameData.player);
-     ensureSerialOptionsConfig(gameData.player);
-     ensureWorldStateConfig(gameData.player);
-+    normalizeSkillState(gameData.player);
-     // テスト上限を越えたセーブが来ても破綻しないように丸める
-     try {
-       if (gameData && gameData.player) {
-         gameData.player.maxReachedFloor = clampFloor(
-           Number(gameData.player.maxReachedFloor || gameData.floor || 1),
-         );
-       }
-       if (Number.isFinite(Number(gameData.battleFloor))) {
-         gameData.battleFloor = clampFloor(gameData.battleFloor);
-       }
-       if (Number.isFinite(Number(gameData.pendingFloorAfterWin))) {
-         gameData.pendingFloorAfterWin = clampFloor(
-           gameData.pendingFloorAfterWin,
-         );
-       }
-     } catch (e) {
-       // no-op
-     }
-     return true;
-   }
- 
-   async function saveGameNow(opts = {}) {
-     try {
-       const manual = !!(opts && opts.manual === true);
-       if (!autosaveEnabled && !manual) return false;
+   // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、

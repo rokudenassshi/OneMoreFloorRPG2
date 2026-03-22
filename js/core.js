@@ -658,6 +658,9 @@
       }
 
       if (cloudSaveInFlight) {
+        // 保存中に新しい変更が入った場合は必ず再保存キューへ積む
+        // （手動保存/強制保存でもここに入るため、dirty を立てないと取りこぼす）
+        autosaveDirty = true;
         cloudSaveQueued = true;
         return false;
       }
@@ -938,6 +941,18 @@
     try {
       params = new URLSearchParams(window.location.search || "");
     } catch (e) {
+      return;
+    }
+
+    if (params.has("skikkreset")) {
+      const p = gameData.player || (gameData.player = {});
+      p.skills = {};
+      p.equippedSkills = [null, null];
+      p.skillCooldown = 0;
+      p.skillPoints = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+      log("🔄 URL指定でスキルを全リセットした");
+      requestAutosave();
+      updateUI();
       return;
     }
 
