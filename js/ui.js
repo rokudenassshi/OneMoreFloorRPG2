@@ -2133,10 +2133,14 @@
     const floor = Math.max(1, Math.floor(Number(gameData.floor || 1)));
     const totalKills = Math.max(0, Math.floor(Number(p.totalKills || 0)));
     const maxDamage = Math.max(0, Math.floor(Number(p.maxDamage || 0)));
+    const currentJobName =
+      jobs && jobs[p.job] && jobs[p.job].name ? jobs[p.job].name : "不明";
 
     const text = `ハクスラ OneMoreFloorRPG2をプレイ！
+
 これまで倒した敵の数: ${totalKills}体
 最大ダメージ: ${maxDamage}
+現在の職業: ${currentJobName}
 到達階層: ${floor}F
 #OneMoreFloorRPG2
 #OMF2`;
@@ -2907,7 +2911,10 @@
     const step = getStatAllocationStep();
     if (delta === 0) return;
     const current = gameData.player.allocatedStats[stat];
-    const remaining = Math.max(0, Math.floor(Number(gameData.player.statPoints || 0)));
+    const remaining = Math.max(
+      0,
+      Math.floor(Number(gameData.player.statPoints || 0)),
+    );
     const maxAdjust = delta > 0 ? remaining : current;
     if (maxAdjust <= 0) return;
     const amount = Math.min(step, maxAdjust);
@@ -3384,7 +3391,9 @@
 
     const byPoints = Math.floor(Math.max(0, Number(p.skillPoints || 0)) / cost);
     const byLevelCap =
-      skill.maxLevel === Infinity ? byPoints : Math.max(0, skill.maxLevel - currentLevel);
+      skill.maxLevel === Infinity
+        ? byPoints
+        : Math.max(0, skill.maxLevel - currentLevel);
     const amount = Math.min(step, byPoints, byLevelCap);
     if (amount <= 0) return;
 
