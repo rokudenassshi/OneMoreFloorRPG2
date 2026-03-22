@@ -76,7 +76,7 @@
       job: "all",
       maxLevel: Infinity,
       requiredPoints: 10,
-      // requiredMaxReachedFloor: 5000,
+      requiredMaxReachedFloor: 5000,
       desc: "攻撃+{attackBonus}%（上限なし）",
       effect: (lv) => ({ attackBonus: lv * 0.1 }),
     },
