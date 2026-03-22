@@ -1674,10 +1674,28 @@
         advancedPassiveMult[key] *= mul;
         return true;
       };
+      const applyCommonTuningMul = (key, raw) => {
+        const v = Number(raw);
+        if (!Number.isFinite(v) || v === 0) return false;
+        const isCommonAttackTuning =
+          skillKey === "common_attack_tuning" && key === "attack";
+        const isCommonDefenseTuning =
+          skillKey === "common_defense_tuning" && key === "defense";
+        if (!isCommonAttackTuning && !isCommonDefenseTuning) return false;
+        const mul = 1 + v / 100;
+        if (!Number.isFinite(mul) || mul <= 0) return false;
+        advancedPassiveMult[key] *= mul;
+        return true;
+      };
 
-      if (!applyAdvancedMul("attack", effect.attackBonus) && effect.attackBonus)
+      if (
+        !applyCommonTuningMul("attack", effect.attackBonus) &&
+        !applyAdvancedMul("attack", effect.attackBonus) &&
+        effect.attackBonus
+      )
         combat.attack += effect.attackBonus;
       if (
+        !applyCommonTuningMul("defense", effect.defenseBonus) &&
         !applyAdvancedMul("defense", effect.defenseBonus) &&
         effect.defenseBonus
       )

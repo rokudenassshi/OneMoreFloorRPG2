@@ -1,75 +1,78 @@
-diff --git a/js/ui.js b/js/ui.js
-index bb4e45ea9fb87787accbfd5e8fd02fa45b1108ae..dfbcd4000283279d5d6d6d8371bfbb00f9645a20 100644
---- a/js/ui.js
-+++ b/js/ui.js
-@@ -3156,59 +3156,64 @@
-         "value",
-       ];
+diff --git a/js/core.js b/js/core.js
+index 0ed12dbb2ff36ee52ebba3305acda8af1491f7d8..a98ee45b57e5e6015c14b2628e3ac3cbb69608bb 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -1652,54 +1652,72 @@
+       const skillDef = skills[skillKey];
+       if (!skillDef) continue;
+       if (skillDef.type !== "passive") continue;
  
-       let fallbackValue = null;
-       let fallbackKey = null;
-       for (const k of priorityKeys) {
-         const v = eff?.[k];
-         if (Number.isFinite(v)) {
-           fallbackValue = v;
-           fallbackKey = k;
-           break;
-         }
-       }
-       if (fallbackValue === null && eff && typeof eff === "object") {
-         for (const k of Object.keys(eff)) {
-           const v = eff[k];
-           if (Number.isFinite(v)) {
-             fallbackValue = v;
-             fallbackKey = k;
-             break;
-           }
-         }
-       }
+       // 現在の職業で有効なパッシブのみ適用（上位職は下位職パッシブを使えない）
+       const jobKey = gameData.player?.job;
+       const isCommon = skillDef.job === "all";
+       if (skillDef.job && !isCommon && skillDef.job !== jobKey) continue;
  
-       const maybePercent = (v, key, offset, tokenLength, str) => {
--        // 置換対象の直後が % のときのみ 0.x を % 表示へ変換する
-+        // 0.x を % 表示へ変換するのは「内部表現が 0〜1 の割合」のキーだけに限定する
-+        // （例: healRate=0.2 -> 20%）。
-+        // attackBonus=0.1 のような「そのまま%ポイント値」を誤って 10% 表示しないため。
-         const base = String(str || raw);
-         const nextChar = base.charAt(offset + tokenLength);
--        const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
--          String(key || ""),
--        );
--        const shouldPercentize = nextChar === "%" || keyLooksPercent;
--        if (!shouldPercentize) return v;
-+        if (nextChar !== "%") return v;
-         if (!Number.isFinite(v)) return v;
-+
-+        const fractionalPercentKeys = new Set([
-+          "healRate",
-+          "skillFollowUpChance",
-+        ]);
-+        if (!fractionalPercentKeys.has(String(key || ""))) return v;
-+
-         if (v > 0 && v < 1) return v * 100;
-         return v;
+       const level = gameData.player.skills[skillKey];
+       const effect = skillDef.effect(level);
+ 
+       const skillJobDef = skillDef.job ? jobs?.[skillDef.job] : null;
+       const isAdvancedPassive = skillJobDef && skillJobDef.tier === "advanced";
+ 
+       const applyAdvancedMul = (key, raw) => {
+         const v = Number(raw);
+         if (!Number.isFinite(v) || v === 0) return false;
+         if (!isAdvancedPassive) return false;
+         // 例: +12 => x1.12, -15 => x0.85
+         const mul = 1 + v / 100;
+         if (!Number.isFinite(mul) || mul <= 0) return false;
+         advancedPassiveMult[key] *= mul;
+         return true;
        };
++      const applyCommonTuningMul = (key, raw) => {
++        const v = Number(raw);
++        if (!Number.isFinite(v) || v === 0) return false;
++        const isCommonAttackTuning =
++          skillKey === "common_attack_tuning" && key === "attack";
++        const isCommonDefenseTuning =
++          skillKey === "common_defense_tuning" && key === "defense";
++        if (!isCommonAttackTuning && !isCommonDefenseTuning) return false;
++        const mul = 1 + v / 100;
++        if (!Number.isFinite(mul) || mul <= 0) return false;
++        advancedPassiveMult[key] *= mul;
++        return true;
++      };
  
-       return raw.replace(/\{([a-zA-Z0-9_]+)\}/g, (_m, key, offset, str) => {
-         let v = null;
-         let actualKey = key;
-         if (key === "value") {
-           v = fallbackValue;
-           actualKey = fallbackKey;
-         } else {
-           v = eff?.[key];
-         }
-         if (!Number.isFinite(v)) return "-";
- 
-         let rep = formatNumber(
-           maybePercent(v, actualKey, offset, String(_m).length, str),
-         );
-         if (!rep) return "-";
- 
-         // 回避上昇は % として表示（説明文側に % が無い場合でも付与）
-         // 例: "回避+{evasionBonus}" -> "回避+3%"
-         if (actualKey === "evasionBonus") {
-           const base = String(str || raw);
-           const nextChar = base.charAt(offset + String(_m).length);
+-      if (!applyAdvancedMul("attack", effect.attackBonus) && effect.attackBonus)
++      if (
++        !applyCommonTuningMul("attack", effect.attackBonus) &&
++        !applyAdvancedMul("attack", effect.attackBonus) &&
++        effect.attackBonus
++      )
+         combat.attack += effect.attackBonus;
+       if (
++        !applyCommonTuningMul("defense", effect.defenseBonus) &&
+         !applyAdvancedMul("defense", effect.defenseBonus) &&
+         effect.defenseBonus
+       )
+         combat.defense += effect.defenseBonus;
+       if (effect.evasionBonus) combat.evasion += effect.evasionBonus;
+       if (effect.critBonus) combat.critRate += effect.critBonus;
+       if (
+         !applyAdvancedMul("magicPower", effect.magicBonus) &&
+         effect.magicBonus
+       )
+         combat.magicPower += effect.magicBonus;
+       if (effect.allStatsBonus) {
+         if (!applyAdvancedMul("attack", effect.allStatsBonus))
+           combat.attack += effect.allStatsBonus;
+         if (!applyAdvancedMul("defense", effect.allStatsBonus))
+           combat.defense += effect.allStatsBonus;
+       }
+       if (effect.searchBonus) combat.search += effect.searchBonus;
+       if (effect.accuracyBonus) combat.accuracy += effect.accuracyBonus;
+       if (!applyAdvancedMul("maxHp", effect.maxHpBonus) && effect.maxHpBonus)
+         combat.maxHp += effect.maxHpBonus;
+       if (
+         !applyAdvancedMul("healPower", effect.healPowerBonus) &&
+         effect.healPowerBonus
+       )
