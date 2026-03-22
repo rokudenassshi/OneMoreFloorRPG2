@@ -2951,6 +2951,14 @@
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
+  function saveSkillsNow() {
+    if (typeof saveGameNow === "function") {
+      saveGameNow({ manual: true, force: true });
+    } else if (typeof requestAutosave === "function") {
+      requestAutosave();
+    }
+  }
+
   function toggleAutoAllocateStatPoints(enabled) {
     const p = gameData && gameData.player ? gameData.player : null;
     if (!p) return;
@@ -2959,7 +2967,7 @@
       `⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`,
     );
     updateSkillUI();
-    if (typeof requestAutosave === "function") requestAutosave();
+    saveSkillsNow();
   }
 
   function setAutoAllocateStatTarget(target) {
@@ -2982,7 +2990,7 @@
       dexterity: "🎯 器用さ",
     };
     log(`⚙️ ステータスポイント自動割り振り先: ${labels[target] || target}`);
-    if (typeof requestAutosave === "function") requestAutosave();
+    saveSkillsNow();
   }
 
   function closeSkillScreen() {
@@ -3390,7 +3398,7 @@
     updateStatusUI();
     getCombatStats();
     updateSkillButtons();
-    if (typeof requestAutosave === "function") requestAutosave();
+    saveSkillsNow();
   }
 
   // いつでもスキルレベルを下げられる（ポイント返却）
@@ -3435,7 +3443,7 @@
     updateStatusUI();
     updateSkillButtons();
     getCombatStats();
-    if (typeof requestAutosave === "function") requestAutosave();
+    saveSkillsNow();
   }
 
   function ensureEquippedSkillsArray(p) {
@@ -3551,7 +3559,7 @@
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
-    if (typeof requestAutosave === "function") requestAutosave();
+    saveSkillsNow();
   }
 
   // ポップアップ

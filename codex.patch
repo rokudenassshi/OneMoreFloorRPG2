@@ -1,8 +1,184 @@
 diff --git a/js/ui.js b/js/ui.js
-index bf2962afafc379fcd97682983fa47fa109b35edf..8536e40b545ed26e238c5054796cab5b24f6269e 100644
+index 8536e40b545ed26e238c5054796cab5b24f6269e..eb76e802a48b504fa34793c9fe122374f4f14fc0 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -3449,68 +3449,76 @@
+@@ -2929,82 +2929,90 @@
+       gameData.player.allocatedStats[stat] = 0;
+     }
+     gameData.player.statPoints += total;
+ 
+     openStatAllocation();
+   }
+ 
+   // -------------------
+   // UI - スキル
+   // -------------------
+   function openSkillScreen() {
+     document.getElementById("skillScreen").style.display = "block";
+     document.getElementById("statusScreen").style.display = "none";
+     updateSkillUI();
+   }
+ 
+   function toggleAutoAllocateExpUp(enabled) {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return;
+     p.autoAllocateExpUp = !!enabled;
+     log(`⚙️ 経験値増加への自動割り振り: ${p.autoAllocateExpUp ? "ON" : "OFF"}`);
+     updateSkillUI();
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
++  function saveSkillsNow() {
++    if (typeof saveGameNow === "function") {
++      saveGameNow({ manual: true, force: true });
++    } else if (typeof requestAutosave === "function") {
++      requestAutosave();
++    }
++  }
++
+   function toggleAutoAllocateStatPoints(enabled) {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return;
+     p.autoAllocateStatPoints = !!enabled;
+     log(
+       `⚙️ ステータスポイント自動割り振り: ${p.autoAllocateStatPoints ? "ON" : "OFF"}`,
+     );
+     updateSkillUI();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    saveSkillsNow();
+   }
+ 
+   function setAutoAllocateStatTarget(target) {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return;
+     const allowed = [
+       "strength",
+       "vitality",
+       "intelligence",
+       "agility",
+       "dexterity",
+     ];
+     if (!allowed.includes(target)) return;
+     p.autoAllocateStatTarget = target;
+     const labels = {
+       strength: "⚔️ 力",
+       vitality: "❤️ 体力",
+       intelligence: "🧙 賢さ",
+       agility: "⚡ 素早さ",
+       dexterity: "🎯 器用さ",
+     };
+     log(`⚙️ ステータスポイント自動割り振り先: ${labels[target] || target}`);
+-    if (typeof requestAutosave === "function") requestAutosave();
++    saveSkillsNow();
+   }
+ 
+   function closeSkillScreen() {
+     document.getElementById("skillScreen").style.display = "none";
+     document.getElementById("statusScreen").style.display = "block";
+   }
+ 
+   function getSkillPointCost(skillDef) {
+     const c = Number(skillDef?.requiredPoints);
+     if (!Number.isFinite(c) || c <= 0) return 1;
+     return Math.max(1, Math.floor(c));
+   }
+ 
+   function getSkillAllocationStep() {
+     const input = document.getElementById("skillAllocationStepInput");
+     const n = Math.floor(Number(input ? input.value : 1));
+     if (!Number.isFinite(n) || n <= 0) return 1;
+     return n;
+   }
+ 
+   function setSkillAllocationStep(value) {
+     const parsed = Math.floor(Number(value));
+     const normalized = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+     const input = document.getElementById("skillAllocationStepInput");
+     if (input) input.value = String(normalized);
+@@ -3368,96 +3376,96 @@
+         );
+         return;
+       }
+       if (!isSkillPrereqMet(skill, p.skills)) {
+         log(`🔒 前提スキルが足りません`);
+         return;
+       }
+     }
+ 
+     const byPoints = Math.floor(Math.max(0, Number(p.skillPoints || 0)) / cost);
+     const byLevelCap =
+       skill.maxLevel === Infinity ? byPoints : Math.max(0, skill.maxLevel - currentLevel);
+     const amount = Math.min(step, byPoints, byLevelCap);
+     if (amount <= 0) return;
+ 
+     if (!p.skills || typeof p.skills !== "object") p.skills = {};
+     p.skills[key] = currentLevel + amount;
+     const spent = amount * cost;
+     p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - spent);
+ 
+     log(`${skill.name}のレベルが${amount}上がった！（ポイント-${spent}）`);
+     updateSkillUI();
+     updateStatusUI();
+     getCombatStats();
+     updateSkillButtons();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    saveSkillsNow();
+   }
+ 
+   // いつでもスキルレベルを下げられる（ポイント返却）
+   function levelDownSkill(key) {
+     const p = gameData.player;
+     if (!p || !p.skills) return;
+ 
+     const skill = skills[key];
+     const currentLevel = Math.floor(Number(p.skills[key] || 0));
+     if (currentLevel <= 0) return;
+     const step = getSkillAllocationStep();
+     const amount = Math.min(step, currentLevel);
+     if (amount <= 0) return;
+ 
+     const nextLevel = currentLevel - amount;
+     if (nextLevel <= 0) {
+       delete p.skills[key];
+ 
+       // 装備しているスキルがレベル0になったら自動で外す
+       ensureEquippedSkillsArray(p);
+       for (let i = 0; i < p.equippedSkills.length; i++) {
+         if (p.equippedSkills[i] === key) p.equippedSkills[i] = null;
+       }
+       p.equippedSkill = p.equippedSkills[0] || null;
+       if (!p.equippedSkills[0] && !p.equippedSkills[1]) p.skillCooldown = 0;
+     } else {
+       p.skills[key] = nextLevel;
+     }
+ 
+     // ポイント返却（スキルごとに必要SPが違う）
+     const cost = getSkillPointCost(skill);
+     const refund = amount * cost;
+     const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+     const nextSkillPoints = Math.max(
+       0,
+       Math.floor(Number(p.skillPoints || 0)) + refund,
+     );
+     p.skillPoints = Math.min(skillPointCap, nextSkillPoints);
+ 
+     log(`${skill?.name || key}のレベルを${amount}下げた（ポイント+${refund}）`);
+     updateSkillUI();
+     updateStatusUI();
+     updateSkillButtons();
+     getCombatStats();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    saveSkillsNow();
+   }
+ 
+   function ensureEquippedSkillsArray(p) {
+     if (!p || typeof p !== "object") return;
+     if (!Array.isArray(p.equippedSkills)) {
+       p.equippedSkills = [
+         p.equippedSkill != null ? String(p.equippedSkill) : null,
+         null,
+       ];
+     }
      p.equippedSkills = p.equippedSkills
        .slice(0, 2)
        .map((v) => (v == null || v === "" ? null : String(v)));
@@ -18,66 +194,56 @@ index bf2962afafc379fcd97682983fa47fa109b35edf..8536e40b545ed26e238c5054796cab5b
      const idx = Number(slotIndex) === 1 ? 1 : 0;
  
      // 同じスキルを2枠に重複装備させない
-     const otherIdx = idx === 0 ? 1 : 0;
-     if (p.equippedSkills[otherIdx] === key) p.equippedSkills[otherIdx] = null;
- 
-     p.equippedSkills[idx] = key;
-     p.equippedSkill = p.equippedSkills[0] || null;
- 
-     log(`${skills[key].name}をスキル${idx + 1}に装備した`);
-     updateSkillUI();
-     updateStatusUI();
-     updateSkillButtons();
--    if (typeof requestAutosave === "function") requestAutosave();
-+    if (typeof saveGameNow === "function") {
-+      saveGameNow({ manual: true, force: true });
-+    } else if (typeof requestAutosave === "function") {
-+      requestAutosave();
-+    }
-   }
- 
-   function unequipSkillSlot(slotIndex) {
-     const p = gameData.player;
-     if (!p) return;
-     ensureEquippedSkillsArray(p);
-     const idx = Number(slotIndex) === 1 ? 1 : 0;
-     if (!p.equippedSkills[idx]) return;
-     const key = p.equippedSkills[idx];
-     p.equippedSkills[idx] = null;
-     p.equippedSkill = p.equippedSkills[0] || null;
-     if (!p.equippedSkills[0] && !p.equippedSkills[1]) p.skillCooldown = 0;
-     log(`スキル${idx + 1}から${skills[key]?.name || key}を外した`);
-     updateSkillUI();
-     updateStatusUI();
-     updateSkillButtons();
--    if (typeof requestAutosave === "function") requestAutosave();
-+    if (typeof saveGameNow === "function") {
-+      saveGameNow({ manual: true, force: true });
-+    } else if (typeof requestAutosave === "function") {
-+      requestAutosave();
-+    }
-   }
- 
-   /**
-    * スキルを指定スロット(①/②)に装備/解除する。
-    * 同一スキルの2枠重複装備は禁止。
-    * @param {string} key
-    * @param {number} slotIndex 0:①, 1:②
-    */
-   function toggleSkillSlot(key, slotIndex) {
-     const p = gameData.player;
-     if (!p) return;
-     ensureEquippedSkillsArray(p);
-     const idx = Number(slotIndex) === 1 ? 1 : 0;
-     if (p.equippedSkills[idx] === key) {
-       unequipSkillSlot(idx);
-     } else {
-       equipSkillToSlot(key, idx);
+@@ -3529,51 +3537,51 @@
+         refund += lv * getSkillPointCost(def);
+       }
      }
+ 
+     p.skills = {};
+     const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+     const nextSkillPoints = Math.max(
+       0,
+       Math.floor(Number(p.skillPoints || 0)) + refund,
+     );
+     p.skillPoints = Math.min(skillPointCap, nextSkillPoints);
+ 
+     // 装備中スキルを解除
+     p.equippedSkills = [null, null];
+     p.equippedSkill = null;
+     p.skillCooldown = 0;
+ 
+     // 職業ごとの保存割り振りもリセット
+     p.jobSkillStates = {};
+ 
+     log("🔄 スキルをリセットした");
+     getCombatStats();
+     updateSkillUI();
+     updateStatusUI();
+     updateSkillButtons();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    saveSkillsNow();
    }
  
-   function resetSkills() {
-     const p = gameData.player;
+   // ポップアップ
+   window.showRareEnemyPopup = showRareEnemyPopup;
+   window.showEventPopup = showEventPopup;
  
-     // 現在割り振っているスキルポイントを全返却
-     let refund = 0;
+   // -------------------
+   // グローバル公開
+   // -------------------
+   window.updateUI = updateUI;
+   window.updateRecordsUI = updateRecordsUI;
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.setOptionsTab = setOptionsTab;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
+   window.confirmTeleport = confirmTeleport;
