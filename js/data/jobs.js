@@ -106,7 +106,7 @@
 
     hero: {
       name: "勇者",
-      desc: "全職を極めし者。全基礎ステータスが2倍",
+      desc: "全職を極めし者。全基礎ステータスが1.5倍",
       favoredType: ["sword", "spear", "staff"],
       unlock: {
         type: "hidden_achievement",
@@ -123,7 +123,7 @@
         dexterity: 0,
       },
       traits: {
-        baseStatMultiplier: 2.0,
+        baseStatMultiplier: 1.5,
       },
     },
 
