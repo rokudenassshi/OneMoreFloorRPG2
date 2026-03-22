@@ -537,10 +537,56 @@
     }
   }
 
+  function normalizePlayerSkillState(player) {
+    const p = player;
+    if (!p || typeof p !== "object") return;
+
+    if (!p.skills || typeof p.skills !== "object") p.skills = {};
+
+    // スキルレベルと消費SPを正規化（セーブ改ざん/不整合対策）
+    let spent = 0;
+    for (const key of Object.keys(p.skills)) {
+      const def = skills && skills[key] ? skills[key] : null;
+      const maxLevel =
+        def && def.maxLevel !== Infinity
+          ? Math.max(0, Math.floor(Number(def.maxLevel || 0)))
+          : Infinity;
+      const lvRaw = Math.floor(Number(p.skills[key] || 0));
+      const lv = Math.max(0, maxLevel === Infinity ? lvRaw : Math.min(lvRaw, maxLevel));
+      if (lv <= 0) {
+        delete p.skills[key];
+        continue;
+      }
+      p.skills[key] = lv;
+      const cost = Math.max(
+        0,
+        Math.floor(
+          Number(
+            def && Number.isFinite(Number(def.requiredPoints))
+              ? def.requiredPoints
+              : 1,
+          ),
+        ),
+      );
+      spent += lv * cost;
+    }
+
+    const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+    const maxUnspentSkillPoints = Math.max(0, skillPointCap - spent);
+    p.skillPoints = Math.max(
+      0,
+      Math.min(
+        Math.floor(Number(p.skillPoints || 0)),
+        maxUnspentSkillPoints,
+      ),
+    );
+  }
+
   function applySavePayload(payload) {
     if (!payload || payload.schema !== SAVE_SCHEMA) return false;
 
     gameData.player = payload.player || gameData.player;
+    normalizePlayerSkillState(gameData.player);
     // 階層上限は serialUnlocks に依存するため、player 復元後に clamp する
     gameData.floor = clampFloor(payload.floor || 1);
     gameData.gameState = payload.gameState || "EXPLORE";
