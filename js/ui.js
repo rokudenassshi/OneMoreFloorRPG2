@@ -3471,7 +3471,11 @@
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
-    if (typeof requestAutosave === "function") requestAutosave();
+    if (typeof saveGameNow === "function") {
+      saveGameNow({ manual: true, force: true });
+    } else if (typeof requestAutosave === "function") {
+      requestAutosave();
+    }
   }
 
   function unequipSkillSlot(slotIndex) {
@@ -3488,7 +3492,11 @@
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
-    if (typeof requestAutosave === "function") requestAutosave();
+    if (typeof saveGameNow === "function") {
+      saveGameNow({ manual: true, force: true });
+    } else if (typeof requestAutosave === "function") {
+      requestAutosave();
+    }
   }
 
   /**

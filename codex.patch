@@ -1,89 +1,8 @@
 diff --git a/js/ui.js b/js/ui.js
-index 60e38d44d393b9704db06d51068cd024eeb6ccea..bf2962afafc379fcd97682983fa47fa109b35edf 100644
+index bf2962afafc379fcd97682983fa47fa109b35edf..8536e40b545ed26e238c5054796cab5b24f6269e 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -3368,145 +3368,149 @@
-         );
-         return;
-       }
-       if (!isSkillPrereqMet(skill, p.skills)) {
-         log(`🔒 前提スキルが足りません`);
-         return;
-       }
-     }
- 
-     const byPoints = Math.floor(Math.max(0, Number(p.skillPoints || 0)) / cost);
-     const byLevelCap =
-       skill.maxLevel === Infinity ? byPoints : Math.max(0, skill.maxLevel - currentLevel);
-     const amount = Math.min(step, byPoints, byLevelCap);
-     if (amount <= 0) return;
- 
-     if (!p.skills || typeof p.skills !== "object") p.skills = {};
-     p.skills[key] = currentLevel + amount;
-     const spent = amount * cost;
-     p.skillPoints = Math.max(0, Math.floor(Number(p.skillPoints || 0)) - spent);
- 
-     log(`${skill.name}のレベルが${amount}上がった！（ポイント-${spent}）`);
-     updateSkillUI();
-     updateStatusUI();
-     getCombatStats();
-     updateSkillButtons();
-+    if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   // いつでもスキルレベルを下げられる（ポイント返却）
-   function levelDownSkill(key) {
-     const p = gameData.player;
-     if (!p || !p.skills) return;
- 
-     const skill = skills[key];
-     const currentLevel = Math.floor(Number(p.skills[key] || 0));
-     if (currentLevel <= 0) return;
-     const step = getSkillAllocationStep();
-     const amount = Math.min(step, currentLevel);
-     if (amount <= 0) return;
- 
-     const nextLevel = currentLevel - amount;
-     if (nextLevel <= 0) {
-       delete p.skills[key];
- 
-       // 装備しているスキルがレベル0になったら自動で外す
-       ensureEquippedSkillsArray(p);
-       for (let i = 0; i < p.equippedSkills.length; i++) {
-         if (p.equippedSkills[i] === key) p.equippedSkills[i] = null;
-       }
-       p.equippedSkill = p.equippedSkills[0] || null;
-       if (!p.equippedSkills[0] && !p.equippedSkills[1]) p.skillCooldown = 0;
-     } else {
-       p.skills[key] = nextLevel;
-     }
- 
-     // ポイント返却（スキルごとに必要SPが違う）
-     const cost = getSkillPointCost(skill);
-     const refund = amount * cost;
-     const skillPointCap = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
-     const nextSkillPoints = Math.max(
-       0,
-       Math.floor(Number(p.skillPoints || 0)) + refund,
-     );
-     p.skillPoints = Math.min(skillPointCap, nextSkillPoints);
- 
-     log(`${skill?.name || key}のレベルを${amount}下げた（ポイント+${refund}）`);
-     updateSkillUI();
-     updateStatusUI();
-     updateSkillButtons();
-     getCombatStats();
-+    if (typeof requestAutosave === "function") requestAutosave();
-   }
- 
-   function ensureEquippedSkillsArray(p) {
-     if (!p || typeof p !== "object") return;
-     if (!Array.isArray(p.equippedSkills)) {
-       p.equippedSkills = [
-         p.equippedSkill != null ? String(p.equippedSkill) : null,
-         null,
-       ];
-     }
+@@ -3449,68 +3449,76 @@
      p.equippedSkills = p.equippedSkills
        .slice(0, 2)
        .map((v) => (v == null || v === "" ? null : String(v)));
@@ -109,7 +28,12 @@ index 60e38d44d393b9704db06d51068cd024eeb6ccea..bf2962afafc379fcd97682983fa47fa1
      updateSkillUI();
      updateStatusUI();
      updateSkillButtons();
-+    if (typeof requestAutosave === "function") requestAutosave();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    if (typeof saveGameNow === "function") {
++      saveGameNow({ manual: true, force: true });
++    } else if (typeof requestAutosave === "function") {
++      requestAutosave();
++    }
    }
  
    function unequipSkillSlot(slotIndex) {
@@ -126,7 +50,12 @@ index 60e38d44d393b9704db06d51068cd024eeb6ccea..bf2962afafc379fcd97682983fa47fa1
      updateSkillUI();
      updateStatusUI();
      updateSkillButtons();
-+    if (typeof requestAutosave === "function") requestAutosave();
+-    if (typeof requestAutosave === "function") requestAutosave();
++    if (typeof saveGameNow === "function") {
++      saveGameNow({ manual: true, force: true });
++    } else if (typeof requestAutosave === "function") {
++      requestAutosave();
++    }
    }
  
    /**
