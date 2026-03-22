@@ -3390,6 +3390,7 @@
     updateStatusUI();
     getCombatStats();
     updateSkillButtons();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   // いつでもスキルレベルを下げられる（ポイント返却）
@@ -3434,6 +3435,7 @@
     updateStatusUI();
     updateSkillButtons();
     getCombatStats();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   function ensureEquippedSkillsArray(p) {
@@ -3469,6 +3471,7 @@
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   function unequipSkillSlot(slotIndex) {
@@ -3485,6 +3488,7 @@
     updateSkillUI();
     updateStatusUI();
     updateSkillButtons();
+    if (typeof requestAutosave === "function") requestAutosave();
   }
 
   /**
