@@ -76,7 +76,7 @@
       job: "all",
       maxLevel: Infinity,
       requiredPoints: 10,
-      requiredMaxReachedFloor: 5000,
+      // requiredMaxReachedFloor: 5000,
       desc: "攻撃+{attackBonus}%（上限なし）",
       effect: (lv) => ({ attackBonus: lv * 0.1 }),
     },
@@ -1520,7 +1520,10 @@
       maxLevel: 3,
       cooldown: 4,
       desc: "闇を裂く一撃（{value}倍、与ダメの20%回復）",
-      effect: (lv) => ({ damageMultiplier: 1.48 + lv * 0.22, healPercent: 0.2 }),
+      effect: (lv) => ({
+        damageMultiplier: 1.48 + lv * 0.22,
+        healPercent: 0.2,
+      }),
     },
     reaper_grim_guard: {
       name: "冥府の護り",
@@ -2626,7 +2629,11 @@
       requiredPoints: 100,
       cooldown: 10,
       desc: "冥府の裁断（3.8倍、防御無視80%、与ダメの35%回復）",
-      effect: (_lv) => ({ damageMultiplier: 3.8, ignoreDef: 0.8, healPercent: 0.35 }),
+      effect: (_lv) => ({
+        damageMultiplier: 3.8,
+        ignoreDef: 0.8,
+        healPercent: 0.35,
+      }),
     },
 
     // ===================================

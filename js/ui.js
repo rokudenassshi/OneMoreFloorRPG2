@@ -3193,15 +3193,20 @@
       }
 
       const maybePercent = (v, key, offset, tokenLength, str) => {
-        // 置換対象の直後が % のときのみ 0.x を % 表示へ変換する
+        // 0.x を % 表示へ変換するのは「内部表現が 0〜1 の割合」のキーだけに限定する
+        // （例: healRate=0.2 -> 20%）。
+        // attackBonus=0.1 のような「そのまま%ポイント値」を誤って 10% 表示しないため。
         const base = String(str || raw);
         const nextChar = base.charAt(offset + tokenLength);
-        const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
-          String(key || ""),
-        );
-        const shouldPercentize = nextChar === "%" || keyLooksPercent;
-        if (!shouldPercentize) return v;
+        if (nextChar !== "%") return v;
         if (!Number.isFinite(v)) return v;
+
+        const fractionalPercentKeys = new Set([
+          "healRate",
+          "skillFollowUpChance",
+        ]);
+        if (!fractionalPercentKeys.has(String(key || ""))) return v;
+
         if (v > 0 && v < 1) return v * 100;
         return v;
       };

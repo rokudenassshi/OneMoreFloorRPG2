@@ -1,67 +1,75 @@
-diff --git a/js/core.js b/js/core.js
-index 72b808d130ff0f99931c5c789bf74ab665c918a0..559f45b53c25d1a5feba894dab31f0a0abc1ff4e 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -919,50 +919,62 @@
-       if (typeof updateRecordsUI === "function") {
-         const statusScreenEl = document.getElementById("statusScreen");
-         const recordsTabEl = document.getElementById("tabRecords");
-         const recordsVisible =
-           !!statusScreenEl &&
-           !!recordsTabEl &&
-           statusScreenEl.style.display === "block" &&
-           recordsTabEl.style.display === "block";
-         if (recordsVisible) updateRecordsUI();
+diff --git a/js/ui.js b/js/ui.js
+index bb4e45ea9fb87787accbfd5e8fd02fa45b1108ae..dfbcd4000283279d5d6d6d8371bfbb00f9645a20 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -3156,59 +3156,64 @@
+         "value",
+       ];
+ 
+       let fallbackValue = null;
+       let fallbackKey = null;
+       for (const k of priorityKeys) {
+         const v = eff?.[k];
+         if (Number.isFinite(v)) {
+           fallbackValue = v;
+           fallbackKey = k;
+           break;
+         }
        }
-     }, AUTOSAVE_INTERVAL_MS);
+       if (fallbackValue === null && eff && typeof eff === "object") {
+         for (const k of Object.keys(eff)) {
+           const v = eff[k];
+           if (Number.isFinite(v)) {
+             fallbackValue = v;
+             fallbackKey = k;
+             break;
+           }
+         }
+       }
  
-     applyUrlActions();
- 
-     updateUI();
-   }
- 
-   function applyUrlActions() {
-     let params;
-     try {
-       params = new URLSearchParams(window.location.search || "");
-     } catch (e) {
-       return;
-     }
- 
-+    if (params.has("skikkreset")) {
-+      const p = gameData.player || (gameData.player = {});
-+      p.skills = {};
-+      p.equippedSkills = [null, null];
-+      p.skillCooldown = 0;
-+      p.skillPoints = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
-+      log("🔄 URL指定でスキルを全リセットした");
-+      requestAutosave();
-+      updateUI();
-+      return;
-+    }
+       const maybePercent = (v, key, offset, tokenLength, str) => {
+-        // 置換対象の直後が % のときのみ 0.x を % 表示へ変換する
++        // 0.x を % 表示へ変換するのは「内部表現が 0〜1 の割合」のキーだけに限定する
++        // （例: healRate=0.2 -> 20%）。
++        // attackBonus=0.1 のような「そのまま%ポイント値」を誤って 10% 表示しないため。
+         const base = String(str || raw);
+         const nextChar = base.charAt(offset + tokenLength);
+-        const keyLooksPercent = /(?:Percent|Rate|Chance|Pct)$/i.test(
+-          String(key || ""),
+-        );
+-        const shouldPercentize = nextChar === "%" || keyLooksPercent;
+-        if (!shouldPercentize) return v;
++        if (nextChar !== "%") return v;
+         if (!Number.isFinite(v)) return v;
 +
-     if (!params.has("back")) return;
++        const fractionalPercentKeys = new Set([
++          "healRate",
++          "skillFollowUpChance",
++        ]);
++        if (!fractionalPercentKeys.has(String(key || ""))) return v;
++
+         if (v > 0 && v < 1) return v * 100;
+         return v;
+       };
  
-     // 非戦闘時：通常の移動ロジックを利用
-     if (gameData.gameState === "EXPLORE") {
-       move(-1);
-       return;
-     }
+       return raw.replace(/\{([a-zA-Z0-9_]+)\}/g, (_m, key, offset, str) => {
+         let v = null;
+         let actualKey = key;
+         if (key === "value") {
+           v = fallbackValue;
+           actualKey = fallbackKey;
+         } else {
+           v = eff?.[key];
+         }
+         if (!Number.isFinite(v)) return "-";
  
-     // 戦闘時：URL指定は確定で離脱して1階層戻る
-     if (gameData.gameState === "BATTLE") {
-       const curBattleFloor = Number(gameData.battleFloor);
-       const baseFloor =
-         Number.isFinite(curBattleFloor) && curBattleFloor > 0
-           ? curBattleFloor
-           : Number(gameData.floor || 1);
+         let rep = formatNumber(
+           maybePercent(v, actualKey, offset, String(_m).length, str),
+         );
+         if (!rep) return "-";
  
-       gameData.pendingFloorAfterWin = null;
-       gameData.floor = clampFloor(baseFloor - 1);
-       log(`↩ URL指定で${gameData.floor}階層へ戻った`);
-       endBattle(false);
-       requestAutosave();
-     }
-   }
- 
-   // 動的に script を読み込む方式だと window.onload が既に終わっていることがあるので、
+         // 回避上昇は % として表示（説明文側に % が無い場合でも付与）
+         // 例: "回避+{evasionBonus}" -> "回避+3%"
+         if (actualKey === "evasionBonus") {
+           const base = String(str || raw);
+           const nextChar = base.charAt(offset + String(_m).length);
