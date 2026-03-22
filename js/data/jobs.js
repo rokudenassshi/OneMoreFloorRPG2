@@ -392,7 +392,7 @@
       desc: "HP吸収と高防御を併せ持つ",
       skillGroup: "have_not",
       baseJob: "have_not",
-      favoredType: null,
+      favoredType: "spear",
       unlock: {
         type: "hidden_achievement",
         target: 1,
