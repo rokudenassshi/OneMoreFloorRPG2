@@ -469,6 +469,7 @@
   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
   const AUTOSAVE_INTERVAL_MS = 5000;
+  const FORCED_CLOUD_SAVE_INTERVAL_MS = 300000;
   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
 
@@ -930,6 +931,10 @@
         if (recordsVisible) updateRecordsUI();
       }
     }, AUTOSAVE_INTERVAL_MS);
+
+    setInterval(() => {
+      saveGameNow({ manual: true, force: true });
+    }, FORCED_CLOUD_SAVE_INTERVAL_MS);
 
     applyUrlActions();
 

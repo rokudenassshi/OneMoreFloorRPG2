@@ -1,78 +1,111 @@
 diff --git a/js/core.js b/js/core.js
-index 0ed12dbb2ff36ee52ebba3305acda8af1491f7d8..a98ee45b57e5e6015c14b2628e3ac3cbb69608bb 100644
+index a98ee45b57e5e6015c14b2628e3ac3cbb69608bb..5d9743bb88b5b22f81e05a194363ec1404a6af35 100644
 --- a/js/core.js
 +++ b/js/core.js
-@@ -1652,54 +1652,72 @@
-       const skillDef = skills[skillKey];
-       if (!skillDef) continue;
-       if (skillDef.type !== "passive") continue;
+@@ -447,50 +447,51 @@
+     if (
+       Number.isFinite(Number(worldAwareFloor)) &&
+       Number(worldAwareFloor) > 0
+     ) {
+       return Math.max(1, Math.floor(Number(worldAwareFloor)));
+     }
  
-       // 現在の職業で有効なパッシブのみ適用（上位職は下位職パッシブを使えない）
-       const jobKey = gameData.player?.job;
-       const isCommon = skillDef.job === "all";
-       if (skillDef.job && !isCommon && skillDef.job !== jobKey) continue;
+     const bf = Number(gameData && gameData.battleFloor);
+     if (
+       gameData &&
+       gameData.gameState === "BATTLE" &&
+       Number.isFinite(bf) &&
+       bf > 0
+     )
+       return bf;
+     const f = Number(gameData && gameData.floor);
+     return Number.isFinite(f) && f > 0 ? f : 1;
+   }
  
-       const level = gameData.player.skills[skillKey];
-       const effect = skillDef.effect(level);
+   // -------------------
+   // オートセーブ
+   // -------------------
+   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
+   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
+   const AUTOSAVE_INTERVAL_MS = 5000;
++  const FORCED_CLOUD_SAVE_INTERVAL_MS = 300000;
+   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
+   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
  
-       const skillJobDef = skillDef.job ? jobs?.[skillDef.job] : null;
-       const isAdvancedPassive = skillJobDef && skillJobDef.tier === "advanced";
+   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
+   const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
+   const CLOUD_SAVE_FUNCTION_SAVE = "saveUserGameData";
+   let autosaveEnabled = true;
  
-       const applyAdvancedMul = (key, raw) => {
-         const v = Number(raw);
-         if (!Number.isFinite(v) || v === 0) return false;
-         if (!isAdvancedPassive) return false;
-         // 例: +12 => x1.12, -15 => x0.85
-         const mul = 1 + v / 100;
-         if (!Number.isFinite(mul) || mul <= 0) return false;
-         advancedPassiveMult[key] *= mul;
-         return true;
-       };
-+      const applyCommonTuningMul = (key, raw) => {
-+        const v = Number(raw);
-+        if (!Number.isFinite(v) || v === 0) return false;
-+        const isCommonAttackTuning =
-+          skillKey === "common_attack_tuning" && key === "attack";
-+        const isCommonDefenseTuning =
-+          skillKey === "common_defense_tuning" && key === "defense";
-+        if (!isCommonAttackTuning && !isCommonDefenseTuning) return false;
-+        const mul = 1 + v / 100;
-+        if (!Number.isFinite(mul) || mul <= 0) return false;
-+        advancedPassiveMult[key] *= mul;
-+        return true;
-+      };
+   function isAutosaveEnabled() {
+     try {
+       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
+       if (raw == null) return true;
+       return raw === "1";
+     } catch (e) {
+       return true;
+     }
+   }
  
--      if (!applyAdvancedMul("attack", effect.attackBonus) && effect.attackBonus)
-+      if (
-+        !applyCommonTuningMul("attack", effect.attackBonus) &&
-+        !applyAdvancedMul("attack", effect.attackBonus) &&
-+        effect.attackBonus
-+      )
-         combat.attack += effect.attackBonus;
-       if (
-+        !applyCommonTuningMul("defense", effect.defenseBonus) &&
-         !applyAdvancedMul("defense", effect.defenseBonus) &&
-         effect.defenseBonus
-       )
-         combat.defense += effect.defenseBonus;
-       if (effect.evasionBonus) combat.evasion += effect.evasionBonus;
-       if (effect.critBonus) combat.critRate += effect.critBonus;
-       if (
-         !applyAdvancedMul("magicPower", effect.magicBonus) &&
-         effect.magicBonus
-       )
-         combat.magicPower += effect.magicBonus;
-       if (effect.allStatsBonus) {
-         if (!applyAdvancedMul("attack", effect.allStatsBonus))
-           combat.attack += effect.allStatsBonus;
-         if (!applyAdvancedMul("defense", effect.allStatsBonus))
-           combat.defense += effect.allStatsBonus;
+   function setAutosaveEnabled(v) {
+     autosaveEnabled = !!v;
+     if (autosaveEnabled) autosaveDirty = true;
+     try {
+       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
+     } catch (e) {}
+   }
+@@ -909,50 +910,54 @@
+     }
+ 
+     const loaded = await loadGameIfExists();
+     getCombatStats();
+ 
+     if (loaded) {
+       log("✅ オートセーブを読み込みました");
+     } else {
+       log("探索開始");
+     }
+ 
+     setInterval(() => {
+       saveGameNow();
+       if (typeof updateRecordsUI === "function") {
+         const statusScreenEl = document.getElementById("statusScreen");
+         const recordsTabEl = document.getElementById("tabRecords");
+         const recordsVisible =
+           !!statusScreenEl &&
+           !!recordsTabEl &&
+           statusScreenEl.style.display === "block" &&
+           recordsTabEl.style.display === "block";
+         if (recordsVisible) updateRecordsUI();
        }
-       if (effect.searchBonus) combat.search += effect.searchBonus;
-       if (effect.accuracyBonus) combat.accuracy += effect.accuracyBonus;
-       if (!applyAdvancedMul("maxHp", effect.maxHpBonus) && effect.maxHpBonus)
-         combat.maxHp += effect.maxHpBonus;
-       if (
-         !applyAdvancedMul("healPower", effect.healPowerBonus) &&
-         effect.healPowerBonus
-       )
+     }, AUTOSAVE_INTERVAL_MS);
+ 
++    setInterval(() => {
++      saveGameNow({ manual: true, force: true });
++    }, FORCED_CLOUD_SAVE_INTERVAL_MS);
++
+     applyUrlActions();
+ 
+     updateUI();
+   }
+ 
+   function applyUrlActions() {
+     let params;
+     try {
+       params = new URLSearchParams(window.location.search || "");
+     } catch (e) {
+       return;
+     }
+ 
+     if (params.has("skikkreset")) {
+       const p = gameData.player || (gameData.player = {});
+       p.skills = {};
+       p.equippedSkills = [null, null];
+       p.skillCooldown = 0;
+       p.skillPoints = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
+       log("🔄 URL指定でスキルを全リセットした");
+       requestAutosave();
+       updateUI();
+       return;
+     }
+ 
