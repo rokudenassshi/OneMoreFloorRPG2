@@ -555,7 +555,10 @@
           ? Math.max(0, Math.floor(Number(def.maxLevel || 0)))
           : Infinity;
       const lvRaw = Math.floor(Number(p.skills[key] || 0));
-      const lv = Math.max(0, maxLevel === Infinity ? lvRaw : Math.min(lvRaw, maxLevel));
+      const lv = Math.max(
+        0,
+        maxLevel === Infinity ? lvRaw : Math.min(lvRaw, maxLevel),
+      );
       if (lv <= 0) {
         delete p.skills[key];
         continue;
@@ -578,10 +581,7 @@
     const maxUnspentSkillPoints = Math.max(0, skillPointCap - spent);
     p.skillPoints = Math.max(
       0,
-      Math.min(
-        Math.floor(Number(p.skillPoints || 0)),
-        maxUnspentSkillPoints,
-      ),
+      Math.min(Math.floor(Number(p.skillPoints || 0)), maxUnspentSkillPoints),
     );
   }
 
@@ -2480,9 +2480,7 @@
     // 案4: 命中100以上は外した場合に救済再抽選（期待値として合成）
     if (accuracy < 100) return primaryChance;
     const rescueChance = clamp((accuracy - 100) * 0.8, 0, 100);
-    return (
-      primaryChance + (100 - primaryChance) * (rescueChance / 100)
-    );
+    return primaryChance + (100 - primaryChance) * (rescueChance / 100);
   }
 
   function applyEnemyVulnerableTaken(enemy, damage) {

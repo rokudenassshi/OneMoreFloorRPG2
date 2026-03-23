@@ -2418,150 +2418,51 @@
   // 修羅の国専用モンスターテーブル
   // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
   // --------------------
-  const asuraTierConfigs = [
-    {
-      maxFloor: 100,
-      target: {
-        hp: 280000,
-        str: 4000,
-        vit: 6800,
-        int: 3000,
-        agi: 330,
-        dex: 390,
-        exp: 62000,
-      },
-    },
-    {
-      maxFloor: 200,
-      target: {
-        hp: 380000,
-        str: 5200,
-        vit: 8400,
-        int: 3800,
-        agi: 390,
-        dex: 450,
-        exp: 78000,
-      },
-    },
-    {
-      maxFloor: 500,
-      target: {
-        hp: 450000,
-        str: 6000,
-        vit: 9400,
-        int: 4300,
-        agi: 420,
-        dex: 480,
-        exp: 90000,
-      },
-    },
-    {
-      maxFloor: 1000,
-      target: {
-        hp: 550000,
-        str: 7000,
-        vit: 10600,
-        int: 5000,
-        agi: 455,
-        dex: 515,
-        exp: 105000,
-      },
-    },
-    {
-      maxFloor: 1500,
-      target: {
-        hp: 680000,
-        str: 8200,
-        vit: 12000,
-        int: 5800,
-        agi: 495,
-        dex: 560,
-        exp: 124000,
-      },
-    },
-    {
-      maxFloor: 2000,
-      target: {
-        hp: 820000,
-        str: 9500,
-        vit: 13600,
-        int: 6700,
-        agi: 535,
-        dex: 605,
-        exp: 145000,
-      },
-    },
-    {
-      maxFloor: 3000,
-      target: {
-        hp: 980000,
-        str: 11000,
-        vit: 15400,
-        int: 7800,
-        agi: 580,
-        dex: 650,
-        exp: 170000,
-      },
-    },
-    {
-      maxFloor: 4500,
-      target: {
-        hp: 1180000,
-        str: 12800,
-        vit: 17600,
-        int: 9200,
-        agi: 630,
-        dex: 700,
-        exp: 200000,
-      },
-    },
-    {
-      maxFloor: 5000,
-      target: {
-        hp: 1380000,
-        str: 14600,
-        vit: 19800,
-        int: 10600,
-        agi: 680,
-        dex: 750,
-        exp: 230000,
-      },
-    },
+  // 修羅の国は「元の世界の基礎ステータス × 倍率」で再設計。
+  // 1st Tier（スライム/コウモリ帯）が 5000F ボスの 5 倍になるようにする。
+  const baseBoss5000ForAsura = {
+    hp: 500000,
+    str: 6800,
+    vit: 11200,
+    int: 5600,
+    agi: 460,
+    dex: 520,
+    exp: 220000,
+  };
+  const asuraFirstTierBaseMultiplier = 5;
+  const asuraTierGrowthMultipliers = [
+    { maxFloor: 100, mul: 1.0 },
+    { maxFloor: 200, mul: 1.3 },
+    { maxFloor: 500, mul: 1.7 },
+    { maxFloor: 1000, mul: 2.15 },
+    { maxFloor: 1500, mul: 2.6 },
+    { maxFloor: 2000, mul: 3.1 },
+    { maxFloor: 3000, mul: 3.75 },
+    { maxFloor: 4500, mul: 4.5 },
+    { maxFloor: 5000, mul: 5.35 },
   ];
+
+  const asuraTierConfigs = asuraTierGrowthMultipliers.map((tier) => {
+    const tierMul = asuraFirstTierBaseMultiplier * tier.mul;
+    return {
+      maxFloor: tier.maxFloor,
+      mul: tier.mul,
+      target: {
+        hp: Math.round(baseBoss5000ForAsura.hp * tierMul),
+        str: Math.round(baseBoss5000ForAsura.str * tierMul),
+        vit: Math.round(baseBoss5000ForAsura.vit * tierMul),
+        int: Math.round(baseBoss5000ForAsura.int * tierMul),
+        agi: Math.round(baseBoss5000ForAsura.agi * tierMul),
+        dex: Math.round(baseBoss5000ForAsura.dex * tierMul),
+        exp: Math.round(baseBoss5000ForAsura.exp * tierMul),
+      },
+    };
+  });
 
   function getAsuraTierConfig(maxFloor) {
     return (
       asuraTierConfigs.find((c) => maxFloor <= c.maxFloor) ||
       asuraTierConfigs[asuraTierConfigs.length - 1]
-    );
-  }
-
-  const asuraTierAverages = asuraTierConfigs.map((cfg) => {
-    const members = monsterTypes.filter((m) => {
-      const max = Math.max(1, Number(m.maxFloor || m.minFloor || 1));
-      return getAsuraTierConfig(max).maxFloor === cfg.maxFloor;
-    });
-    const avg = (key) => {
-      if (members.length <= 0) return 1;
-      const sum = members.reduce((acc, m) => acc + Number(m[key] || 0), 0);
-      return Math.max(1, sum / members.length);
-    };
-    return {
-      maxFloor: cfg.maxFloor,
-      hp: avg("hp"),
-      str: avg("str"),
-      vit: avg("vit"),
-      int: avg("int"),
-      agi: avg("agi"),
-      dex: avg("dex"),
-      exp: avg("exp"),
-    };
-  });
-
-  function getAsuraTierAverage(maxFloor) {
-    return (
-      asuraTierAverages.find((c) => maxFloor <= c.maxFloor) ||
-      asuraTierAverages[asuraTierAverages.length - 1]
     );
   }
 
@@ -2575,30 +2476,75 @@
     const min = Math.max(1, Number(m.minFloor || 1));
     const max = Math.max(min, Number(m.maxFloor || min));
     const tier = getAsuraTierConfig(max);
-    const avg = getAsuraTierAverage(max);
     const tierStart = getAsuraTierStart(max);
     const tierSpan = Math.max(1, tier.maxFloor - tierStart + 1);
     const tierProgress = Math.max(0, Math.min(1, (min - tierStart) / tierSpan));
-    const tierGrowth = 1 + tierProgress * 0.2;
-
-    const mul = {
-      hp: tier.target.hp / avg.hp,
-      str: tier.target.str / avg.str,
-      vit: tier.target.vit / avg.vit,
-      int: tier.target.int / avg.int,
-      agi: tier.target.agi / avg.agi,
-      dex: tier.target.dex / avg.dex,
-      exp: tier.target.exp / avg.exp,
-    };
+    const tierGrowth = tier.mul * (1 + tierProgress * 0.2);
 
     const baseScaled = {
-      hp: Math.max(1, Math.round(Number(m.hp || 1) * mul.hp * tierGrowth)),
-      str: Math.max(1, Math.round(Number(m.str || 1) * mul.str * tierGrowth)),
-      vit: Math.max(1, Math.round(Number(m.vit || 1) * mul.vit * tierGrowth)),
-      int: Math.max(1, Math.round(Number(m.int || 1) * mul.int * tierGrowth)),
-      agi: Math.max(1, Math.round(Number(m.agi || 1) * mul.agi * tierGrowth)),
-      dex: Math.max(1, Math.round(Number(m.dex || 1) * mul.dex * tierGrowth)),
-      exp: Math.max(1, Math.round(Number(m.exp || 1) * mul.exp * tierGrowth)),
+      hp: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.hp *
+            Number(m.hp || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      str: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.str *
+            Number(m.str || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      vit: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.vit *
+            Number(m.vit || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      int: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.int *
+            Number(m.int || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      agi: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.agi *
+            Number(m.agi || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      dex: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.dex *
+            Number(m.dex || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
+      exp: Math.max(
+        1,
+        Math.round(
+          baseBoss5000ForAsura.exp *
+            Number(m.exp || 1) *
+            asuraFirstTierBaseMultiplier *
+            tierGrowth,
+        ),
+      ),
     };
     const floorGuardRate = 1 + tierProgress * 0.1;
     const floorGuard = {
