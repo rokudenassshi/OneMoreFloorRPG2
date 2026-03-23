@@ -556,6 +556,7 @@
       0,
       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
     );
+    p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
     return p.autoSell;
   }
 
@@ -565,12 +566,15 @@
     const atkEl = document.getElementById("autoSellWeaponAttackMax");
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
-    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl) return;
+    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl || !prefixOnlyEl)
+      return;
 
     armorEl.value = String(cfg.armorDefenseMax || 0);
     atkEl.value = String(cfg.weaponAttackMax || 0);
     healEl.value = String(cfg.weaponHealPowerMax || 0);
     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
+    prefixOnlyEl.checked = !!cfg.pickupSpecialPrefixOnly;
   }
 
   function onAutoSellConfigChange() {
@@ -581,6 +585,7 @@
     const atkEl = document.getElementById("autoSellWeaponAttackMax");
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
 
     const toInt = (el) => {
       const n = Math.floor(Number(el && el.value != null ? el.value : 0));
@@ -591,6 +596,7 @@
     cfg.weaponAttackMax = toInt(atkEl);
     cfg.weaponHealPowerMax = toInt(healEl);
     cfg.weaponMagicAttackMax = toInt(matkEl);
+    cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
 
     syncAutoSellConfigUi();
     log(`⚙️ 自動売却閾値を更新`);

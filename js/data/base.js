@@ -101,6 +101,7 @@ stunTurns: 0,
         weaponAttackMax: 0,
         weaponHealPowerMax: 0,
         weaponMagicAttackMax: 0,
+        pickupSpecialPrefixOnly: false,
       },
 
       // 貴重品（秘宝）

@@ -555,6 +555,10 @@
           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
               onchange="onAutoSellConfigChange()" /></label>
         </div>
+        <label class="skill-auto-allocate-toggle">
+          <input id="pickupSpecialPrefixOnly" type="checkbox" onchange="onAutoSellConfigChange()" />
+          レア装備のみ拾う
+        </label>
         <div class="modal-actions">
           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>
         </div>

@@ -169,6 +169,7 @@
       weaponAttackMax: 0,
       weaponHealPowerMax: 0,
       weaponMagicAttackMax: 0,
+      pickupSpecialPrefixOnly: false,
     };
     const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
     p.autoSell = {
@@ -188,6 +189,7 @@
         0,
         Math.floor(Number(src.weaponMagicAttackMax || 0)),
       ),
+      pickupSpecialPrefixOnly: !!src.pickupSpecialPrefixOnly,
     };
     for (const k of Object.keys(base)) {
       if (!(k in p.autoSell)) p.autoSell[k] = base[k];
@@ -4633,6 +4635,17 @@
     return false;
   }
 
+  function shouldSkipDropItemBySpecialPrefixSetting(item) {
+    if (!item) return false;
+    const p = gameData && gameData.player ? gameData.player : null;
+    ensureAutoSellConfig(p);
+    const cfg = p && p.autoSell ? p.autoSell : null;
+    if (!cfg || !cfg.pickupSpecialPrefixOnly) return false;
+    return !(
+      typeof item._specialPrefixName === "string" && item._specialPrefixName
+    );
+  }
+
   function checkBattleEnd() {
     const enemy = gameData.enemy;
     if (!enemy) return;
@@ -4726,12 +4739,16 @@
           });
         }
         const soldByAutoSell = evaluateAutoSellDropItem(item);
+        const skipBySpecialPrefixSetting =
+          shouldSkipDropItemBySpecialPrefixSetting(item);
         const skipAccessoryPickup = shouldSkipAccessoryPickupByOwnedValue(
           item,
           gameData.player,
         );
 
-        if (skipAccessoryPickup) {
+        if (skipBySpecialPrefixSetting) {
+          log(`⏭️ ${item.name}は特殊接頭語なしのため見送った。`);
+        } else if (skipAccessoryPickup) {
           log(`⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`);
         } else if (soldByAutoSell) {
           log(`💸 ${item.name}を自動売却した。`);
@@ -4743,6 +4760,7 @@
         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
         if (
           !soldByAutoSell &&
+          !skipBySpecialPrefixSetting &&
           !skipAccessoryPickup &&
           item &&
           typeof item._specialPrefixName === "string" &&

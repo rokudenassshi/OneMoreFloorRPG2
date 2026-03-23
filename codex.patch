@@ -1,111 +1,97 @@
-diff --git a/js/core.js b/js/core.js
-index a98ee45b57e5e6015c14b2628e3ac3cbb69608bb..5d9743bb88b5b22f81e05a194363ec1404a6af35 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -447,50 +447,51 @@
-     if (
-       Number.isFinite(Number(worldAwareFloor)) &&
-       Number(worldAwareFloor) > 0
-     ) {
-       return Math.max(1, Math.floor(Number(worldAwareFloor)));
-     }
+diff --git a/js/ui.js b/js/ui.js
+index dffe82a6956a7e968f2ac79581b51ca821639bcc..f7e9d2ea696eb8a9b575ff68e5368711425a963f 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -534,85 +534,91 @@
+       );
  
-     const bf = Number(gameData && gameData.battleFloor);
-     if (
-       gameData &&
-       gameData.gameState === "BATTLE" &&
-       Number.isFinite(bf) &&
-       bf > 0
-     )
-       return bf;
-     const f = Number(gameData && gameData.floor);
-     return Number.isFinite(f) && f > 0 ? f : 1;
+     updateBagUI();
+   }
+ 
+   function ensureAutoSellConfig() {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return null;
+     if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
+     p.autoSell.armorDefenseMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
+     );
+     p.autoSell.weaponAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
+     );
+     p.autoSell.weaponHealPowerMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
+     );
+     p.autoSell.weaponMagicAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
+     );
++    p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
+     return p.autoSell;
+   }
+ 
+   function syncAutoSellConfigUi() {
+     const cfg = ensureAutoSellConfig();
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+-    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl) return;
++    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
++    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl || !prefixOnlyEl)
++      return;
+ 
+     armorEl.value = String(cfg.armorDefenseMax || 0);
+     atkEl.value = String(cfg.weaponAttackMax || 0);
+     healEl.value = String(cfg.weaponHealPowerMax || 0);
+     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
++    prefixOnlyEl.checked = !!cfg.pickupSpecialPrefixOnly;
+   }
+ 
+   function onAutoSellConfigChange() {
+     const cfg = ensureAutoSellConfig();
+     if (!cfg) return;
+ 
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
++    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+ 
+     const toInt = (el) => {
+       const n = Math.floor(Number(el && el.value != null ? el.value : 0));
+       return Number.isFinite(n) ? Math.max(0, n) : 0;
+     };
+ 
+     cfg.armorDefenseMax = toInt(armorEl);
+     cfg.weaponAttackMax = toInt(atkEl);
+     cfg.weaponHealPowerMax = toInt(healEl);
+     cfg.weaponMagicAttackMax = toInt(matkEl);
++    cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
+ 
+     syncAutoSellConfigUi();
+     log(`⚙️ 自動売却閾値を更新`);
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function openAutoSellConfigModal() {
+     syncAutoSellConfigUi();
+     const modal = document.getElementById("autoSellConfigModal");
+     if (!modal) return;
+     modal.classList.remove("hidden");
+     modal.setAttribute("aria-hidden", "false");
+   }
+ 
+   function closeAutoSellConfigModal() {
+     const modal = document.getElementById("autoSellConfigModal");
+     if (!modal) return;
+     modal.classList.add("hidden");
+     modal.setAttribute("aria-hidden", "true");
    }
  
    // -------------------
-   // オートセーブ
-   // -------------------
-   const SAVE_KEY = "one_more_floor_rpg_autosave_v1";
-   const SAVE_SCHEMA = "one_more_floor_rpg_autosave_v1";
-   const AUTOSAVE_INTERVAL_MS = 5000;
-+  const FORCED_CLOUD_SAVE_INTERVAL_MS = 300000;
-   const REQUEST_AUTOSAVE_DEBOUNCE_MS = 5000;
-   const MIN_CLOUD_SAVE_INTERVAL_MS = 30000;
- 
-   const AUTOSAVE_ENABLED_KEY = "one_more_floor_rpg_autosave_enabled_v1";
-   const CLOUD_SAVE_FUNCTION_LOAD = "loadUserGameData";
-   const CLOUD_SAVE_FUNCTION_SAVE = "saveUserGameData";
-   let autosaveEnabled = true;
- 
-   function isAutosaveEnabled() {
-     try {
-       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
-       if (raw == null) return true;
-       return raw === "1";
-     } catch (e) {
-       return true;
-     }
-   }
- 
-   function setAutosaveEnabled(v) {
-     autosaveEnabled = !!v;
-     if (autosaveEnabled) autosaveDirty = true;
-     try {
-       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
-     } catch (e) {}
-   }
-@@ -909,50 +910,54 @@
-     }
- 
-     const loaded = await loadGameIfExists();
-     getCombatStats();
- 
-     if (loaded) {
-       log("✅ オートセーブを読み込みました");
-     } else {
-       log("探索開始");
-     }
- 
-     setInterval(() => {
-       saveGameNow();
-       if (typeof updateRecordsUI === "function") {
-         const statusScreenEl = document.getElementById("statusScreen");
-         const recordsTabEl = document.getElementById("tabRecords");
-         const recordsVisible =
-           !!statusScreenEl &&
-           !!recordsTabEl &&
-           statusScreenEl.style.display === "block" &&
-           recordsTabEl.style.display === "block";
-         if (recordsVisible) updateRecordsUI();
-       }
-     }, AUTOSAVE_INTERVAL_MS);
- 
-+    setInterval(() => {
-+      saveGameNow({ manual: true, force: true });
-+    }, FORCED_CLOUD_SAVE_INTERVAL_MS);
-+
-     applyUrlActions();
- 
-     updateUI();
-   }
- 
-   function applyUrlActions() {
-     let params;
-     try {
-       params = new URLSearchParams(window.location.search || "");
-     } catch (e) {
-       return;
-     }
- 
-     if (params.has("skikkreset")) {
-       const p = gameData.player || (gameData.player = {});
-       p.skills = {};
-       p.equippedSkills = [null, null];
-       p.skillCooldown = 0;
-       p.skillPoints = Math.max(0, Math.floor(Number(p.level || 1)) - 1);
-       log("🔄 URL指定でスキルを全リセットした");
-       requestAutosave();
-       updateUI();
-       return;
-     }
- 
+   function fmtSigned(n) {
+     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
+     return n > 0 ? `+${n}` : `${n}`;
