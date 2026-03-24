@@ -1,153 +1,121 @@
 diff --git a/js/ui.js b/js/ui.js
-index f7e9d2ea696eb8a9b575ff68e5368711425a963f..8dd463c78cd05f395fb43372f48be14a21d86d1a 100644
+index 8dd463c78cd05f395fb43372f48be14a21d86d1a..97f3473e229fec3d0c60469b2e27161dfc8b47d0 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -1431,51 +1431,51 @@
-       const vals = Array.isArray(gameData.player.valuables)
-         ? gameData.player.valuables
-         : [];
-       if (vals.length === 0) {
-         valuablesList.innerHTML = `<div class="small" style="color:#aaa; padding:8px;">貴重品を持っていません</div>`;
-       } else {
-         const statName = {
-           strength: "⚔️ 力",
-           vitality: "❤️ 体力",
-           intelligence: "🧙 賢さ",
-           agility: "⚡ 素早さ",
-           dexterity: "🎯 器用さ",
-         };
-         vals.forEach((v) => {
-           const cnt = Number(v.count || 0);
-           if (!Number.isFinite(cnt) || cnt <= 0) return;
-           const key = String(v.statKey || "");
-           const sname = statName[key] || "ステータス";
-           const hasStatEffect = !!key && key in statName;
-           const effect = cnt === 1 ? `${sname}+1` : `${sname}+${cnt}`;
-           const description =
-             typeof v.description === "string" && v.description
-               ? v.description
-               : "";
-           const canUseMapFragment =
--            v.id === "ancient_map_fragment" && Number(cnt) >= 5;
-+            v.id === "ancient_map_fragment" && Number(cnt) >= 2;
-           valuablesList.innerHTML += `
-             <div class="item-card">
-               <div class="item-name">✨ ${v.name} x${cnt}</div>
-               ${hasStatEffect ? `<div class="item-stats">所持効果：${effect}</div>` : ""}
-               ${description ? `<div class="item-stats">${description}</div>` : ""}
-               ${canUseMapFragment ? `<button type="button" class="item-action-btn item-action-btn-text" onclick="useValuableById('${v.id}')">使用する</button>` : ""}
-             </div>
-           `;
-         });
-       }
-     }
-   }
+@@ -581,50 +581,64 @@
+     const cfg = ensureAutoSellConfig();
+     if (!cfg) return;
  
-   // -------------------
-   // 装備品：ロック / 捨てる
-   // -------------------
-   function toggleItemLock(ev, idx) {
-     if (ev) {
-       ev.stopPropagation();
-       ev.preventDefault();
-     }
-     const item = gameData.player.inventory[idx];
-     if (!item) return;
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+     const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
  
-     item.locked = !item.locked;
-@@ -1734,93 +1734,93 @@
-       return;
-     }
+     const toInt = (el) => {
+       const n = Math.floor(Number(el && el.value != null ? el.value : 0));
+       return Number.isFinite(n) ? Math.max(0, n) : 0;
+     };
  
-     // 装飾品は専用スロットへ
-     if (item.category === "accessory") {
-       eq.accessory = item;
-       log(`${item.name}を装飾品に装備した`);
-       getCombatStats();
-       updateBagUI();
-       updateUI();
-       if (typeof requestAutosave === "function") requestAutosave();
-       return;
-     }
+     cfg.armorDefenseMax = toInt(armorEl);
+     cfg.weaponAttackMax = toInt(atkEl);
+     cfg.weaponHealPowerMax = toInt(healEl);
+     cfg.weaponMagicAttackMax = toInt(matkEl);
+     cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
  
-     // 武器/防具は装備先を選択
-     openEquipSlotPicker(idx);
-   }
- 
-   function useValuableById(id) {
-     if (id !== "ancient_map_fragment") return;
-     const vals = Array.isArray(gameData?.player?.valuables)
-       ? gameData.player.valuables
-       : [];
-     const target = vals.find((v) => v && v.id === id);
-     const cnt = Number(target?.count || 0);
--    if (!Number.isFinite(cnt) || cnt < 5) {
-+    if (!Number.isFinite(cnt) || cnt < 2) {
-       log("謎のかけらが足りない");
-       return;
-     }
- 
-     const isAsuraNow = !!gameData?.player?.worldState?.isAsura;
-     if (
-       !isAsuraNow &&
-       typeof window.confirm === "function" &&
-       !window.confirm(
-         "敵がかなり強くなります。旅立ちますか？（いつでも元の世界に戻れます）",
-       )
-     ) {
-       return;
-     }
- 
-     let movedToAsura = null;
-     if (typeof window.toggleAsuraWorldByMapFragment === "function") {
-       const result = window.toggleAsuraWorldByMapFragment();
-       if (result && result.ok) movedToAsura = !!result.movedToAsura;
-     }
- 
-     if (movedToAsura === true) {
-       log("🗝️ 修羅の国への鍵を使い、修羅の国へ転移した！");
-     } else if (movedToAsura === false) {
-       log("🗝️ 修羅の国への鍵を使い、元の世界へ戻った！");
-     } else {
-       log("🗝️ 修羅の国への鍵を使った…しかし鍵は消えなかった");
-     }
- 
-     if (typeof window.showRareEnemyPopup === "function") {
-       const title =
-         movedToAsura === true
-           ? "修羅の国"
-           : movedToAsura === false
-             ? "元の世界"
-             : "修羅の国への鍵";
-       const body =
-         movedToAsura === true
-           ? "世界が歪み、修羅の国に飲み込まれた…"
-           : movedToAsura === false
-             ? "歪みが晴れ、元の世界に戻った"
--            : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
-+            : "2つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
-       window.showRareEnemyPopup(title, body, {
-         autoClose: false,
-         allowOverlayClose: false,
-         showCloseButton: true,
-         hintText: "不思議な力で鍵は残っている",
-       });
-     }
-     updateBagUI();
-     updateUI();
+     syncAutoSellConfigUi();
+     log(`⚙️ 自動売却閾値を更新`);
      if (typeof requestAutosave === "function") requestAutosave();
    }
  
-   function useItem(name) {
-     const item = gameData.player.items.find((i) => i.name === name);
-     if (!item) return;
++  function resetAutoSellConfigThresholds() {
++    const cfg = ensureAutoSellConfig();
++    if (!cfg) return;
++
++    cfg.armorDefenseMax = 0;
++    cfg.weaponAttackMax = 0;
++    cfg.weaponHealPowerMax = 0;
++    cfg.weaponMagicAttackMax = 0;
++
++    syncAutoSellConfigUi();
++    log("⚙️ 自動売却の数値設定をすべて0にした");
++    if (typeof requestAutosave === "function") requestAutosave();
++  }
++
+   function openAutoSellConfigModal() {
+     syncAutoSellConfigUi();
+     const modal = document.getElementById("autoSellConfigModal");
+     if (!modal) return;
+     modal.classList.remove("hidden");
+     modal.setAttribute("aria-hidden", "false");
+   }
  
-     item.count--;
-     if (item.count <= 0) {
-       gameData.player.items = gameData.player.items.filter(
-         (i) => i.name !== name,
-       );
-     }
+   function closeAutoSellConfigModal() {
+     const modal = document.getElementById("autoSellConfigModal");
+     if (!modal) return;
+     modal.classList.add("hidden");
+     modal.setAttribute("aria-hidden", "true");
+   }
  
-     let heal = Number(item.heal || 0);
+   // -------------------
+   function fmtSigned(n) {
+     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
+     return n > 0 ? `+${n}` : `${n}`;
+   }
  
+   function fmtStat(label, value, suffix = "") {
+     const s = fmtSigned(value);
+     if (!s) return "";
+     return `${label}${s}${suffix} `;
+@@ -3594,50 +3608,51 @@
+   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
+   window.updateSkillButton = updateSkillButtons;
+   window.log = log;
+   window.clearLog = clearLog;
+ 
+   window.openBag = openBag;
+   window.openOptions = openOptions;
+   window.setOptionsTab = setOptionsTab;
+   window.closeOptions = closeOptions;
+   window.closeBag = closeBag;
+   window.openTeleportModal = openTeleportModal;
+   window.closeTeleportModal = closeTeleportModal;
+   window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
+   window.confirmTeleport = confirmTeleport;
+   window.setBagTab = setBagTab;
+   window.setEquipmentSubTab = setEquipmentSubTab;
+   window.setWeaponHandsTab = setWeaponHandsTab;
+   window.updateBagUI = updateBagUI;
+   window.toggleEquip = toggleEquip;
+   window.toggleItemLock = toggleItemLock;
+   window.discardEquipment = discardEquipment;
+   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
+   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
+   window.setBagEffectSortKey = setBagEffectSortKey;
+   window.onAutoSellConfigChange = onAutoSellConfigChange;
++  window.resetAutoSellConfigThresholds = resetAutoSellConfigThresholds;
+   window.openAutoSellConfigModal = openAutoSellConfigModal;
+   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
+   window.openEquipSlotPicker = openEquipSlotPicker;
+   window.closeEquipSlotPicker = closeEquipSlotPicker;
+   window.chooseEquipSlot = chooseEquipSlot;
+   window.useItem = useItem;
+   window.useValuableById = useValuableById;
+   // =====================
+   // セーブ設定
+   // =====================
+   function toggleAutosave(enabled) {
+     setAutosaveEnabled(!!enabled);
+     updateOptionsUI();
+     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
+   }
+ 
+   async function handleManualSave() {
+     try {
+       if (typeof saveGameNow !== "function") {
+         log("⚠️ セーブ機能を利用できません");
+         return;
+       }
+       const ok = await saveGameNow({ force: true, manual: true });
+       if (ok) {
+         log("💾 手動セーブしました");

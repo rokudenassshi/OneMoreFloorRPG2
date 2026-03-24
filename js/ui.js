@@ -603,6 +603,20 @@
     if (typeof requestAutosave === "function") requestAutosave();
   }
 
+  function resetAutoSellConfigThresholds() {
+    const cfg = ensureAutoSellConfig();
+    if (!cfg) return;
+
+    cfg.armorDefenseMax = 0;
+    cfg.weaponAttackMax = 0;
+    cfg.weaponHealPowerMax = 0;
+    cfg.weaponMagicAttackMax = 0;
+
+    syncAutoSellConfigUi();
+    log("⚙️ 自動売却の数値設定をすべて0にした");
+    if (typeof requestAutosave === "function") requestAutosave();
+  }
+
   function openAutoSellConfigModal() {
     syncAutoSellConfigUi();
     const modal = document.getElementById("autoSellConfigModal");
@@ -3616,6 +3630,7 @@
   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
   window.setBagEffectSortKey = setBagEffectSortKey;
   window.onAutoSellConfigChange = onAutoSellConfigChange;
+  window.resetAutoSellConfigThresholds = resetAutoSellConfigThresholds;
   window.openAutoSellConfigModal = openAutoSellConfigModal;
   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
   window.openEquipSlotPicker = openEquipSlotPicker;
