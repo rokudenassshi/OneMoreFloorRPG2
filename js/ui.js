@@ -557,6 +557,7 @@
       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
     );
     p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
+    p.autoSell.disableRareEquipmentPopup = !!p.autoSell.disableRareEquipmentPopup;
     return p.autoSell;
   }
 
@@ -567,7 +568,18 @@
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
     const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
-    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl || !prefixOnlyEl)
+    const disableRarePopupEl = document.getElementById(
+      "disableRareEquipmentPopup",
+    );
+    if (
+      !cfg ||
+      !armorEl ||
+      !atkEl ||
+      !healEl ||
+      !matkEl ||
+      !prefixOnlyEl ||
+      !disableRarePopupEl
+    )
       return;
 
     armorEl.value = String(cfg.armorDefenseMax || 0);
@@ -575,6 +587,7 @@
     healEl.value = String(cfg.weaponHealPowerMax || 0);
     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
     prefixOnlyEl.checked = !!cfg.pickupSpecialPrefixOnly;
+    disableRarePopupEl.checked = !!cfg.disableRareEquipmentPopup;
   }
 
   function onAutoSellConfigChange() {
@@ -586,6 +599,9 @@
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
     const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+    const disableRarePopupEl = document.getElementById(
+      "disableRareEquipmentPopup",
+    );
 
     const toInt = (el) => {
       const n = Math.floor(Number(el && el.value != null ? el.value : 0));
@@ -597,6 +613,9 @@
     cfg.weaponHealPowerMax = toInt(healEl);
     cfg.weaponMagicAttackMax = toInt(matkEl);
     cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
+    cfg.disableRareEquipmentPopup = !!(
+      disableRarePopupEl && disableRarePopupEl.checked
+    );
 
     syncAutoSellConfigUi();
     log(`⚙️ 自動売却閾値を更新`);

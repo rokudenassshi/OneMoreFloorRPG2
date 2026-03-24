@@ -488,7 +488,7 @@
           const v = Math.max(0, getAsuraKills(p) - startKills);
           return `${Math.min(v, ms.needKills)}/${ms.needKills}`;
         },
-        bonus: { asuraBaseStatMultiplierBonus: 1 },
+        bonus: { asuraBaseStatMultiplierBonus: 0.5 },
       });
     });
   }

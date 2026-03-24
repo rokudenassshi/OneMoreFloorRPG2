@@ -170,6 +170,7 @@
       weaponHealPowerMax: 0,
       weaponMagicAttackMax: 0,
       pickupSpecialPrefixOnly: false,
+      disableRareEquipmentPopup: false,
     };
     const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
     p.autoSell = {
@@ -190,6 +191,7 @@
         Math.floor(Number(src.weaponMagicAttackMax || 0)),
       ),
       pickupSpecialPrefixOnly: !!src.pickupSpecialPrefixOnly,
+      disableRareEquipmentPopup: !!src.disableRareEquipmentPopup,
     };
     for (const k of Object.keys(base)) {
       if (!(k in p.autoSell)) p.autoSell[k] = base[k];
@@ -4756,7 +4758,14 @@
         }
 
         // 特殊接頭語（固有効果付き）装備のドロップ時はポップアップ表示
+        const autoSellConfig =
+          gameData?.player && typeof gameData.player === "object"
+            ? gameData.player.autoSell
+            : null;
+        const shouldDisableRareEquipmentPopup =
+          !!autoSellConfig?.disableRareEquipmentPopup;
         if (
+          !shouldDisableRareEquipmentPopup &&
           !soldByAutoSell &&
           !skipBySpecialPrefixSetting &&
           !skipAccessoryPickup &&

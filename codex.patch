@@ -1,8 +1,68 @@
 diff --git a/js/ui.js b/js/ui.js
-index 8dd463c78cd05f395fb43372f48be14a21d86d1a..97f3473e229fec3d0c60469b2e27161dfc8b47d0 100644
+index 97f3473e229fec3d0c60469b2e27161dfc8b47d0..70c4eba75e4dc2a470ed38c7a4ff6797e9a2ae28 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -581,50 +581,64 @@
+@@ -535,90 +535,109 @@
+ 
+     updateBagUI();
+   }
+ 
+   function ensureAutoSellConfig() {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return null;
+     if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
+     p.autoSell.armorDefenseMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
+     );
+     p.autoSell.weaponAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
+     );
+     p.autoSell.weaponHealPowerMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
+     );
+     p.autoSell.weaponMagicAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
+     );
+     p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
++    p.autoSell.disableRareEquipmentPopup = !!p.autoSell.disableRareEquipmentPopup;
+     return p.autoSell;
+   }
+ 
+   function syncAutoSellConfigUi() {
+     const cfg = ensureAutoSellConfig();
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+     const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+-    if (!cfg || !armorEl || !atkEl || !healEl || !matkEl || !prefixOnlyEl)
++    const disableRarePopupEl = document.getElementById(
++      "disableRareEquipmentPopup",
++    );
++    if (
++      !cfg ||
++      !armorEl ||
++      !atkEl ||
++      !healEl ||
++      !matkEl ||
++      !prefixOnlyEl ||
++      !disableRarePopupEl
++    )
+       return;
+ 
+     armorEl.value = String(cfg.armorDefenseMax || 0);
+     atkEl.value = String(cfg.weaponAttackMax || 0);
+     healEl.value = String(cfg.weaponHealPowerMax || 0);
+     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
+     prefixOnlyEl.checked = !!cfg.pickupSpecialPrefixOnly;
++    disableRarePopupEl.checked = !!cfg.disableRareEquipmentPopup;
+   }
+ 
+   function onAutoSellConfigChange() {
      const cfg = ensureAutoSellConfig();
      if (!cfg) return;
  
@@ -11,6 +71,9 @@ index 8dd463c78cd05f395fb43372f48be14a21d86d1a..97f3473e229fec3d0c60469b2e27161d
      const healEl = document.getElementById("autoSellWeaponHealPowerMax");
      const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
      const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
++    const disableRarePopupEl = document.getElementById(
++      "disableRareEquipmentPopup",
++    );
  
      const toInt = (el) => {
        const n = Math.floor(Number(el && el.value != null ? el.value : 0));
@@ -22,100 +85,31 @@ index 8dd463c78cd05f395fb43372f48be14a21d86d1a..97f3473e229fec3d0c60469b2e27161d
      cfg.weaponHealPowerMax = toInt(healEl);
      cfg.weaponMagicAttackMax = toInt(matkEl);
      cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
++    cfg.disableRareEquipmentPopup = !!(
++      disableRarePopupEl && disableRarePopupEl.checked
++    );
  
      syncAutoSellConfigUi();
      log(`⚙️ 自動売却閾値を更新`);
      if (typeof requestAutosave === "function") requestAutosave();
    }
  
-+  function resetAutoSellConfigThresholds() {
-+    const cfg = ensureAutoSellConfig();
-+    if (!cfg) return;
-+
-+    cfg.armorDefenseMax = 0;
-+    cfg.weaponAttackMax = 0;
-+    cfg.weaponHealPowerMax = 0;
-+    cfg.weaponMagicAttackMax = 0;
-+
-+    syncAutoSellConfigUi();
-+    log("⚙️ 自動売却の数値設定をすべて0にした");
-+    if (typeof requestAutosave === "function") requestAutosave();
-+  }
-+
+   function resetAutoSellConfigThresholds() {
+     const cfg = ensureAutoSellConfig();
+     if (!cfg) return;
+ 
+     cfg.armorDefenseMax = 0;
+     cfg.weaponAttackMax = 0;
+     cfg.weaponHealPowerMax = 0;
+     cfg.weaponMagicAttackMax = 0;
+ 
+     syncAutoSellConfigUi();
+     log("⚙️ 自動売却の数値設定をすべて0にした");
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
    function openAutoSellConfigModal() {
      syncAutoSellConfigUi();
      const modal = document.getElementById("autoSellConfigModal");
      if (!modal) return;
      modal.classList.remove("hidden");
-     modal.setAttribute("aria-hidden", "false");
-   }
- 
-   function closeAutoSellConfigModal() {
-     const modal = document.getElementById("autoSellConfigModal");
-     if (!modal) return;
-     modal.classList.add("hidden");
-     modal.setAttribute("aria-hidden", "true");
-   }
- 
-   // -------------------
-   function fmtSigned(n) {
-     if (typeof n !== "number" || !Number.isFinite(n) || n === 0) return "";
-     return n > 0 ? `+${n}` : `${n}`;
-   }
- 
-   function fmtStat(label, value, suffix = "") {
-     const s = fmtSigned(value);
-     if (!s) return "";
-     return `${label}${s}${suffix} `;
-@@ -3594,50 +3608,51 @@
-   // 互換：既存コードが updateSkillButton を呼んでも動くようにする
-   window.updateSkillButton = updateSkillButtons;
-   window.log = log;
-   window.clearLog = clearLog;
- 
-   window.openBag = openBag;
-   window.openOptions = openOptions;
-   window.setOptionsTab = setOptionsTab;
-   window.closeOptions = closeOptions;
-   window.closeBag = closeBag;
-   window.openTeleportModal = openTeleportModal;
-   window.closeTeleportModal = closeTeleportModal;
-   window.onTeleportStayBattleToggleChange = onTeleportStayBattleToggleChange;
-   window.confirmTeleport = confirmTeleport;
-   window.setBagTab = setBagTab;
-   window.setEquipmentSubTab = setEquipmentSubTab;
-   window.setWeaponHandsTab = setWeaponHandsTab;
-   window.updateBagUI = updateBagUI;
-   window.toggleEquip = toggleEquip;
-   window.toggleItemLock = toggleItemLock;
-   window.discardEquipment = discardEquipment;
-   window.discardAllUnprotectedEquipment = discardAllUnprotectedEquipment;
-   window.sortInventoryByEffectValue = sortInventoryByEffectValue;
-   window.setBagEffectSortKey = setBagEffectSortKey;
-   window.onAutoSellConfigChange = onAutoSellConfigChange;
-+  window.resetAutoSellConfigThresholds = resetAutoSellConfigThresholds;
-   window.openAutoSellConfigModal = openAutoSellConfigModal;
-   window.closeAutoSellConfigModal = closeAutoSellConfigModal;
-   window.openEquipSlotPicker = openEquipSlotPicker;
-   window.closeEquipSlotPicker = closeEquipSlotPicker;
-   window.chooseEquipSlot = chooseEquipSlot;
-   window.useItem = useItem;
-   window.useValuableById = useValuableById;
-   // =====================
-   // セーブ設定
-   // =====================
-   function toggleAutosave(enabled) {
-     setAutosaveEnabled(!!enabled);
-     updateOptionsUI();
-     log(enabled ? "💾 オートセーブ: ON" : "💾 オートセーブ: OFF");
-   }
- 
-   async function handleManualSave() {
-     try {
-       if (typeof saveGameNow !== "function") {
-         log("⚠️ セーブ機能を利用できません");
-         return;
-       }
-       const ok = await saveGameNow({ force: true, manual: true });
-       if (ok) {
-         log("💾 手動セーブしました");
