@@ -557,7 +557,8 @@
       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
     );
     p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
-    p.autoSell.disableRareEquipmentPopup = !!p.autoSell.disableRareEquipmentPopup;
+    p.autoSell.disableRareEquipmentPopup =
+      !!p.autoSell.disableRareEquipmentPopup;
     return p.autoSell;
   }
 
@@ -2262,7 +2263,7 @@
             a.bonus.asuraBaseStatMultiplierBonus > 0
           ) {
             parts.push(
-              `修羅の基礎ステ倍率+${Math.floor(a.bonus.asuraBaseStatMultiplierBonus)}`,
+              `修羅の基礎ステ倍率+${a.bonus.asuraBaseStatMultiplierBonus}`,
             );
           }
           if (
