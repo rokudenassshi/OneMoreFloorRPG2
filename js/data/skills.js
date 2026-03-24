@@ -140,16 +140,6 @@
       desc: "会心率+{critBonus}%（最大100%）",
       effect: (lv) => ({ critBonus: lv * 0.5 }),
     },
-    common_guarded_attack: {
-      name: "護りの構え",
-      type: "passive",
-      job: "all",
-      maxLevel: 1,
-      requiredPoints: 1,
-      desc: "たたかう時に攻撃せず、防御を行う",
-      effect: (_lv) => ({}),
-    },
-
     // ===================================
     // 剣士 (swordsman)
     // ===================================

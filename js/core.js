@@ -3052,12 +3052,6 @@
   function attack() {
     if (gameData.gameState !== "BATTLE" || !gameData.enemy) return;
 
-    // 共通スキル：護りの構え（たたかうで防御）
-    if (Number(gameData.player?.skills?.common_guarded_attack || 0) > 0) {
-      defend();
-      return;
-    }
-
     // シリアル特典：スキル1が使用可能な時は、たたかうでスキル1を発動
     if (isAutoSkill1OnAttackUnlocked()) {
       const p = gameData.player || {};
