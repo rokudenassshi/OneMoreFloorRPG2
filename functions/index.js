@@ -95,13 +95,13 @@ exports.saveUserGameData = onCall(
       throw new HttpsError("invalid-argument", "invalid schema");
     }
 
-    await db.collection(SAVE_COLLECTION).doc(uid).set(
-      {
-        payload,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+    // セーブデータは payload 全体を「置き換え」る。
+    // merge:true だと map のネストが部分マージされ、0に戻したスキルで
+    // クライアント側が削除したキーが残ることがあるため使わない。
+    await db.collection(SAVE_COLLECTION).doc(uid).set({
+      payload,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
 
     return { ok: true };
   },

@@ -1453,7 +1453,7 @@
               ? v.description
               : "";
           const canUseMapFragment =
-            v.id === "ancient_map_fragment" && Number(cnt) >= 5;
+            v.id === "ancient_map_fragment" && Number(cnt) >= 2;
           valuablesList.innerHTML += `
             <div class="item-card">
               <div class="item-name">✨ ${v.name} x${cnt}</div>
@@ -1756,7 +1756,7 @@
       : [];
     const target = vals.find((v) => v && v.id === id);
     const cnt = Number(target?.count || 0);
-    if (!Number.isFinite(cnt) || cnt < 5) {
+    if (!Number.isFinite(cnt) || cnt < 2) {
       log("謎のかけらが足りない");
       return;
     }
@@ -1798,7 +1798,7 @@
           ? "世界が歪み、修羅の国に飲み込まれた…"
           : movedToAsura === false
             ? "歪みが晴れ、元の世界に戻った"
-            : "5つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
+            : "2つ集めた謎のかけらは、修羅の国への鍵へと変化した…！";
       window.showRareEnemyPopup(title, body, {
         autoClose: false,
         allowOverlayClose: false,

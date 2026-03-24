@@ -1741,13 +1741,7 @@
       exp: 5750,
       minFloor: 920,
       maxFloor: 1000,
-      skills: [
-        "fireball",
-        "ice_lance",
-        "silence_hex",
-        "doom_mark",
-        "heal",
-      ],
+      skills: ["fireball", "ice_lance", "silence_hex", "doom_mark", "heal"],
     },
     {
       name: "紅蓮の断罪翼",
@@ -2041,13 +2035,7 @@
       exp: 20600,
       minFloor: 1720,
       maxFloor: 2000,
-      skills: [
-        "multi_slash",
-        "crushing_blow",
-        "doom_mark",
-        "roar",
-        "heal",
-      ],
+      skills: ["multi_slash", "crushing_blow", "doom_mark", "roar", "heal"],
     },
     {
       name: "天冥の葬送者",
@@ -2421,13 +2409,13 @@
   // 修羅の国は「元の世界の基礎ステータス × 倍率」で再設計。
   // 1st Tier（スライム/コウモリ帯）が 5000F ボスの 5 倍になるようにする。
   const baseBoss5000ForAsura = {
-    hp: 500000,
-    str: 6800,
-    vit: 11200,
+    hp: 300000,
+    str: 68000,
+    vit: 15200,
     int: 5600,
     agi: 460,
     dex: 520,
-    exp: 220000,
+    exp: 600,
   };
   const asuraFirstTierBaseMultiplier = 5;
   const asuraTierGrowthMultipliers = [

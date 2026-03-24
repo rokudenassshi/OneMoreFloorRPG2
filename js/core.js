@@ -121,7 +121,7 @@
   const MAP_FRAGMENT_BASE_NAME = "謎のかけら";
   const MAP_FRAGMENT_READY_NAME = "修羅の国への鍵";
   const MAP_FRAGMENT_DROP_CHANCE = 0.0000001;
-  const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 5;
+  const MAP_FRAGMENT_MAX_STACK_FOR_DROP = 2;
   const MAX_BATTLE_ACTIONS_BEFORE_ESCAPE = 50;
   const ASURA_ITEM_STAT_MULTIPLIER = 1.5;
   const ASURA_ITEM_BASE_FLOOR_OFFSET = Math.round(5 + 5000 * 2.5);
@@ -138,7 +138,7 @@
     id: MAP_FRAGMENT_ID,
     name: MAP_FRAGMENT_BASE_NAME,
     statKey: "",
-    description: "5つ集めると・・・",
+    description: "2つ集めると・・・",
   };
 
   function getMapFragmentDisplayName(count) {
@@ -4799,7 +4799,7 @@
       }
 
       // 地図の切れ端ドロップ（通常ドロップとは別判定 / 固定 1/10,000,000）
-      // 5個持っている場合はドロップしない。
+      // 2個持っている場合はドロップしない。
       const mapFragmentCount = getValuableCountById(
         gameData.player,
         MAP_FRAGMENT_ID,
@@ -4810,7 +4810,7 @@
       ) {
         addValuableByDef(MAP_FRAGMENT_DEF, 1);
         log(
-          `🗺️ ${getMapFragmentDisplayName(mapFragmentCount + 1)}を手に入れた！ (${mapFragmentCount + 1}/5)`,
+          `🗺️ ${getMapFragmentDisplayName(mapFragmentCount + 1)}を手に入れた！ (${mapFragmentCount + 1}/2)`,
         );
         if (typeof window.showRareEnemyPopup === "function") {
           window.showRareEnemyPopup(
