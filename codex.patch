@@ -1,276 +1,77 @@
-diff --git a/js/data/enemies.js b/js/data/enemies.js
-index 13fb9674a8e2daa06211a6815a7317a1336535af..67d2776a8a17c491f2df3fff5f72f3c53efc9062 100644
---- a/js/data/enemies.js
-+++ b/js/data/enemies.js
-@@ -2378,50 +2378,156 @@
-         "roar",
-         "heal",
-       ],
-     },
-     {
-       name: "万雷の虚王",
-       hp: 446000,
-       str: 5920,
-       vit: 9980,
-       int: 4920,
-       agi: 444,
-       dex: 506,
-       exp: 94400,
-       minFloor: 4920,
-       maxFloor: 5000,
-       skills: [
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "silence_hex",
-         "doom_mark",
-         "roar",
-         "heal",
-       ],
-     },
-+    // --------------------
-+    // 5000〜6001F（新テーブル）
-+    // --------------------
-+    {
-+      name: "冥極の星断機",
-+      hp: 520000,
-+      str: 6420,
-+      vit: 10880,
-+      int: 5380,
-+      agi: 466,
-+      dex: 534,
-+      exp: 102000,
-+      minFloor: 5001,
-+      maxFloor: 6001,
-+      skills: [
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "doom_mark",
-+        "silence_hex",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "天冥覇導アストラル",
-+      hp: 568000,
-+      str: 6880,
-+      vit: 11740,
-+      int: 5860,
-+      agi: 480,
-+      dex: 552,
-+      exp: 110500,
-+      minFloor: 5200,
-+      maxFloor: 6001,
-+      skills: [
-+        "fireball",
-+        "ice_lance",
-+        "thunder_strike",
-+        "silence_hex",
-+        "doom_mark",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "境壊の殲神騎",
-+      hp: 612000,
-+      str: 7420,
-+      vit: 12560,
-+      int: 6120,
-+      agi: 496,
-+      dex: 570,
-+      exp: 119800,
-+      minFloor: 5400,
-+      maxFloor: 6001,
-+      skills: [
-+        "power_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "doom_mark",
-+        "roar",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "終星の裁断王",
-+      hp: 668000,
-+      str: 7980,
-+      vit: 13540,
-+      int: 6620,
-+      agi: 514,
-+      dex: 594,
-+      exp: 132000,
-+      minFloor: 5600,
-+      maxFloor: 6001,
-+      skills: [
-+        "fireball",
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "doom_mark",
-+        "silence_hex",
-+        "heal",
-+      ],
-+    },
-+    {
-+      name: "無窮輪廻エンペリオン",
-+      hp: 728000,
-+      str: 8560,
-+      vit: 14680,
-+      int: 7240,
-+      agi: 534,
-+      dex: 620,
-+      exp: 146500,
-+      minFloor: 5800,
-+      maxFloor: 6001,
-+      skills: [
-+        "fireball",
-+        "ice_lance",
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "doom_mark",
-+        "silence_hex",
-+        "heal",
-+      ],
-+    },
-   ];
+diff --git a/index.html b/index.html
+index cf2fcc8f9f916928d1f1059be25357b49a3f5a96..32975bc23fa869c9cd85780139bfe7f246274203 100644
+--- a/index.html
++++ b/index.html
+@@ -541,54 +541,68 @@
+           </label>
+         </div>
+         <div id="statAllocationList"></div>
+         <div class="modal-actions">
+           <button onclick="resetStatAllocation()">リセット</button>
+           <button onclick="closeStatAllocation()">決定</button>
+         </div>
+       </div>
+     </div>
  
-   // --------------------
-   // 修羅の国専用モンスターテーブル
-   // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
-   // --------------------
-   // 修羅の国は「元の世界の基礎ステータス × 倍率」で再設計。
-   // 1st Tier（スライム/コウモリ帯）が 5000F ボスの 5 倍になるようにする。
-   const baseBoss5000ForAsura = {
-     hp: 3000000,
-     str: 68000,
-     vit: 35200,
-     int: 5600,
-     agi: 460,
-     dex: 520,
-     exp: 600,
-   };
-   const asuraFirstTierBaseMultiplier = 5;
-   const asuraTierGrowthMultipliers = [
-     { maxFloor: 100, mul: 1.0 },
-     { maxFloor: 200, mul: 1.3 },
-     { maxFloor: 500, mul: 1.7 },
-     { maxFloor: 1000, mul: 2.15 },
-     { maxFloor: 1500, mul: 2.6 },
-     { maxFloor: 2000, mul: 3.1 },
-@@ -2543,51 +2649,51 @@
-       agi: Math.round(tier.target.agi * floorGuardRate),
-       dex: Math.round(tier.target.dex * floorGuardRate),
-       exp: Math.round(tier.target.exp * floorGuardRate),
-     };
+     <!-- 自動売却設定モーダル -->
+     <div id="autoSellConfigModal" class="modal hidden" aria-hidden="true">
+       <div class="modal-content auto-sell-modal-content">
+         <h2>自動売却設定</h2>
+         <div class="small">設定値以下の装備を自動売却します。</div>
+         <div class="auto-sell-grid">
+           <label>防具 防御<input id="autoSellArmorDefenseMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 攻撃<input id="autoSellWeaponAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 回復力<input id="autoSellWeaponHealPowerMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
+               onchange="onAutoSellConfigChange()" /></label>
+         </div>
+-        <label class="skill-auto-allocate-toggle">
+-          <input id="pickupSpecialPrefixOnly" type="checkbox" onchange="onAutoSellConfigChange()" />
+-          レア装備のみ拾う
+-        </label>
++        <div class="skill-auto-allocate-toggle auto-sell-rarity-filter">
++          <div>装備フィルター</div>
++          <label>
++            <input id="pickupSpecialPrefixMinRarityRare" type="radio" name="pickupSpecialPrefixMinRarity"
++              value="rare" onchange="onAutoSellConfigChange()" />
++            レア以上の装備を拾う
++          </label>
++          <label>
++            <input id="pickupSpecialPrefixMinRarityEpic" type="radio" name="pickupSpecialPrefixMinRarity"
++              value="epic" onchange="onAutoSellConfigChange()" />
++            エピック以上の装備を拾う
++          </label>
++          <label>
++            <input id="pickupSpecialPrefixMinRarityLegendary" type="radio" name="pickupSpecialPrefixMinRarity"
++              value="legendary" onchange="onAutoSellConfigChange()" />
++            レジェンダリー以上の装備を拾う
++          </label>
++        </div>
+         <div class="modal-actions">
+           <button type="button" onclick="resetAutoSellConfigThresholds()">数値をすべて0にする</button>
+           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>
+         </div>
+       </div>
+     </div>
  
-     return {
-       ...m,
-       name:
-         typeof m.name === "string" && m.name.startsWith("修羅")
-           ? m.name
-           : `修羅${m.name}`,
-       hp: Math.max(baseScaled.hp, floorGuard.hp),
-       str: Math.max(baseScaled.str, floorGuard.str),
-       vit: Math.max(baseScaled.vit, floorGuard.vit),
-       int: Math.max(baseScaled.int, floorGuard.int),
-       agi: Math.max(baseScaled.agi, floorGuard.agi),
-       dex: Math.max(baseScaled.dex, floorGuard.dex),
-       exp: Math.max(baseScaled.exp, floorGuard.exp),
-       minFloor: min,
-       maxFloor: max,
-     };
-   });
-   // --------------------
-   // ボスモンスター（敵テーブル切替階層）
-   // --------------------
--  // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F に固定出現するボス。
-+  // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F / 6001F に固定出現するボス。
-   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
-   const bossMonsters = {
-     100: {
-       name: "境界の守護竜",
-       hp: 900,
-       str: 38,
-       vit: 28,
-       int: 20,
-       agi: 10,
-       dex: 14,
-       exp: 380,
-       isBoss: true,
-       skills: ["fireball", "power_strike", "roar", "heal"],
-       effects: { damageReduction: 0.08, regenRate: 0.03 },
-     },
-     200: {
-       name: "黒鋼の巨王",
-       hp: 1800,
-       str: 68,
-       vit: 62,
-       int: 18,
-       agi: 12,
-       dex: 18,
-       exp: 900,
-       isBoss: true,
-@@ -2765,33 +2871,61 @@
-       str: 6800,
-       vit: 11200,
-       int: 5600,
-       agi: 460,
-       dex: 520,
-       exp: 220000,
-       isBoss: true,
-       skills: [
-         "doom_mark",
-         "fireball",
-         "ice_lance",
-         "thunder_strike",
-         "crushing_blow",
-         "multi_slash",
-         "silence_hex",
-         "heal",
-       ],
-       effects: {
-         damageReduction: 0.48,
-         regenRate: 0.16,
-         extraTurnChance: 0.33,
-         armorPierceRate: 0.58,
-         alwaysHit: true,
-       },
-     },
-+    6001: {
-+      name: "真終天魔ゼロ・オーバーロード",
-+      hp: 860000,
-+      str: 9800,
-+      vit: 16800,
-+      int: 8600,
-+      agi: 560,
-+      dex: 650,
-+      exp: 360000,
-+      isBoss: true,
-+      skills: [
-+        "doom_mark",
-+        "fireball",
-+        "ice_lance",
-+        "thunder_strike",
-+        "crushing_blow",
-+        "multi_slash",
-+        "silence_hex",
-+        "heal",
-+      ],
-+      effects: {
-+        damageReduction: 0.55,
-+        regenRate: 0.2,
-+        extraTurnChance: 0.4,
-+        armorPierceRate: 0.66,
-+        alwaysHit: true,
-+      },
-+    },
-   };
+   </div>
  
-   window.epithets = epithets;
-   window.enemySkills = enemySkills;
-   window.monsterTypes = monsterTypes;
-   window.asuraMonsterTypes = asuraMonsterTypes;
-   window.bossMonsters = bossMonsters;
- })();
+   <script>
+     // モバイルでのピンチ/ダブルタップ拡大を抑止し、常に固定倍率で表示する
+     (function () {
+       const preventZoom = (event) => {
+         event.preventDefault();
+       };
+ 
+       document.addEventListener("gesturestart", preventZoom, { passive: false });
+       document.addEventListener("gesturechange", preventZoom, { passive: false });
+       document.addEventListener("gestureend", preventZoom, { passive: false });
+ 
+       document.addEventListener(
+         "touchmove",
+         (event) => {
+           if (event.scale && event.scale !== 1) {
+             event.preventDefault();

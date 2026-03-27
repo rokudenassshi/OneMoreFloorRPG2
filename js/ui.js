@@ -556,7 +556,13 @@
       0,
       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
     );
-    p.autoSell.pickupSpecialPrefixOnly = !!p.autoSell.pickupSpecialPrefixOnly;
+    p.autoSell.pickupSpecialPrefixMinRarity =
+      p.autoSell.pickupSpecialPrefixMinRarity === "epic" ||
+      p.autoSell.pickupSpecialPrefixMinRarity === "legendary"
+        ? p.autoSell.pickupSpecialPrefixMinRarity
+        : p.autoSell.pickupSpecialPrefixOnly
+          ? "rare"
+          : "rare";
     p.autoSell.disableRareEquipmentPopup =
       !!p.autoSell.disableRareEquipmentPopup;
     return p.autoSell;
@@ -568,7 +574,15 @@
     const atkEl = document.getElementById("autoSellWeaponAttackMax");
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
-    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+    const minRarityRareEl = document.getElementById(
+      "pickupSpecialPrefixMinRarityRare",
+    );
+    const minRarityEpicEl = document.getElementById(
+      "pickupSpecialPrefixMinRarityEpic",
+    );
+    const minRarityLegendaryEl = document.getElementById(
+      "pickupSpecialPrefixMinRarityLegendary",
+    );
     const disableRarePopupEl = document.getElementById(
       "disableRareEquipmentPopup",
     );
@@ -578,7 +592,9 @@
       !atkEl ||
       !healEl ||
       !matkEl ||
-      !prefixOnlyEl ||
+      !minRarityRareEl ||
+      !minRarityEpicEl ||
+      !minRarityLegendaryEl ||
       !disableRarePopupEl
     )
       return;
@@ -587,7 +603,14 @@
     atkEl.value = String(cfg.weaponAttackMax || 0);
     healEl.value = String(cfg.weaponHealPowerMax || 0);
     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
-    prefixOnlyEl.checked = !!cfg.pickupSpecialPrefixOnly;
+    const minRarity =
+      cfg.pickupSpecialPrefixMinRarity === "epic" ||
+      cfg.pickupSpecialPrefixMinRarity === "legendary"
+        ? cfg.pickupSpecialPrefixMinRarity
+        : "rare";
+    minRarityRareEl.checked = minRarity === "rare";
+    minRarityEpicEl.checked = minRarity === "epic";
+    minRarityLegendaryEl.checked = minRarity === "legendary";
     disableRarePopupEl.checked = !!cfg.disableRareEquipmentPopup;
   }
 
@@ -599,7 +622,9 @@
     const atkEl = document.getElementById("autoSellWeaponAttackMax");
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
-    const prefixOnlyEl = document.getElementById("pickupSpecialPrefixOnly");
+    const minRarityEl = document.querySelector(
+      "input[name='pickupSpecialPrefixMinRarity']:checked",
+    );
     const disableRarePopupEl = document.getElementById(
       "disableRareEquipmentPopup",
     );
@@ -613,7 +638,12 @@
     cfg.weaponAttackMax = toInt(atkEl);
     cfg.weaponHealPowerMax = toInt(healEl);
     cfg.weaponMagicAttackMax = toInt(matkEl);
-    cfg.pickupSpecialPrefixOnly = !!(prefixOnlyEl && prefixOnlyEl.checked);
+    cfg.pickupSpecialPrefixMinRarity =
+      minRarityEl && minRarityEl.value === "epic"
+        ? "epic"
+        : minRarityEl && minRarityEl.value === "legendary"
+          ? "legendary"
+          : "rare";
     cfg.disableRareEquipmentPopup = !!(
       disableRarePopupEl && disableRarePopupEl.checked
     );

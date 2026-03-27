@@ -563,10 +563,24 @@
           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
               onchange="onAutoSellConfigChange()" /></label>
         </div>
-        <label class="skill-auto-allocate-toggle">
-          <input id="pickupSpecialPrefixOnly" type="checkbox" onchange="onAutoSellConfigChange()" />
-          レア装備のみ拾う
-        </label>
+        <div class="skill-auto-allocate-toggle auto-sell-rarity-filter">
+          <div>装備フィルター</div>
+          <label>
+            <input id="pickupSpecialPrefixMinRarityRare" type="radio" name="pickupSpecialPrefixMinRarity"
+              value="rare" onchange="onAutoSellConfigChange()" />
+            レア以上の装備を拾う
+          </label>
+          <label>
+            <input id="pickupSpecialPrefixMinRarityEpic" type="radio" name="pickupSpecialPrefixMinRarity"
+              value="epic" onchange="onAutoSellConfigChange()" />
+            エピック以上の装備を拾う
+          </label>
+          <label>
+            <input id="pickupSpecialPrefixMinRarityLegendary" type="radio" name="pickupSpecialPrefixMinRarity"
+              value="legendary" onchange="onAutoSellConfigChange()" />
+            レジェンダリー以上の装備を拾う
+          </label>
+        </div>
         <div class="modal-actions">
           <button type="button" onclick="resetAutoSellConfigThresholds()">数値をすべて0にする</button>
           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>

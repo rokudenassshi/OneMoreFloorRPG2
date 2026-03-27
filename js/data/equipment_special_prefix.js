@@ -179,7 +179,8 @@
         { type: "bonusPct", key: "lifeSteal", min: 4, max: 10 },
         { type: "statPct", stat: "attack", min: 6, max: 12 },
       ],
-      describe: (r) => `HP吸収+${pct(r.lifeSteal)} / 攻撃力+${pct(r.attackPct)}`,
+      describe: (r) =>
+        `HP吸収+${pct(r.lifeSteal)} / 攻撃力+${pct(r.attackPct)}`,
     },
     {
       name: "血宴の",

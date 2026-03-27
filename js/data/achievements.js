@@ -171,7 +171,7 @@
     },
     {
       id: "the_have_not",
-      title: "死を超える",
+      title: "持たざる者",
       desc: "？？？",
       isDone: (p) => Number(p.nakedDefeats || 0) >= 1000,
       progress: (p) => `${Math.min(Number(p.nakedDefeats || 0), 1000)}/1000`,

@@ -169,7 +169,7 @@
       weaponAttackMax: 0,
       weaponHealPowerMax: 0,
       weaponMagicAttackMax: 0,
-      pickupSpecialPrefixOnly: false,
+      pickupSpecialPrefixMinRarity: "rare",
       disableRareEquipmentPopup: false,
     };
     const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
@@ -190,7 +190,13 @@
         0,
         Math.floor(Number(src.weaponMagicAttackMax || 0)),
       ),
-      pickupSpecialPrefixOnly: !!src.pickupSpecialPrefixOnly,
+      pickupSpecialPrefixMinRarity:
+        src.pickupSpecialPrefixMinRarity === "epic" ||
+        src.pickupSpecialPrefixMinRarity === "legendary"
+          ? src.pickupSpecialPrefixMinRarity
+          : src.pickupSpecialPrefixOnly
+            ? "rare"
+            : "rare",
       disableRareEquipmentPopup: !!src.disableRareEquipmentPopup,
     };
     for (const k of Object.keys(base)) {
@@ -4725,10 +4731,18 @@
     const p = gameData && gameData.player ? gameData.player : null;
     ensureAutoSellConfig(p);
     const cfg = p && p.autoSell ? p.autoSell : null;
-    if (!cfg || !cfg.pickupSpecialPrefixOnly) return false;
-    return !(
-      typeof item._specialPrefixName === "string" && item._specialPrefixName
-    );
+    if (!cfg) return false;
+    const minRarity =
+      cfg.pickupSpecialPrefixMinRarity === "epic" ||
+      cfg.pickupSpecialPrefixMinRarity === "legendary"
+        ? cfg.pickupSpecialPrefixMinRarity
+        : "rare";
+    const rank = { rare: 1, epic: 2, legendary: 3 };
+    const itemRarity =
+      item && typeof item._specialPrefixRarity === "string"
+        ? item._specialPrefixRarity
+        : "";
+    return (rank[itemRarity] || 0) < rank[minRarity];
   }
 
   function checkBattleEnd() {
@@ -4832,7 +4846,7 @@
         );
 
         if (skipBySpecialPrefixSetting) {
-          log(`⏭️ ${item.name}は特殊接頭語なしのため見送った。`);
+          log(`⏭️ ${item.name}は拾わなかった。`);
         } else if (skipAccessoryPickup) {
           log(`⏭️ ${item.name}は同系統の装飾品より効果値が低いため見送った。`);
         } else if (soldByAutoSell) {
