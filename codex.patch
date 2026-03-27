@@ -1,64 +1,159 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index a2315a27e18e9af3d1660ea1f333dd8da91bc19f..be1d604d8ed56a4c38515dd8834b4a77e38ccd4f 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -323,50 +323,59 @@
-       desc: "3回攻撃（各{value}倍）",
-       effect: (lv) => ({ hits: 3, damageMultiplier: 0.4 + lv * 0.15 }),
-     },
-     steal_life: {
-       name: "生命吸収",
-       type: "active",
-       accuracy: 100,
-       job: "thief",
-       maxLevel: 3,
-       cooldown: 4,
-       desc: "攻撃して吸収（ダメージ{value}倍、与ダメの50%回復）",
-       effect: (lv) => ({ damageMultiplier: 1.25 + lv * 0.3, healPercent: 0.5 }),
-     },
+diff --git a/js/ui.js b/js/ui.js
+index b89b326060edf3a57517bff3cef3e3c6e9b728ff..47060ac6e90a6d0dbd588dcc5464fba2e8423f4a 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -535,137 +535,150 @@
  
-     // ---- 固有ギミック ----
-     thief_just_dodge: {
-       name: "ジャスト回避",
-       type: "passive",
-       job: "thief",
-       // 仕様変更：最大レベル1、必要ポイント5
-       maxLevel: 1,
-       requiredPoints: 5,
-       desc: "回避成功時、次の攻撃が確定会心",
-       effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
-     },
-+    trickster_prefix_hunter: {
-+      name: "怪盗の目利き",
-+      type: "passive",
-+      job: "thief",
-+      maxLevel: 1,
-+      requiredPoints: 5,
-+      desc: "特殊接頭語の付与確率が1.5倍になる",
-+      effect: () => ({ specialPrefixChanceMultiplier: 1.5 }),
-+    },
+     updateBagUI();
+   }
  
-     // ===================================
-     // 魔法使い (mage)
-     // ===================================
-     magic_power: {
-       name: "魔力増幅",
-       type: "passive",
-       job: "mage",
-       maxLevel: 5,
-       desc: "魔法ダメージ+{value}",
-       effect: (lv) => ({ magicBonus: lv * 10 }),
-     },
-     mage_focus: {
-       name: "魔法の集中",
-       type: "passive",
-       job: "mage",
-       maxLevel: 5,
-       desc: "命中率+{value}%",
-       effect: (lv) => ({ accuracyBonus: lv * 3 }),
-     },
-     fireball: {
-       name: "ファイアボール",
-       type: "active",
-       accuracy: 100,
-       job: "mage",
+   function ensureAutoSellConfig() {
+     const p = gameData && gameData.player ? gameData.player : null;
+     if (!p) return null;
+     if (!p.autoSell || typeof p.autoSell !== "object") p.autoSell = {};
+     p.autoSell.armorDefenseMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.armorDefenseMax || 0)),
+     );
+     p.autoSell.weaponAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponAttackMax || 0)),
+     );
+     p.autoSell.weaponHealPowerMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponHealPowerMax || 0)),
+     );
+     p.autoSell.weaponMagicAttackMax = Math.max(
+       0,
+       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
+     );
+     p.autoSell.pickupSpecialPrefixMinRarity =
++      p.autoSell.pickupSpecialPrefixMinRarity === "all" ||
++      p.autoSell.pickupSpecialPrefixMinRarity === "rare" ||
+       p.autoSell.pickupSpecialPrefixMinRarity === "epic" ||
+       p.autoSell.pickupSpecialPrefixMinRarity === "legendary"
+         ? p.autoSell.pickupSpecialPrefixMinRarity
+         : p.autoSell.pickupSpecialPrefixOnly
+           ? "rare"
+-          : "rare";
++          : "all";
+     p.autoSell.disableRareEquipmentPopup =
+       !!p.autoSell.disableRareEquipmentPopup;
+     return p.autoSell;
+   }
+ 
+   function syncAutoSellConfigUi() {
+     const cfg = ensureAutoSellConfig();
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
++    const minRarityAllEl = document.getElementById(
++      "pickupSpecialPrefixMinRarityAll",
++    );
+     const minRarityRareEl = document.getElementById(
+       "pickupSpecialPrefixMinRarityRare",
+     );
+     const minRarityEpicEl = document.getElementById(
+       "pickupSpecialPrefixMinRarityEpic",
+     );
+     const minRarityLegendaryEl = document.getElementById(
+       "pickupSpecialPrefixMinRarityLegendary",
+     );
+     const disableRarePopupEl = document.getElementById(
+       "disableRareEquipmentPopup",
+     );
+     if (
+       !cfg ||
+       !armorEl ||
+       !atkEl ||
+       !healEl ||
+       !matkEl ||
++      !minRarityAllEl ||
+       !minRarityRareEl ||
+       !minRarityEpicEl ||
+       !minRarityLegendaryEl ||
+       !disableRarePopupEl
+     )
+       return;
+ 
+     armorEl.value = String(cfg.armorDefenseMax || 0);
+     atkEl.value = String(cfg.weaponAttackMax || 0);
+     healEl.value = String(cfg.weaponHealPowerMax || 0);
+     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
+     const minRarity =
++      cfg.pickupSpecialPrefixMinRarity === "all" ||
++      cfg.pickupSpecialPrefixMinRarity === "rare" ||
+       cfg.pickupSpecialPrefixMinRarity === "epic" ||
+       cfg.pickupSpecialPrefixMinRarity === "legendary"
+         ? cfg.pickupSpecialPrefixMinRarity
+-        : "rare";
++        : "all";
++    minRarityAllEl.checked = minRarity === "all";
+     minRarityRareEl.checked = minRarity === "rare";
+     minRarityEpicEl.checked = minRarity === "epic";
+     minRarityLegendaryEl.checked = minRarity === "legendary";
+     disableRarePopupEl.checked = !!cfg.disableRareEquipmentPopup;
+   }
+ 
+   function onAutoSellConfigChange() {
+     const cfg = ensureAutoSellConfig();
+     if (!cfg) return;
+ 
+     const armorEl = document.getElementById("autoSellArmorDefenseMax");
+     const atkEl = document.getElementById("autoSellWeaponAttackMax");
+     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
+     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+     const minRarityEl = document.querySelector(
+       "input[name='pickupSpecialPrefixMinRarity']:checked",
+     );
+     const disableRarePopupEl = document.getElementById(
+       "disableRareEquipmentPopup",
+     );
+ 
+     const toInt = (el) => {
+       const n = Math.floor(Number(el && el.value != null ? el.value : 0));
+       return Number.isFinite(n) ? Math.max(0, n) : 0;
+     };
+ 
+     cfg.armorDefenseMax = toInt(armorEl);
+     cfg.weaponAttackMax = toInt(atkEl);
+     cfg.weaponHealPowerMax = toInt(healEl);
+     cfg.weaponMagicAttackMax = toInt(matkEl);
+     cfg.pickupSpecialPrefixMinRarity =
+-      minRarityEl && minRarityEl.value === "epic"
++      minRarityEl && minRarityEl.value === "all"
++        ? "all"
++        : minRarityEl && minRarityEl.value === "epic"
+         ? "epic"
+         : minRarityEl && minRarityEl.value === "legendary"
+           ? "legendary"
+-          : "rare";
++          : minRarityEl && minRarityEl.value === "rare"
++            ? "rare"
++            : "all";
+     cfg.disableRareEquipmentPopup = !!(
+       disableRarePopupEl && disableRarePopupEl.checked
+     );
+ 
+     syncAutoSellConfigUi();
+     log(`⚙️ 自動売却閾値を更新`);
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function resetAutoSellConfigThresholds() {
+     const cfg = ensureAutoSellConfig();
+     if (!cfg) return;
+ 
+     cfg.armorDefenseMax = 0;
+     cfg.weaponAttackMax = 0;
+     cfg.weaponHealPowerMax = 0;
+     cfg.weaponMagicAttackMax = 0;
+ 
+     syncAutoSellConfigUi();
+     log("⚙️ 自動売却の数値設定をすべて0にした");
+     if (typeof requestAutosave === "function") requestAutosave();
+   }
+ 
+   function openAutoSellConfigModal() {
+     syncAutoSellConfigUi();

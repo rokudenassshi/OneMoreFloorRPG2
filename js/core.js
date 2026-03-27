@@ -169,7 +169,7 @@
       weaponAttackMax: 0,
       weaponHealPowerMax: 0,
       weaponMagicAttackMax: 0,
-      pickupSpecialPrefixMinRarity: "rare",
+      pickupSpecialPrefixMinRarity: "all",
       disableRareEquipmentPopup: false,
     };
     const src = p.autoSell && typeof p.autoSell === "object" ? p.autoSell : {};
@@ -191,12 +191,14 @@
         Math.floor(Number(src.weaponMagicAttackMax || 0)),
       ),
       pickupSpecialPrefixMinRarity:
+        src.pickupSpecialPrefixMinRarity === "all" ||
+        src.pickupSpecialPrefixMinRarity === "rare" ||
         src.pickupSpecialPrefixMinRarity === "epic" ||
         src.pickupSpecialPrefixMinRarity === "legendary"
           ? src.pickupSpecialPrefixMinRarity
           : src.pickupSpecialPrefixOnly
             ? "rare"
-            : "rare",
+            : "all",
       disableRareEquipmentPopup: !!src.disableRareEquipmentPopup,
     };
     for (const k of Object.keys(base)) {
@@ -4728,16 +4730,19 @@
 
   function shouldSkipDropItemBySpecialPrefixSetting(item) {
     if (!item) return false;
+    if (item.category === "accessory") return false;
     const p = gameData && gameData.player ? gameData.player : null;
     ensureAutoSellConfig(p);
     const cfg = p && p.autoSell ? p.autoSell : null;
     if (!cfg) return false;
     const minRarity =
+      cfg.pickupSpecialPrefixMinRarity === "all" ||
+      cfg.pickupSpecialPrefixMinRarity === "rare" ||
       cfg.pickupSpecialPrefixMinRarity === "epic" ||
       cfg.pickupSpecialPrefixMinRarity === "legendary"
         ? cfg.pickupSpecialPrefixMinRarity
-        : "rare";
-    const rank = { rare: 1, epic: 2, legendary: 3 };
+        : "all";
+    const rank = { all: 0, rare: 1, epic: 2, legendary: 3 };
     const itemRarity =
       item && typeof item._specialPrefixRarity === "string"
         ? item._specialPrefixRarity
@@ -5996,7 +6001,8 @@
           ? options.specialPrefixRarityPool
           : null;
       const specialPrefixChanceMultiplier =
-        options && Number.isFinite(Number(options.specialPrefixChanceMultiplier))
+        options &&
+        Number.isFinite(Number(options.specialPrefixChanceMultiplier))
           ? Number(options.specialPrefixChanceMultiplier)
           : 1;
       let sp = window.rollSpecialPrefix(rarity, category, typeKey, {

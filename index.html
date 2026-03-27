@@ -566,6 +566,11 @@
         <div class="skill-auto-allocate-toggle auto-sell-rarity-filter">
           <div>装備フィルター</div>
           <label>
+            <input id="pickupSpecialPrefixMinRarityAll" type="radio" name="pickupSpecialPrefixMinRarity"
+              value="all" checked onchange="onAutoSellConfigChange()" />
+            すべて拾う
+          </label>
+          <label>
             <input id="pickupSpecialPrefixMinRarityRare" type="radio" name="pickupSpecialPrefixMinRarity"
               value="rare" onchange="onAutoSellConfigChange()" />
             レア以上の装備を拾う

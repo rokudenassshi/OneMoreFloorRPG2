@@ -557,12 +557,14 @@
       Math.floor(Number(p.autoSell.weaponMagicAttackMax || 0)),
     );
     p.autoSell.pickupSpecialPrefixMinRarity =
+      p.autoSell.pickupSpecialPrefixMinRarity === "all" ||
+      p.autoSell.pickupSpecialPrefixMinRarity === "rare" ||
       p.autoSell.pickupSpecialPrefixMinRarity === "epic" ||
       p.autoSell.pickupSpecialPrefixMinRarity === "legendary"
         ? p.autoSell.pickupSpecialPrefixMinRarity
         : p.autoSell.pickupSpecialPrefixOnly
           ? "rare"
-          : "rare";
+          : "all";
     p.autoSell.disableRareEquipmentPopup =
       !!p.autoSell.disableRareEquipmentPopup;
     return p.autoSell;
@@ -574,6 +576,9 @@
     const atkEl = document.getElementById("autoSellWeaponAttackMax");
     const healEl = document.getElementById("autoSellWeaponHealPowerMax");
     const matkEl = document.getElementById("autoSellWeaponMagicAttackMax");
+    const minRarityAllEl = document.getElementById(
+      "pickupSpecialPrefixMinRarityAll",
+    );
     const minRarityRareEl = document.getElementById(
       "pickupSpecialPrefixMinRarityRare",
     );
@@ -592,6 +597,7 @@
       !atkEl ||
       !healEl ||
       !matkEl ||
+      !minRarityAllEl ||
       !minRarityRareEl ||
       !minRarityEpicEl ||
       !minRarityLegendaryEl ||
@@ -604,10 +610,13 @@
     healEl.value = String(cfg.weaponHealPowerMax || 0);
     matkEl.value = String(cfg.weaponMagicAttackMax || 0);
     const minRarity =
+      cfg.pickupSpecialPrefixMinRarity === "all" ||
+      cfg.pickupSpecialPrefixMinRarity === "rare" ||
       cfg.pickupSpecialPrefixMinRarity === "epic" ||
       cfg.pickupSpecialPrefixMinRarity === "legendary"
         ? cfg.pickupSpecialPrefixMinRarity
-        : "rare";
+        : "all";
+    minRarityAllEl.checked = minRarity === "all";
     minRarityRareEl.checked = minRarity === "rare";
     minRarityEpicEl.checked = minRarity === "epic";
     minRarityLegendaryEl.checked = minRarity === "legendary";
@@ -639,11 +648,15 @@
     cfg.weaponHealPowerMax = toInt(healEl);
     cfg.weaponMagicAttackMax = toInt(matkEl);
     cfg.pickupSpecialPrefixMinRarity =
-      minRarityEl && minRarityEl.value === "epic"
+      minRarityEl && minRarityEl.value === "all"
+        ? "all"
+        : minRarityEl && minRarityEl.value === "epic"
         ? "epic"
         : minRarityEl && minRarityEl.value === "legendary"
           ? "legendary"
-          : "rare";
+          : minRarityEl && minRarityEl.value === "rare"
+            ? "rare"
+            : "all";
     cfg.disableRareEquipmentPopup = !!(
       disableRarePopupEl && disableRarePopupEl.checked
     );
