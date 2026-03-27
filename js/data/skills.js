@@ -345,6 +345,15 @@
       desc: "回避成功時、次の攻撃が確定会心",
       effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
     },
+    trickster_prefix_hunter: {
+      name: "目利き",
+      type: "passive",
+      job: "thief",
+      maxLevel: 1,
+      requiredPoints: 50,
+      desc: "レア装備のドロップ率が1.5倍になる",
+      effect: () => ({ specialPrefixChanceMultiplier: 1.5 }),
+    },
 
     // ===================================
     // 魔法使い (mage)

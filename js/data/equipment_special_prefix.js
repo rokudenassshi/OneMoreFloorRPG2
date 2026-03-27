@@ -589,7 +589,7 @@
    * @param {"common"|"uncommon"|"rare"|"epic"|"legendary"} itemRarity
    * @param {"weapon"|"armor"|"accessory"} category
    * @param {string} typeKey
-   * @param {{forceRarity?: "rare"|"epic"|"legendary", forceRarityPool?: Array<"rare"|"epic"|"legendary">}} [options]
+   * @param {{forceRarity?: "rare"|"epic"|"legendary", forceRarityPool?: Array<"rare"|"epic"|"legendary">, attachChanceMultiplier?: number}} [options]
    */
   function rollSpecialPrefix(itemRarity, category, typeKey, options) {
     if (category !== "weapon" && category !== "armor") return null;
@@ -606,7 +606,21 @@
         : null;
     const hasForcedPool = !!(forceRarityPool && forceRarityPool.length > 0);
 
-    if (Math.random() >= SPECIAL_PREFIX_ATTACH_CHANCE) return null;
+    const attachChanceMultiplier = Number(
+      options && options.attachChanceMultiplier,
+    );
+    const finalAttachChance = Math.min(
+      1,
+      Math.max(
+        0,
+        SPECIAL_PREFIX_ATTACH_CHANCE *
+          (Number.isFinite(attachChanceMultiplier)
+            ? attachChanceMultiplier
+            : 1),
+      ),
+    );
+
+    if (Math.random() >= finalAttachChance) return null;
 
     // 武器/防具とも「装備レア度に関係なく」接頭語テーブル全体から抽選できる
     // （接頭語自体の rarity による出にくさは PREFIX_RARITY_WEIGHT_MULT で担保）

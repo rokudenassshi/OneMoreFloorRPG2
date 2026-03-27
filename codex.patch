@@ -1,77 +1,64 @@
-diff --git a/index.html b/index.html
-index cf2fcc8f9f916928d1f1059be25357b49a3f5a96..32975bc23fa869c9cd85780139bfe7f246274203 100644
---- a/index.html
-+++ b/index.html
-@@ -541,54 +541,68 @@
-           </label>
-         </div>
-         <div id="statAllocationList"></div>
-         <div class="modal-actions">
-           <button onclick="resetStatAllocation()">リセット</button>
-           <button onclick="closeStatAllocation()">決定</button>
-         </div>
-       </div>
-     </div>
+diff --git a/js/data/skills.js b/js/data/skills.js
+index a2315a27e18e9af3d1660ea1f333dd8da91bc19f..be1d604d8ed56a4c38515dd8834b4a77e38ccd4f 100644
+--- a/js/data/skills.js
++++ b/js/data/skills.js
+@@ -323,50 +323,59 @@
+       desc: "3回攻撃（各{value}倍）",
+       effect: (lv) => ({ hits: 3, damageMultiplier: 0.4 + lv * 0.15 }),
+     },
+     steal_life: {
+       name: "生命吸収",
+       type: "active",
+       accuracy: 100,
+       job: "thief",
+       maxLevel: 3,
+       cooldown: 4,
+       desc: "攻撃して吸収（ダメージ{value}倍、与ダメの50%回復）",
+       effect: (lv) => ({ damageMultiplier: 1.25 + lv * 0.3, healPercent: 0.5 }),
+     },
  
-     <!-- 自動売却設定モーダル -->
-     <div id="autoSellConfigModal" class="modal hidden" aria-hidden="true">
-       <div class="modal-content auto-sell-modal-content">
-         <h2>自動売却設定</h2>
-         <div class="small">設定値以下の装備を自動売却します。</div>
-         <div class="auto-sell-grid">
-           <label>防具 防御<input id="autoSellArmorDefenseMax" type="number" min="0" step="1"
-               onchange="onAutoSellConfigChange()" /></label>
-           <label>武器 攻撃<input id="autoSellWeaponAttackMax" type="number" min="0" step="1"
-               onchange="onAutoSellConfigChange()" /></label>
-           <label>武器 回復力<input id="autoSellWeaponHealPowerMax" type="number" min="0" step="1"
-               onchange="onAutoSellConfigChange()" /></label>
-           <label>武器 魔法攻撃<input id="autoSellWeaponMagicAttackMax" type="number" min="0" step="1"
-               onchange="onAutoSellConfigChange()" /></label>
-         </div>
--        <label class="skill-auto-allocate-toggle">
--          <input id="pickupSpecialPrefixOnly" type="checkbox" onchange="onAutoSellConfigChange()" />
--          レア装備のみ拾う
--        </label>
-+        <div class="skill-auto-allocate-toggle auto-sell-rarity-filter">
-+          <div>装備フィルター</div>
-+          <label>
-+            <input id="pickupSpecialPrefixMinRarityRare" type="radio" name="pickupSpecialPrefixMinRarity"
-+              value="rare" onchange="onAutoSellConfigChange()" />
-+            レア以上の装備を拾う
-+          </label>
-+          <label>
-+            <input id="pickupSpecialPrefixMinRarityEpic" type="radio" name="pickupSpecialPrefixMinRarity"
-+              value="epic" onchange="onAutoSellConfigChange()" />
-+            エピック以上の装備を拾う
-+          </label>
-+          <label>
-+            <input id="pickupSpecialPrefixMinRarityLegendary" type="radio" name="pickupSpecialPrefixMinRarity"
-+              value="legendary" onchange="onAutoSellConfigChange()" />
-+            レジェンダリー以上の装備を拾う
-+          </label>
-+        </div>
-         <div class="modal-actions">
-           <button type="button" onclick="resetAutoSellConfigThresholds()">数値をすべて0にする</button>
-           <button type="button" onclick="closeAutoSellConfigModal()">閉じる</button>
-         </div>
-       </div>
-     </div>
+     // ---- 固有ギミック ----
+     thief_just_dodge: {
+       name: "ジャスト回避",
+       type: "passive",
+       job: "thief",
+       // 仕様変更：最大レベル1、必要ポイント5
+       maxLevel: 1,
+       requiredPoints: 5,
+       desc: "回避成功時、次の攻撃が確定会心",
+       effect: (lv) => ({ evasionBonus: lv * 1 }), // おまけ（わずかに回避も上げる）
+     },
++    trickster_prefix_hunter: {
++      name: "怪盗の目利き",
++      type: "passive",
++      job: "thief",
++      maxLevel: 1,
++      requiredPoints: 5,
++      desc: "特殊接頭語の付与確率が1.5倍になる",
++      effect: () => ({ specialPrefixChanceMultiplier: 1.5 }),
++    },
  
-   </div>
- 
-   <script>
-     // モバイルでのピンチ/ダブルタップ拡大を抑止し、常に固定倍率で表示する
-     (function () {
-       const preventZoom = (event) => {
-         event.preventDefault();
-       };
- 
-       document.addEventListener("gesturestart", preventZoom, { passive: false });
-       document.addEventListener("gesturechange", preventZoom, { passive: false });
-       document.addEventListener("gestureend", preventZoom, { passive: false });
- 
-       document.addEventListener(
-         "touchmove",
-         (event) => {
-           if (event.scale && event.scale !== 1) {
-             event.preventDefault();
+     // ===================================
+     // 魔法使い (mage)
+     // ===================================
+     magic_power: {
+       name: "魔力増幅",
+       type: "passive",
+       job: "mage",
+       maxLevel: 5,
+       desc: "魔法ダメージ+{value}",
+       effect: (lv) => ({ magicBonus: lv * 10 }),
+     },
+     mage_focus: {
+       name: "魔法の集中",
+       type: "passive",
+       job: "mage",
+       maxLevel: 5,
+       desc: "命中率+{value}%",
+       effect: (lv) => ({ accuracyBonus: lv * 3 }),
+     },
+     fireball: {
+       name: "ファイアボール",
+       type: "active",
+       accuracy: 100,
+       job: "mage",

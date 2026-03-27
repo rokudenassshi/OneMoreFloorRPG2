@@ -4824,10 +4824,15 @@
             ? ["rare", "epic", "legendary"]
             : ["rare", "epic"]
           : null;
+        const specialPrefixChanceMultiplier =
+          Number(gameData.player?.skills?.trickster_prefix_hunter || 0) > 0
+            ? 1.5
+            : 1;
         const item = generateEquipment({
           player: gameData.player,
           specialPrefixEnabled: isNamedEnemy,
           specialPrefixRarityPool: forcedSpecialPrefixRarityPool,
+          specialPrefixChanceMultiplier,
         });
         if (isInAsuraWorld() && item && typeof item === "object") {
           ["attack", "defense", "magicAttack", "healPower"].forEach((k) => {
@@ -5990,8 +5995,13 @@
         options && Array.isArray(options.specialPrefixRarityPool)
           ? options.specialPrefixRarityPool
           : null;
+      const specialPrefixChanceMultiplier =
+        options && Number.isFinite(Number(options.specialPrefixChanceMultiplier))
+          ? Number(options.specialPrefixChanceMultiplier)
+          : 1;
       let sp = window.rollSpecialPrefix(rarity, category, typeKey, {
         forceRarityPool: forceSpecialPrefixRarityPool,
+        attachChanceMultiplier: specialPrefixChanceMultiplier,
       });
       if (sp) {
         window.applySpecialPrefixEffects(item, sp);
