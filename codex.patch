@@ -1,65 +1,179 @@
-diff --git a/js/data/skills.js b/js/data/skills.js
-index dec0816f073b0ce25ba2e0ec86080d5261a69db4..a2315a27e18e9af3d1660ea1f333dd8da91bc19f 100644
---- a/js/data/skills.js
-+++ b/js/data/skills.js
-@@ -118,60 +118,50 @@
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "追撃率+{skillFollowUpChance}%（最大60%）",
-       effect: (lv) => ({ skillFollowUpChance: lv * 0.005 }),
-     },
-     common_followup_damage_tuning: {
-       name: "追撃威力強化",
-       type: "passive",
-       job: "all",
-       maxLevel: Infinity,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "追撃威力+{followUpDamageMulBonus}%（上限なし）",
-       effect: (lv) => ({ followUpDamageMulBonus: lv * 0.1 }),
-     },
-     common_crit_rate_tuning: {
-       name: "会心率強化",
-       type: "passive",
-       job: "all",
-       maxLevel: 200,
-       requiredPoints: 10,
-       requiredMaxReachedFloor: 5000,
-       desc: "会心率+{critBonus}%（最大100%）",
-       effect: (lv) => ({ critBonus: lv * 0.5 }),
-     },
--    common_guarded_attack: {
--      name: "護りの構え",
--      type: "passive",
--      job: "all",
--      maxLevel: 1,
--      requiredPoints: 1,
--      desc: "たたかう時に攻撃せず、防御を行う",
--      effect: (_lv) => ({}),
--    },
--
-     // ===================================
-     // 剣士 (swordsman)
-     // ===================================
-     sword_mastery: {
-       name: "剣術マスタリー",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "物理攻撃力+{value}",
-       effect: (lv) => ({ attackBonus: lv * 5 }),
-     },
-     sword_focus: {
-       name: "剣の心得",
-       type: "passive",
-       job: "swordsman",
-       maxLevel: 5,
-       desc: "命中率+{value}%",
-       effect: (lv) => ({ accuracyBonus: lv * 2 }),
-     },
-     power_slash: {
-       name: "パワースラッシュ",
-       type: "active",
-       accuracy: 100,
-       job: "swordsman",
-       maxLevel: 3,
+diff --git a/js/core.js b/js/core.js
+index fb5c627b6473f98d09c34ecb915a8753d233f398..5f330b723c0010f4344a4be00b21e23fccc09423 100644
+--- a/js/core.js
++++ b/js/core.js
+@@ -484,86 +484,97 @@
+ 
+   function isAutosaveEnabled() {
+     try {
+       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
+       if (raw == null) return true;
+       return raw === "1";
+     } catch (e) {
+       return true;
+     }
+   }
+ 
+   function setAutosaveEnabled(v) {
+     autosaveEnabled = !!v;
+     if (autosaveEnabled) autosaveDirty = true;
+     try {
+       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
+     } catch (e) {}
+   }
+ 
+   let pendingAutosaveTimer = null;
+   let pendingThrottledSaveTimer = null;
+   let autosaveDirty = true;
+   let cloudSaveInFlight = false;
+   let cloudSaveQueued = false;
+   let lastCloudSaveAt = 0;
++  let lastSavedPayloadSignature = null;
+ 
+   function buildSavePayload() {
+     const payload = {
+       schema: SAVE_SCHEMA,
+       savedAt: new Date().toISOString(),
+       floor: gameData.floor,
+       gameState: gameData.gameState,
+       player: gameData.player,
+       enemy: gameData.enemy,
+       battleFloor: gameData.battleFloor || null,
+       pendingFloorAfterWin: gameData.pendingFloorAfterWin || null,
+     };
+     return JSON.parse(JSON.stringify(payload));
+   }
+ 
+   function savePayloadToLocalCache(payload) {
+     try {
+       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
++      lastSavedPayloadSignature = getPayloadSignature(payload);
+       return true;
+     } catch (e) {
+       return false;
+     }
+   }
+ 
+   function loadPayloadFromLocalCache() {
+     try {
+       const raw = localStorage.getItem(SAVE_KEY);
+       if (!raw) return null;
+       const parsed = JSON.parse(raw);
+       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
++      lastSavedPayloadSignature = getPayloadSignature(parsed);
+       return parsed;
+     } catch (e) {
+       return null;
+     }
+   }
+ 
++  function getPayloadSignature(payload) {
++    try {
++      return JSON.stringify(payload);
++    } catch (e) {
++      return null;
++    }
++  }
++
+   function normalizePlayerSkillState(player) {
+     const p = player;
+     if (!p || typeof p !== "object") return;
+ 
+     if (!p.skills || typeof p.skills !== "object") p.skills = {};
+ 
+     // スキルレベルと消費SPを正規化（セーブ改ざん/不整合対策）
+     let spent = 0;
+     for (const key of Object.keys(p.skills)) {
+       const def = skills && skills[key] ? skills[key] : null;
+       const maxLevel =
+         def && def.maxLevel !== Infinity
+           ? Math.max(0, Math.floor(Number(def.maxLevel || 0)))
+           : Infinity;
+       const lvRaw = Math.floor(Number(p.skills[key] || 0));
+       const lv = Math.max(
+         0,
+         maxLevel === Infinity ? lvRaw : Math.min(lvRaw, maxLevel),
+       );
+       if (lv <= 0) {
+         delete p.skills[key];
+         continue;
+       }
+       p.skills[key] = lv;
+       const cost = Math.max(
+@@ -649,66 +660,76 @@
+ 
+       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
+       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
+         if (!pendingThrottledSaveTimer) {
+           const delay = Math.max(
+             0,
+             MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave,
+           );
+           pendingThrottledSaveTimer = setTimeout(() => {
+             pendingThrottledSaveTimer = null;
+             saveGameNow();
+           }, delay);
+         }
+         return;
+       }
+ 
+       if (cloudSaveInFlight) {
+         // 保存中に新しい変更が入った場合は必ず再保存キューへ積む
+         // （手動保存/強制保存でもここに入るため、dirty を立てないと取りこぼす）
+         autosaveDirty = true;
+         cloudSaveQueued = true;
+         return false;
+       }
+ 
+       const payload = buildSavePayload();
++      const payloadSignature = getPayloadSignature(payload);
++      if (
++        !force &&
++        payloadSignature &&
++        payloadSignature === lastSavedPayloadSignature
++      ) {
++        autosaveDirty = false;
++        return true;
++      }
+       autosaveDirty = false;
+ 
+       const functionsInstance = window.firebaseFunctions || null;
+       const httpsCallableFactory = window.firebaseHttpsCallable || null;
+       if (!functionsInstance || typeof httpsCallableFactory !== "function") {
+         autosaveDirty = true;
+         return false;
+       }
+ 
+       cloudSaveInFlight = true;
+       const saveUserGameData = httpsCallableFactory(
+         functionsInstance,
+         CLOUD_SAVE_FUNCTION_SAVE,
+       );
+       try {
+         await saveUserGameData({ payload });
++        lastSavedPayloadSignature = payloadSignature;
+         lastCloudSaveAt = Date.now();
+       } finally {
+         cloudSaveInFlight = false;
+       }
+ 
+       if (cloudSaveQueued) {
+         cloudSaveQueued = false;
+         if (autosaveDirty) saveGameNow();
+       }
+       return true;
+     } catch (e) {
+       autosaveDirty = true;
+       return false;
+     }
+   }
+ 
+   function requestAutosave() {
+     if (!autosaveEnabled) return;
+     autosaveDirty = true;
+     if (pendingAutosaveTimer) return;
+     pendingAutosaveTimer = setTimeout(() => {
+       pendingAutosaveTimer = null;
+       saveGameNow();
+     }, REQUEST_AUTOSAVE_DEBOUNCE_MS);
+   }

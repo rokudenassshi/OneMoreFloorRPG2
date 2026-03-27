@@ -506,6 +506,7 @@
   let cloudSaveInFlight = false;
   let cloudSaveQueued = false;
   let lastCloudSaveAt = 0;
+  let lastSavedPayloadSignature = null;
 
   function buildSavePayload() {
     const payload = {
@@ -524,6 +525,7 @@
   function savePayloadToLocalCache(payload) {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      lastSavedPayloadSignature = getPayloadSignature(payload);
       return true;
     } catch (e) {
       return false;
@@ -536,7 +538,16 @@
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
+      lastSavedPayloadSignature = getPayloadSignature(parsed);
       return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getPayloadSignature(payload) {
+    try {
+      return JSON.stringify(payload);
     } catch (e) {
       return null;
     }
@@ -671,6 +682,15 @@
       }
 
       const payload = buildSavePayload();
+      const payloadSignature = getPayloadSignature(payload);
+      if (
+        !force &&
+        payloadSignature &&
+        payloadSignature === lastSavedPayloadSignature
+      ) {
+        autosaveDirty = false;
+        return true;
+      }
       autosaveDirty = false;
 
       const functionsInstance = window.firebaseFunctions || null;
@@ -687,6 +707,7 @@
       );
       try {
         await saveUserGameData({ payload });
+        lastSavedPayloadSignature = payloadSignature;
         lastCloudSaveAt = Date.now();
       } finally {
         cloudSaveInFlight = false;
