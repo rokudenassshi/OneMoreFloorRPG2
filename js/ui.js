@@ -3760,6 +3760,9 @@
     if (user) {
       finishLoginPrompt();
     }
+    if (typeof window.handleCoreAuthChanged === "function") {
+      window.handleCoreAuthChanged(user || null);
+    }
   }
 
   // -------------------

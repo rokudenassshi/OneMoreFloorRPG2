@@ -11,7 +11,7 @@
   // 通常時は250階層で頭打ち。
   // 上限解放シリアル入力時は 5001 階層まで進行可能。
   const DEFAULT_FLOOR_CAP = 250;
-  const UNLOCKED_FLOOR_CAP = 5001;
+  const UNLOCKED_FLOOR_CAP = 6001;
   const SERIAL_UNLOCK_STORE_KEY = "omf_serial_unlocks_v1";
   const BASE_EVASION_CAP = 70;
   const MAX_EVASION_CAP = 90;
@@ -505,6 +505,9 @@
   let autosaveDirty = true;
   let cloudSaveInFlight = false;
   let cloudSaveQueued = false;
+  let cloudProfileSyncInFlight = false;
+  let cloudProfileSyncQueued = false;
+  let currentCloudUid = null;
   let lastCloudSaveAt = 0;
   let lastSavedPayloadSignature = null;
 
@@ -655,7 +658,14 @@
         const payload = buildSavePayload();
         const cached = savePayloadToLocalCache(payload);
         if (cached) autosaveDirty = false;
+        currentCloudUid = null;
         return cached;
+      }
+
+      if (cloudProfileSyncInFlight) {
+        autosaveDirty = true;
+        cloudSaveQueued = true;
+        return false;
       }
 
       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
@@ -764,6 +774,57 @@
       return applySavePayload(payload);
     } catch (e) {
       return false;
+    }
+  }
+
+  async function handleCloudUidChange(nextUid) {
+    if (!nextUid || nextUid === currentCloudUid) return;
+    if (cloudProfileSyncInFlight) {
+      cloudProfileSyncQueued = true;
+      return;
+    }
+
+    cloudProfileSyncInFlight = true;
+    try {
+      currentCloudUid = nextUid;
+      lastSavedPayloadSignature = null;
+      lastCloudSaveAt = 0;
+      const loaded = await loadGameIfExists();
+      if (loaded) {
+        getCombatStats();
+        if (typeof updateUI === "function") updateUI();
+        if (typeof log === "function")
+          log("✅ Googleアカウントのセーブを読み込みました");
+        autosaveDirty = false;
+      } else {
+        autosaveDirty = true;
+      }
+    } catch (e) {
+      autosaveDirty = true;
+    } finally {
+      cloudProfileSyncInFlight = false;
+
+      if (cloudProfileSyncQueued) {
+        cloudProfileSyncQueued = false;
+        const authBridge = window.firebaseAuthBridge || null;
+        const latestUser =
+          authBridge && typeof authBridge.getCurrentUser === "function"
+            ? authBridge.getCurrentUser()
+            : null;
+        const latestUid =
+          latestUser && typeof latestUser.uid === "string"
+            ? latestUser.uid
+            : null;
+        if (latestUid && latestUid !== currentCloudUid) {
+          handleCloudUidChange(latestUid);
+          return;
+        }
+      }
+
+      if (cloudSaveQueued && autosaveDirty) {
+        cloudSaveQueued = false;
+        saveGameNow();
+      }
     }
   }
 
@@ -928,6 +989,15 @@
     ensureAutoAllocateStatPointsConfig(gameData.player);
     ensureSerialOptionsConfig(gameData.player);
     ensureWorldStateConfig(gameData.player);
+    const authBridge = window.firebaseAuthBridge || null;
+    const currentUserAtInit =
+      authBridge && typeof authBridge.getCurrentUser === "function"
+        ? authBridge.getCurrentUser()
+        : null;
+    currentCloudUid =
+      currentUserAtInit && typeof currentUserAtInit.uid === "string"
+        ? currentUserAtInit.uid
+        : null;
     if (typeof window.promptGoogleLoginAtStart === "function") {
       try {
         await window.promptGoogleLoginAtStart();
@@ -6263,6 +6333,15 @@
   window.setAutosaveEnabled = setAutosaveEnabled;
   window.requestAutosave = requestAutosave;
   window.saveGameNow = saveGameNow;
+  window.handleCoreAuthChanged = function (user) {
+    const nextUid =
+      user && typeof user.uid === "string" && user.uid ? user.uid : null;
+    if (!nextUid) {
+      currentCloudUid = null;
+      return;
+    }
+    handleCloudUidChange(nextUid);
+  };
 
   window.move = move;
   window.teleportToFloor = teleportToFloor;

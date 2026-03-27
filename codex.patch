@@ -1,179 +1,276 @@
-diff --git a/js/core.js b/js/core.js
-index fb5c627b6473f98d09c34ecb915a8753d233f398..5f330b723c0010f4344a4be00b21e23fccc09423 100644
---- a/js/core.js
-+++ b/js/core.js
-@@ -484,86 +484,97 @@
+diff --git a/js/data/enemies.js b/js/data/enemies.js
+index 13fb9674a8e2daa06211a6815a7317a1336535af..67d2776a8a17c491f2df3fff5f72f3c53efc9062 100644
+--- a/js/data/enemies.js
++++ b/js/data/enemies.js
+@@ -2378,50 +2378,156 @@
+         "roar",
+         "heal",
+       ],
+     },
+     {
+       name: "万雷の虚王",
+       hp: 446000,
+       str: 5920,
+       vit: 9980,
+       int: 4920,
+       agi: 444,
+       dex: 506,
+       exp: 94400,
+       minFloor: 4920,
+       maxFloor: 5000,
+       skills: [
+         "thunder_strike",
+         "crushing_blow",
+         "multi_slash",
+         "silence_hex",
+         "doom_mark",
+         "roar",
+         "heal",
+       ],
+     },
++    // --------------------
++    // 5000〜6001F（新テーブル）
++    // --------------------
++    {
++      name: "冥極の星断機",
++      hp: 520000,
++      str: 6420,
++      vit: 10880,
++      int: 5380,
++      agi: 466,
++      dex: 534,
++      exp: 102000,
++      minFloor: 5001,
++      maxFloor: 6001,
++      skills: [
++        "thunder_strike",
++        "crushing_blow",
++        "multi_slash",
++        "doom_mark",
++        "silence_hex",
++        "heal",
++      ],
++    },
++    {
++      name: "天冥覇導アストラル",
++      hp: 568000,
++      str: 6880,
++      vit: 11740,
++      int: 5860,
++      agi: 480,
++      dex: 552,
++      exp: 110500,
++      minFloor: 5200,
++      maxFloor: 6001,
++      skills: [
++        "fireball",
++        "ice_lance",
++        "thunder_strike",
++        "silence_hex",
++        "doom_mark",
++        "heal",
++      ],
++    },
++    {
++      name: "境壊の殲神騎",
++      hp: 612000,
++      str: 7420,
++      vit: 12560,
++      int: 6120,
++      agi: 496,
++      dex: 570,
++      exp: 119800,
++      minFloor: 5400,
++      maxFloor: 6001,
++      skills: [
++        "power_strike",
++        "crushing_blow",
++        "multi_slash",
++        "doom_mark",
++        "roar",
++        "heal",
++      ],
++    },
++    {
++      name: "終星の裁断王",
++      hp: 668000,
++      str: 7980,
++      vit: 13540,
++      int: 6620,
++      agi: 514,
++      dex: 594,
++      exp: 132000,
++      minFloor: 5600,
++      maxFloor: 6001,
++      skills: [
++        "fireball",
++        "thunder_strike",
++        "crushing_blow",
++        "multi_slash",
++        "doom_mark",
++        "silence_hex",
++        "heal",
++      ],
++    },
++    {
++      name: "無窮輪廻エンペリオン",
++      hp: 728000,
++      str: 8560,
++      vit: 14680,
++      int: 7240,
++      agi: 534,
++      dex: 620,
++      exp: 146500,
++      minFloor: 5800,
++      maxFloor: 6001,
++      skills: [
++        "fireball",
++        "ice_lance",
++        "thunder_strike",
++        "crushing_blow",
++        "multi_slash",
++        "doom_mark",
++        "silence_hex",
++        "heal",
++      ],
++    },
+   ];
  
-   function isAutosaveEnabled() {
-     try {
-       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
-       if (raw == null) return true;
-       return raw === "1";
-     } catch (e) {
-       return true;
-     }
-   }
- 
-   function setAutosaveEnabled(v) {
-     autosaveEnabled = !!v;
-     if (autosaveEnabled) autosaveDirty = true;
-     try {
-       localStorage.setItem(AUTOSAVE_ENABLED_KEY, autosaveEnabled ? "1" : "0");
-     } catch (e) {}
-   }
- 
-   let pendingAutosaveTimer = null;
-   let pendingThrottledSaveTimer = null;
-   let autosaveDirty = true;
-   let cloudSaveInFlight = false;
-   let cloudSaveQueued = false;
-   let lastCloudSaveAt = 0;
-+  let lastSavedPayloadSignature = null;
- 
-   function buildSavePayload() {
-     const payload = {
-       schema: SAVE_SCHEMA,
-       savedAt: new Date().toISOString(),
-       floor: gameData.floor,
-       gameState: gameData.gameState,
-       player: gameData.player,
-       enemy: gameData.enemy,
-       battleFloor: gameData.battleFloor || null,
-       pendingFloorAfterWin: gameData.pendingFloorAfterWin || null,
+   // --------------------
+   // 修羅の国専用モンスターテーブル
+   // ※元の世界と同じ階層分けで全モンスターを変換し、1Fから超高難易度になるように調整
+   // --------------------
+   // 修羅の国は「元の世界の基礎ステータス × 倍率」で再設計。
+   // 1st Tier（スライム/コウモリ帯）が 5000F ボスの 5 倍になるようにする。
+   const baseBoss5000ForAsura = {
+     hp: 3000000,
+     str: 68000,
+     vit: 35200,
+     int: 5600,
+     agi: 460,
+     dex: 520,
+     exp: 600,
+   };
+   const asuraFirstTierBaseMultiplier = 5;
+   const asuraTierGrowthMultipliers = [
+     { maxFloor: 100, mul: 1.0 },
+     { maxFloor: 200, mul: 1.3 },
+     { maxFloor: 500, mul: 1.7 },
+     { maxFloor: 1000, mul: 2.15 },
+     { maxFloor: 1500, mul: 2.6 },
+     { maxFloor: 2000, mul: 3.1 },
+@@ -2543,51 +2649,51 @@
+       agi: Math.round(tier.target.agi * floorGuardRate),
+       dex: Math.round(tier.target.dex * floorGuardRate),
+       exp: Math.round(tier.target.exp * floorGuardRate),
      };
-     return JSON.parse(JSON.stringify(payload));
-   }
  
-   function savePayloadToLocalCache(payload) {
-     try {
-       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-+      lastSavedPayloadSignature = getPayloadSignature(payload);
-       return true;
-     } catch (e) {
-       return false;
-     }
-   }
+     return {
+       ...m,
+       name:
+         typeof m.name === "string" && m.name.startsWith("修羅")
+           ? m.name
+           : `修羅${m.name}`,
+       hp: Math.max(baseScaled.hp, floorGuard.hp),
+       str: Math.max(baseScaled.str, floorGuard.str),
+       vit: Math.max(baseScaled.vit, floorGuard.vit),
+       int: Math.max(baseScaled.int, floorGuard.int),
+       agi: Math.max(baseScaled.agi, floorGuard.agi),
+       dex: Math.max(baseScaled.dex, floorGuard.dex),
+       exp: Math.max(baseScaled.exp, floorGuard.exp),
+       minFloor: min,
+       maxFloor: max,
+     };
+   });
+   // --------------------
+   // ボスモンスター（敵テーブル切替階層）
+   // --------------------
+-  // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F に固定出現するボス。
++  // 100F / 200F / 500F / 1000F / 1500F / 2000F / 3000F / 4500F / 5000F / 6001F に固定出現するボス。
+   // ※core.js の startBattle() がこのテーブルを参照してボスを優先生成する。
+   const bossMonsters = {
+     100: {
+       name: "境界の守護竜",
+       hp: 900,
+       str: 38,
+       vit: 28,
+       int: 20,
+       agi: 10,
+       dex: 14,
+       exp: 380,
+       isBoss: true,
+       skills: ["fireball", "power_strike", "roar", "heal"],
+       effects: { damageReduction: 0.08, regenRate: 0.03 },
+     },
+     200: {
+       name: "黒鋼の巨王",
+       hp: 1800,
+       str: 68,
+       vit: 62,
+       int: 18,
+       agi: 12,
+       dex: 18,
+       exp: 900,
+       isBoss: true,
+@@ -2765,33 +2871,61 @@
+       str: 6800,
+       vit: 11200,
+       int: 5600,
+       agi: 460,
+       dex: 520,
+       exp: 220000,
+       isBoss: true,
+       skills: [
+         "doom_mark",
+         "fireball",
+         "ice_lance",
+         "thunder_strike",
+         "crushing_blow",
+         "multi_slash",
+         "silence_hex",
+         "heal",
+       ],
+       effects: {
+         damageReduction: 0.48,
+         regenRate: 0.16,
+         extraTurnChance: 0.33,
+         armorPierceRate: 0.58,
+         alwaysHit: true,
+       },
+     },
++    6001: {
++      name: "真終天魔ゼロ・オーバーロード",
++      hp: 860000,
++      str: 9800,
++      vit: 16800,
++      int: 8600,
++      agi: 560,
++      dex: 650,
++      exp: 360000,
++      isBoss: true,
++      skills: [
++        "doom_mark",
++        "fireball",
++        "ice_lance",
++        "thunder_strike",
++        "crushing_blow",
++        "multi_slash",
++        "silence_hex",
++        "heal",
++      ],
++      effects: {
++        damageReduction: 0.55,
++        regenRate: 0.2,
++        extraTurnChance: 0.4,
++        armorPierceRate: 0.66,
++        alwaysHit: true,
++      },
++    },
+   };
  
-   function loadPayloadFromLocalCache() {
-     try {
-       const raw = localStorage.getItem(SAVE_KEY);
-       if (!raw) return null;
-       const parsed = JSON.parse(raw);
-       if (!parsed || parsed.schema !== SAVE_SCHEMA) return null;
-+      lastSavedPayloadSignature = getPayloadSignature(parsed);
-       return parsed;
-     } catch (e) {
-       return null;
-     }
-   }
- 
-+  function getPayloadSignature(payload) {
-+    try {
-+      return JSON.stringify(payload);
-+    } catch (e) {
-+      return null;
-+    }
-+  }
-+
-   function normalizePlayerSkillState(player) {
-     const p = player;
-     if (!p || typeof p !== "object") return;
- 
-     if (!p.skills || typeof p.skills !== "object") p.skills = {};
- 
-     // スキルレベルと消費SPを正規化（セーブ改ざん/不整合対策）
-     let spent = 0;
-     for (const key of Object.keys(p.skills)) {
-       const def = skills && skills[key] ? skills[key] : null;
-       const maxLevel =
-         def && def.maxLevel !== Infinity
-           ? Math.max(0, Math.floor(Number(def.maxLevel || 0)))
-           : Infinity;
-       const lvRaw = Math.floor(Number(p.skills[key] || 0));
-       const lv = Math.max(
-         0,
-         maxLevel === Infinity ? lvRaw : Math.min(lvRaw, maxLevel),
-       );
-       if (lv <= 0) {
-         delete p.skills[key];
-         continue;
-       }
-       p.skills[key] = lv;
-       const cost = Math.max(
-@@ -649,66 +660,76 @@
- 
-       const elapsedSinceLastSave = Date.now() - lastCloudSaveAt;
-       if (!force && elapsedSinceLastSave < MIN_CLOUD_SAVE_INTERVAL_MS) {
-         if (!pendingThrottledSaveTimer) {
-           const delay = Math.max(
-             0,
-             MIN_CLOUD_SAVE_INTERVAL_MS - elapsedSinceLastSave,
-           );
-           pendingThrottledSaveTimer = setTimeout(() => {
-             pendingThrottledSaveTimer = null;
-             saveGameNow();
-           }, delay);
-         }
-         return;
-       }
- 
-       if (cloudSaveInFlight) {
-         // 保存中に新しい変更が入った場合は必ず再保存キューへ積む
-         // （手動保存/強制保存でもここに入るため、dirty を立てないと取りこぼす）
-         autosaveDirty = true;
-         cloudSaveQueued = true;
-         return false;
-       }
- 
-       const payload = buildSavePayload();
-+      const payloadSignature = getPayloadSignature(payload);
-+      if (
-+        !force &&
-+        payloadSignature &&
-+        payloadSignature === lastSavedPayloadSignature
-+      ) {
-+        autosaveDirty = false;
-+        return true;
-+      }
-       autosaveDirty = false;
- 
-       const functionsInstance = window.firebaseFunctions || null;
-       const httpsCallableFactory = window.firebaseHttpsCallable || null;
-       if (!functionsInstance || typeof httpsCallableFactory !== "function") {
-         autosaveDirty = true;
-         return false;
-       }
- 
-       cloudSaveInFlight = true;
-       const saveUserGameData = httpsCallableFactory(
-         functionsInstance,
-         CLOUD_SAVE_FUNCTION_SAVE,
-       );
-       try {
-         await saveUserGameData({ payload });
-+        lastSavedPayloadSignature = payloadSignature;
-         lastCloudSaveAt = Date.now();
-       } finally {
-         cloudSaveInFlight = false;
-       }
- 
-       if (cloudSaveQueued) {
-         cloudSaveQueued = false;
-         if (autosaveDirty) saveGameNow();
-       }
-       return true;
-     } catch (e) {
-       autosaveDirty = true;
-       return false;
-     }
-   }
- 
-   function requestAutosave() {
-     if (!autosaveEnabled) return;
-     autosaveDirty = true;
-     if (pendingAutosaveTimer) return;
-     pendingAutosaveTimer = setTimeout(() => {
-       pendingAutosaveTimer = null;
-       saveGameNow();
-     }, REQUEST_AUTOSAVE_DEBOUNCE_MS);
-   }
+   window.epithets = epithets;
+   window.enemySkills = enemySkills;
+   window.monsterTypes = monsterTypes;
+   window.asuraMonsterTypes = asuraMonsterTypes;
+   window.bossMonsters = bossMonsters;
+ })();
