@@ -940,6 +940,15 @@
         maxHpBonus: -lv * 6,
       }),
     },
+    archmage_grand_sorcery: {
+      name: "大魔導",
+      type: "passive",
+      job: "archmage",
+      maxLevel: 1,
+      requiredPoints: 50,
+      desc: "魔法攻撃力が{value}倍になる",
+      effect: (_lv) => ({ magicBonus: 100, value: 2 }),
+    },
 
     archmage_seal_ray: {
       name: "魔封光",

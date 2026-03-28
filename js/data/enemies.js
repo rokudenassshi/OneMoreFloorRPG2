@@ -2515,13 +2515,13 @@
   // 修羅の国は「元の世界の基礎ステータス × 倍率」で再設計。
   // 1st Tier（スライム/コウモリ帯）が 5000F ボスの 5 倍になるようにする。
   const baseBoss5000ForAsura = {
-    hp: 3000000,
+    hp: 5000000,
     str: 68000,
-    vit: 35200,
-    int: 5600,
+    vit: 55200,
+    int: 56000,
     agi: 460,
     dex: 520,
-    exp: 600,
+    exp: 100,
   };
   const asuraFirstTierBaseMultiplier = 5;
   const asuraTierGrowthMultipliers = [
